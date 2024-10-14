@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='my_python_project',
+    name='optopus',
     version='0.1.0',
     packages=find_packages(),
     install_requires=[
@@ -9,19 +9,19 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'my_python_project=my_python_project.main:main',
+            'optopus=optopus.main:main',
         ],
     },
     author='Your Name',
     author_email='your.email@example.com',
-    description='A brief description of your project',
+    description='A Python project for options trading and backtesting.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/yourusername/my_python_project',
+    url='https://github.com/yourusername/optopus',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
 )
