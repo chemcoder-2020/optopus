@@ -1,4 +1,4 @@
-# Your Project Name
+# My Python Project
 
 A brief description of your project.
 
@@ -6,8 +6,8 @@ A brief description of your project.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/your_project_name.git
-   cd your_project_name
+   git clone https://github.com/yourusername/my_python_project.git
+   cd my_python_project
    ```
 
 2. Create a virtual environment:
@@ -29,7 +29,7 @@ A brief description of your project.
 
 Run the project:
 ```bash
-your_project_name
+my_python_project
 ```
 
 ## Contributing
