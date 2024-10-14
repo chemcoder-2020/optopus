@@ -1,2 +1,8 @@
 # src/optopus/__init__.py
 # This file initializes the optopus package.
+# src/optopus/brokers/__init__.py
+# This file initializes the brokers package.
+# src/optopus/brokers/schwab/__init__.py
+# This file initializes the schwab package.
+# src/optopus/trades/__init__.py
+# This file initializes the trades package.
