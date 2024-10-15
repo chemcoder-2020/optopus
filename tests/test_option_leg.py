@@ -1,6 +1,7 @@
 import unittest
 import pandas as pd
-from src.optopus.trades.option_leg import OptionLeg
+import datetime
+from src.optopus.trades.option_leg import OptionLeg, calculate_dte
 
 
 class TestOptionLeg(unittest.TestCase):
