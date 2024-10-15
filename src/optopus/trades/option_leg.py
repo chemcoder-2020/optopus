@@ -1,8 +1,13 @@
 import datetime
-import logging
+from loguru import logger
 import pandas as pd
 import numpy as np
-logging.basicConfig(level=logging.ERROR)
+import sys
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="ERROR"
+)
+
 
 class OptionLeg:
     """
@@ -58,8 +63,7 @@ class OptionLeg:
             position_side (str): The side of the position ('BUY' or 'SELL').
             commission (float): The commission per contract.
         """
-        
-        self.logger = logging.getLogger(__name__)
+
         if not isinstance(symbol, str):
             raise ValueError("Symbol must be a string")
         if option_type not in ["CALL", "PUT"]:
@@ -101,6 +105,7 @@ class OptionLeg:
 
         self.update(entry_time, option_chain_df, is_entry=True)
 
+    @logger.catch
     def update(self, current_time, option_chain_df, is_entry=False):
         """
         Update the option leg with new market data.
@@ -128,7 +133,9 @@ class OptionLeg:
         self.current_time = current_datetime
 
         # Ensure QUOTE_READTIME is timezone-naive and rounded to 15 minutes
-        quote_readtime = option_chain_df["QUOTE_READTIME"].iloc[0].round("15min").tz_localize(None)
+        quote_readtime = (
+            option_chain_df["QUOTE_READTIME"].iloc[0].round("15min").tz_localize(None)
+        )
         rounded_current_time = current_datetime.round("15min")
 
         if quote_readtime != rounded_current_time:
@@ -155,28 +162,52 @@ class OptionLeg:
 
             if bid_key in option_data:
                 self.current_bid = option_data[bid_key].iloc[0]
-            
+
             if ask_key in option_data:
                 self.current_ask = option_data[ask_key].iloc[0]
 
             if mark_key in option_data:
                 self.current_mark = option_data[mark_key].iloc[0]
             else:
-                bid = option_data[bid_key].iloc[0] if bid_key in option_data.columns else None
-                ask = option_data[ask_key].iloc[0] if ask_key in option_data.columns else None
+                bid = (
+                    option_data[bid_key].iloc[0]
+                    if bid_key in option_data.columns
+                    else None
+                )
+                ask = (
+                    option_data[ask_key].iloc[0]
+                    if ask_key in option_data.columns
+                    else None
+                )
 
                 if pd.notna(bid) and pd.notna(ask):
                     self.current_mark = (bid + ask) / 2
                 else:
-                    self.logger.warning(f"Unable to calculate mark price for {self}")
+                    logger.warning(f"Unable to calculate mark price for {self}")
                     self.current_mark = np.nan
 
-            self.current_last = option_data[last_key].iloc[0] if last_key in option_data.columns else None
-            self.current_delta = option_data[delta_key].iloc[0] if delta_key in option_data.columns else None
-            self.underlying_last = option_data["UNDERLYING_LAST"].iloc[0] if "UNDERLYING_LAST" in option_data.columns else None
-            self.is_itm = option_data[itm_key].iloc[0] if itm_key in option_data.columns else None
+            self.current_last = (
+                option_data[last_key].iloc[0]
+                if last_key in option_data.columns
+                else None
+            )
+            self.current_delta = (
+                option_data[delta_key].iloc[0]
+                if delta_key in option_data.columns
+                else None
+            )
+            self.underlying_last = (
+                option_data["UNDERLYING_LAST"].iloc[0]
+                if "UNDERLYING_LAST" in option_data.columns
+                else None
+            )
+            self.is_itm = (
+                option_data[itm_key].iloc[0] if itm_key in option_data.columns else None
+            )
 
-            self.current_price = self.current_mark if pd.notna(self.current_mark) else np.nan
+            self.current_price = (
+                self.current_mark if pd.notna(self.current_mark) else np.nan
+            )
 
             if is_entry:
                 self.entry_price = self.current_mark
@@ -189,7 +220,7 @@ class OptionLeg:
             # Calculate DTE
             self.dte = calculate_dte(self.expiration, current_datetime)
         else:
-            self.logger.warning(f"No matching option found in the chain for {self}")
+            logger.warning(f"No matching option found in the chain for {self}")
             if is_entry:
                 self.entry_price = np.nan
                 self.entry_underlying_last = np.nan
@@ -216,7 +247,7 @@ class OptionLeg:
             float: The total commission.
         """
         return self.commission * self.contracts * 2  # Opening and closing
-    
+
     def update_entry_price(self, new_price: float):
         """Modify the entry price of the option leg. Helpful for updating entry prices after actual trading order is filled."""
         self.entry_price = new_price
@@ -377,7 +408,11 @@ class OptionLeg:
             else:  # put
                 subset = subset[subset["STRIKE"] <= underlying_price]
             subset["abs_strike_diff"] = (subset["STRIKE"] - underlying_price).abs()
-            return subset.nsmallest(1, "abs_strike_diff").iloc[0] if not subset.empty else None
+            return (
+                subset.nsmallest(1, "abs_strike_diff").iloc[0]
+                if not subset.empty
+                else None
+            )
         else:
             raise ValueError("Invalid target_delta or option_type")
 
@@ -397,7 +432,7 @@ class OptionLeg:
             and self.strike == other_leg.strike
             and self.expiration == other_leg.expiration
         )
-    
+
     @property
     def schwab_symbol(self):
         if isinstance(self.expiration, pd.Timestamp):
@@ -407,6 +442,7 @@ class OptionLeg:
                 expiration = pd.Timestamp(self.expiration).strftime("%y%m%d")
         option_symbol = f"{self.symbol.ljust(6)}{expiration}{self.option_type[0]}{str(int(self.strike * 1000)).zfill(8)}"
         return option_symbol
+
 
 def calculate_dte(expiration_date, current_date) -> float:
     """
