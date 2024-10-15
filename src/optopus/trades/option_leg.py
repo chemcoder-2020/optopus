@@ -106,6 +106,7 @@ class OptionLeg:
         self.update(entry_time, option_chain_df, is_entry=True)
 
     @logger.catch
+    @logger.catch
     def update(self, current_time, option_chain_df, is_entry=False):
         """
         Update the option leg with new market data.
@@ -226,6 +227,7 @@ class OptionLeg:
                 self.entry_underlying_last = np.nan
             self.dte = calculate_dte(self.expiration, current_datetime)
 
+    @logger.catch
     def calculate_pl(self):
         """
         Calculate the profit/loss for the option leg.
@@ -239,6 +241,7 @@ class OptionLeg:
             multiplier * self.price_diff * self.contracts * 100 - total_commission
         )  # Assuming each contract is for 100 shares
 
+    @logger.catch
     def calculate_total_commission(self):
         """
         Calculate the total commission for the option leg.
@@ -248,16 +251,19 @@ class OptionLeg:
         """
         return self.commission * self.contracts * 2  # Opening and closing
 
+    @logger.catch
     def update_entry_price(self, new_price: float):
         """Modify the entry price of the option leg. Helpful for updating entry prices after actual trading order is filled."""
         self.entry_price = new_price
         self.price_diff = self.current_price - self.entry_price
         self.pl = self.calculate_pl()
 
+    @logger.catch
     def __repr__(self):
         return f"OptionLeg(symbol={self.symbol}, option_type={self.option_type}, strike={self.strike}, expiration={self.expiration}, contracts={self.contracts}, entry_price={self.entry_price}, current_price={self.current_price}, current_mark={self.current_mark}, current_last={self.current_last}, current_delta={self.current_delta}, entry_underlying_last={self.entry_underlying_last}, underlying_last={self.underlying_last}, underlying_diff={self.underlying_diff}, is_itm={self.is_itm}, price_diff={self.price_diff}, pl={self.pl}, position_side={self.position_side}, dte={self.dte}, commission={self.commission})"
 
     @classmethod
+    @logger.catch
     def from_delta_and_dte(
         cls,
         symbol: str,
@@ -346,6 +352,7 @@ class OptionLeg:
         )
 
     @staticmethod
+    @logger.catch
     def calculate_closest_match(
         subset,
         delta_col,
@@ -416,6 +423,7 @@ class OptionLeg:
         else:
             raise ValueError("Invalid target_delta or option_type")
 
+    @logger.catch
     def conflicts_with(self, other_leg):
         """
         Check if this option leg conflicts with another option leg.
@@ -434,6 +442,7 @@ class OptionLeg:
         )
 
     @property
+    @logger.catch
     def schwab_symbol(self):
         if isinstance(self.expiration, pd.Timestamp):
             expiration = self.expiration.strftime("%y%m%d")
@@ -444,6 +453,7 @@ class OptionLeg:
         return option_symbol
 
 
+@logger.catch
 def calculate_dte(expiration_date, current_date) -> float:
     """
     Calculate the days to expiration (DTE) for an option.
