@@ -1,8 +1,14 @@
-import logging
+from loguru import logger
 import pandas as pd
 import os
 import dotenv
 from schwab import Schwab
+import sys
+
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
+)
 
 dotenv.load_dotenv()
 
@@ -19,6 +25,7 @@ class SchwabData(Schwab):
         super().__init__(client_id, client_secret, redirect_uri, token_file, auth)
         self.marketdata_base_url = "https://api.schwabapi.com/marketdata/v1"
 
+    @logger.catch
     def get_option_chain(
         self,
         symbol,
@@ -104,6 +111,7 @@ class SchwabData(Schwab):
 
         return processed_chain
 
+    @logger.catch
     def get_market_hours(self, market_id, date=None):
         """
         Get Market Hours for dates in the future for a single market.
@@ -120,6 +128,7 @@ class SchwabData(Schwab):
         response.raise_for_status()
         return response.json()
 
+    @logger.catch
     def market_isOpen(self, market_id="option", date=None):
         """
         Check if the market is open for a given market and date.
@@ -144,6 +153,7 @@ class SchwabData(Schwab):
             raise ValueError(f"Invalid market_id: {market_id}")
         return market_hours[market_id][last_key]["isOpen"]
 
+    @logger.catch
     def get_quote(self, symbols, fields="all", indicative=False):
         """
         Get quote for a symbol or list of symbols.
@@ -167,6 +177,7 @@ class SchwabData(Schwab):
         raw_quote = response.json()
         return self.format_quote(raw_quote)
 
+    @logger.catch
     def format_quote(self, raw_quote):
         """
         Format the output of get_quote to match the structure and data types of the output from _process_option_chain.
@@ -267,6 +278,7 @@ class SchwabData(Schwab):
             formatted_df[col] = formatted_df[col].astype("float64")
         return formatted_df
 
+    @logger.catch
     @classmethod
     def _process_option_chain(cls, opt_chain):
         calls = opt_chain["callExpDateMap"]

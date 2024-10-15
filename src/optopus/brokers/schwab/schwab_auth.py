@@ -3,21 +3,23 @@ import base64
 from urllib.parse import urlparse, parse_qs
 import json
 import os
-import logging
+from loguru import logger
+import sys
 
-logging.basicConfig(level=logging.INFO)
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
+)
 
 
 class SchwabAuth:
-    def __init__(self, client_id, client_secret, redirect_uri, token_file=None):
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
-        self.token_file = token_file
+    def __init__(self, client_id=None, client_secret=None, redirect_uri=None, token_file=None):
+        self.client_id = client_id if client_id else os.getenv("SCHWAB_CLIENT_ID")
+        self.client_secret = client_secret if client_secret else os.getenv("SCHWAB_CLIENT_SECRET")
+        self.redirect_uri = redirect_uri if redirect_uri else os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1")
+        self.token_file = token_file if token_file else os.getenv("SCHWAB_TOKEN_FILE", "token.json")
         self.access_token = None
         self.refresh_token = None
         self.token_data = None
-        self.logger = logging.getLogger(__name__)
 
         if token_file and os.path.exists(token_file):
             with open(token_file, "r") as f:
@@ -26,8 +28,7 @@ class SchwabAuth:
                 self.refresh_token = token_data.get("refresh_token")
                 self.token_data = token_data
 
-            self.logger.info(f"Loaded token data from {token_file}")
-
+            logger.info(f"Loaded token data from {token_file}")
 
     def get_authorization_url(self):
         return f"https://api.schwabapi.com/v1/oauth/authorize?client_id={self.client_id}&redirect_uri={self.redirect_uri}"
@@ -36,15 +37,15 @@ class SchwabAuth:
         import webbrowser
 
         authorization_url = self.get_authorization_url()
-        print(
+        logger.info(
             f"Please visit this URL to authorize the application: {authorization_url}"
         )
         webbrowser.open(authorization_url)
 
         authorization_url_response = input("Enter the authorization url response: ")
         tokens = self.get_tokens(authorization_url_response)
-        print("Access Token:", tokens["access_token"])
-        print("Refresh Token:", tokens["refresh_token"])
+        logger.info("Access Token:", tokens["access_token"])
+        logger.info("Refresh Token:", tokens["refresh_token"])
         self.save_token()
 
     def _get_token_url(self, authorization_url_response):

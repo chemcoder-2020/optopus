@@ -1,15 +1,22 @@
-import logging
+from loguru import logger
 import requests
 import json
 from schwab_auth import SchwabAuth
+import sys
+import os
+
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
+)
 
 
 class Schwab:
     def __init__(
         self,
-        client_id,
-        client_secret,
-        redirect_uri="https://127.0.0.1",
+        client_id=os.getenv("SCHWAB_CLIENT_ID"),
+        client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+        redirect_uri=os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1"),
         token_file="token.json",
         auth=None,
     ):
@@ -22,7 +29,6 @@ class Schwab:
             if auth
             else SchwabAuth(client_id, client_secret, redirect_uri, token_file)
         )
-        self.logger = logging.getLogger(__name__)
         self.trading_base_url = "https://api.schwabapi.com/trader/v1"
 
     def refresh_token(self):
@@ -37,9 +43,10 @@ class Schwab:
             self.auth.save_token(self.token_file)
             return True
         except Exception as e:
-            self.logger.error(f"Refreshing token failed: {e}")
+            logger.exception(f"Refreshing token failed: {e}")
             return False
 
+    @logger.catch
     def _make_request(self, method, url, headers=None, params=None, data=None):
         """
         Make a general HTTP request.

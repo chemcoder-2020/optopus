@@ -2,9 +2,15 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Union
-import logging
+from loguru import logger
 import dotenv
 from schwab import Schwab
+import sys
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
+)
+
 
 dotenv.load_dotenv()
 
@@ -29,12 +35,11 @@ class SchwabTrade(Schwab):
             auth (SchwabAuth, optional): An optional auth instance. Defaults to None.
         """
         super().__init__(client_id, client_secret, redirect_uri, token_file, auth)
-        self.logger = logging.getLogger(__name__)
 
         try:
             self.auth.refresh_access_token()
         except Exception as e:
-            self.logger.info(
+            logger.info(
                 f"{e}... Attempting to get new token by going through the authentication process"
             )
             self.auth.authenticate()
@@ -294,7 +299,7 @@ class SchwabTrade(Schwab):
                 "America/New_York"
             )  # Assuming the response contains the order url and timestamp
             order_link = response.headers.get("location")
-            self.logger.info(
+            logger.info(
                 f"Order placed successfully at {placed_time}. Link: {order_link}"
             )
             return order_link, placed_time
@@ -303,7 +308,7 @@ class SchwabTrade(Schwab):
             error_message = response.json().get("message", "Unknown error")
             error_details = response.json().get("errors", [])
             correl_id = response.headers.get("Schwab-Client-CorrelID", "Unknown")
-            self.logger.warning(
+            logger.warning(
                 f"Order placement failed with status code {response.status_code}. "
                 f"Error message: {error_message}. "
                 f"Error details: {error_details}. "
@@ -332,13 +337,13 @@ class SchwabTrade(Schwab):
             placed_time = pd.Timestamp(response.headers.get("Date")).tz_convert(
                 "America/New_York"
             )  # Assuming the response contains the timestamp
-            self.logger.info(f"Order canceled successfully at {placed_time}.")
+            logger.info(f"Order canceled successfully at {placed_time}.")
             return placed_time
         else:
             error_message = response.json().get("message", "Unknown error")
             error_details = response.json().get("errors", [])
             correl_id = response.headers.get("Schwab-Client-CorrelID", "Unknown")
-            self.logger.warning(
+            logger.warning(
                 f"Order placement failed with status code {response.status_code}. "
                 f"Error message: {error_message}. "
                 f"Error details: {error_details}. "
@@ -365,13 +370,13 @@ class SchwabTrade(Schwab):
             placed_time = pd.Timestamp(response.headers.get("Date")).tz_convert(
                 "America/New_York"
             )  # Assuming the response contains the timestamp
-            self.logger.info(f"Order retrieved successfully at {placed_time}.")
+            logger.info(f"Order retrieved successfully at {placed_time}.")
             return response.json()
         else:
             error_message = response.json().get("message", "Unknown error")
             error_details = response.json().get("errors", [])
             correl_id = response.headers.get("Schwab-Client-CorrelID", "Unknown")
-            self.logger.warning(
+            logger.warning(
                 f"Order placement failed with status code {response.status_code}. "
                 f"Error message: {error_message}. "
                 f"Error details: {error_details}. "
@@ -400,7 +405,7 @@ class SchwabTrade(Schwab):
                 "America/New_York"
             )  # Assuming the response contains the order url and timestamp
             order_link = response.headers.get("location")
-            self.logger.info(
+            logger.info(
                 f"Order placed successfully at {placed_time}. Link: {order_link}"
             )
             return order_link, placed_time
@@ -408,7 +413,7 @@ class SchwabTrade(Schwab):
             error_message = response.json().get("message", "Unknown error")
             error_details = response.json().get("errors", [])
             correl_id = response.headers.get("Schwab-Client-CorrelID", "Unknown")
-            self.logger.warning(
+            logger.warning(
                 f"Order placement failed with status code {response.status_code}. "
                 f"Error message: {error_message}. "
                 f"Error details: {error_details}. "
