@@ -162,6 +162,25 @@ class TestOptionLeg(unittest.TestCase):
         expected_symbol = f"{self.symbol.ljust(6)}241220C00585000"
         self.assertEqual(option_leg.schwab_symbol, expected_symbol)
 
+    def test_calculate_dte_data_types(self):
+        expiration_date_str = "2024-12-20"
+        current_date_str = "2024-10-15"
+        expiration_date_ts = pd.to_datetime(expiration_date_str)
+        current_date_ts = pd.to_datetime(current_date_str)
+        expiration_date_dt = datetime.datetime.strptime(expiration_date_str, "%Y-%m-%d")
+        current_date_dt = datetime.datetime.strptime(current_date_str, "%Y-%m-%d")
+
+        expected_dte = calculate_dte(expiration_date_str, current_date_str)
+
+        self.assertEqual(calculate_dte(expiration_date_str, current_date_ts), expected_dte)
+        self.assertEqual(calculate_dte(expiration_date_str, current_date_dt), expected_dte)
+        self.assertEqual(calculate_dte(expiration_date_ts, current_date_str), expected_dte)
+        self.assertEqual(calculate_dte(expiration_date_ts, current_date_ts), expected_dte)
+        self.assertEqual(calculate_dte(expiration_date_ts, current_date_dt), expected_dte)
+        self.assertEqual(calculate_dte(expiration_date_dt, current_date_str), expected_dte)
+        self.assertEqual(calculate_dte(expiration_date_dt, current_date_ts), expected_dte)
+        self.assertEqual(calculate_dte(expiration_date_dt, current_date_dt), expected_dte)
+
 
 if __name__ == "__main__":
     unittest.main()
