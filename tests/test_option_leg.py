@@ -56,11 +56,27 @@ class TestOptionLeg(unittest.TestCase):
             position_side=self.position_side,
             commission=self.commission,
         )
+        self.assertAlmostEqual(option_leg.underlying_last, 584.33, places=2)
+        self.assertAlmostEqual(option_leg.current_ask, 17.17, places=2)
+        self.assertAlmostEqual(option_leg.current_bid, 16.94, places=2)
+        self.assertAlmostEqual(option_leg.current_mark, 17.06, places=2)
+        self.assertAlmostEqual(option_leg.current_last, 17.0, places=2)
+        self.assertAlmostEqual(option_leg.current_delta, 0.551, places=3)
         new_current_time = "2024-10-15 15:45:00"
         option_leg.update(new_current_time, self.update_df)
         self.assertEqual(
             option_leg.current_time, pd.to_datetime(new_current_time).tz_localize(None)
         )
+        self.assertAlmostEqual(option_leg.underlying_last, 579.27, places=2)
+        self.assertAlmostEqual(option_leg.current_ask, 14.43, places=2)
+        self.assertAlmostEqual(option_leg.current_bid, 14.4, places=2)
+        self.assertAlmostEqual(option_leg.current_mark, 14.42, places=2)
+        self.assertAlmostEqual(option_leg.current_last, 14.52, places=2)
+        self.assertAlmostEqual(option_leg.current_delta, 0.499, places=3)
+
+        self.assertAlmostEqual(option_leg.underlying_diff, 579.27 - 584.33, places=2)
+        self.assertAlmostEqual(option_leg.price_diff, 14.42 - 17.06, places=2)
+        self.assertAlmostEqual(option_leg.pl, -1 * (14.42 - 17.06) * self.contracts * 100 - option_leg.calculate_total_commission(), places=2)
 
     def test_calculate_pl(self):
         option_leg = OptionLeg(
@@ -163,6 +179,8 @@ class TestOptionLeg(unittest.TestCase):
             commission=self.commission,
         )
         self.assertEqual(option_leg.symbol, self.symbol)
+        self.assertEqual(option_leg.strike, 585)
+        self.assertEqual(option_leg.expiration, pd.to_datetime(self.expiration))
         self.assertEqual(option_leg.option_type, self.option_type)
         self.assertEqual(option_leg.contracts, self.contracts)
         self.assertEqual(option_leg.position_side, self.position_side)
@@ -183,6 +201,8 @@ class TestOptionLeg(unittest.TestCase):
             commission=self.commission,
         )
         self.assertEqual(option_leg.symbol, self.symbol)
+        self.assertEqual(option_leg.strike, 567)
+        self.assertEqual(option_leg.expiration, pd.to_datetime(self.expiration))
         self.assertEqual(option_leg.option_type, "PUT")
         self.assertEqual(option_leg.contracts, self.contracts)
         self.assertEqual(option_leg.position_side, self.position_side)
@@ -205,6 +225,8 @@ class TestOptionLeg(unittest.TestCase):
             commission=self.commission,
         )
         self.assertEqual(option_leg.symbol, self.symbol)
+        self.assertEqual(option_leg.strike, reference_strike + target_delta)
+        self.assertEqual(option_leg.expiration, pd.to_datetime(self.expiration))
         self.assertEqual(option_leg.option_type, "PUT")
         self.assertEqual(option_leg.contracts, self.contracts)
         self.assertEqual(option_leg.position_side, self.position_side)

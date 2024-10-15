@@ -6,7 +6,7 @@ from loguru import logger
 
 from .schwab_trade import SchwabTrade
 from .schwab_data import SchwabData
-from ..trades.option_spread import OptionStrategy
+from ...trades.option_spread import OptionStrategy
 from ..order import Order
 
 logger.add(

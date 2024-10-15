@@ -2,7 +2,7 @@ from loguru import logger
 import pandas as pd
 import os
 import dotenv
-from schwab import Schwab
+from .schwab import Schwab
 import sys
 
 

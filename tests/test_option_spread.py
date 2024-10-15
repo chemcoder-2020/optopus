@@ -2,13 +2,15 @@ import unittest
 import pandas as pd
 from src.optopus.trades.option_spread import OptionStrategy
 from src.optopus.trades.option_leg import OptionLeg
+from loguru import logger
+
 
 class TestOptionStrategy(unittest.TestCase):
 
     def setUp(self):
-        self.entry_df = pd.read_parquet("path/to/entry_df.parquet")
-        self.update_df = pd.read_parquet("path/to/update_df.parquet")
-        self.update_df2 = pd.read_parquet("path/to/update_df2.parquet")
+        self.entry_df = pd.read_parquet("data/SPY_2024-09-06 15-30.parquet")
+        self.update_df = pd.read_parquet("data/SPY_2024-09-06 15-45.parquet")
+        self.update_df2 = pd.read_parquet("data/SPY_2024-09-09 09-45.parquet")
 
     def test_vertical_spread_creation(self):
         vertical_spread = OptionStrategy.create_vertical_spread(
@@ -101,10 +103,32 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
+        vertical_spread.update("2024-09-06 15:30:00", self.entry_df)
+        self.assertTrue(
+            vertical_spread.total_pl()
+            == 0 - vertical_spread.calculate_total_commission()
+        )
+        self.assertEqual(
+            vertical_spread.current_time, pd.Timestamp("2024-09-06 15:30:00")
+        )
         vertical_spread.update("2024-09-06 15:45:00", self.update_df)
-        self.assertIsNotNone(vertical_spread.current_time)
+        self.assertTrue(
+            vertical_spread.total_pl() + vertical_spread.calculate_total_commission()
+            > 0
+        )
+        self.assertEqual(
+            vertical_spread.current_time, pd.Timestamp("2024-09-06 15:45:00")
+        )
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        self.assertTrue(
+            vertical_spread.total_pl() + vertical_spread.calculate_total_commission()
+            < 0
+        )
+        self.assertEqual(
+            vertical_spread.current_time, pd.Timestamp("2024-09-09 09:45:00")
+        )
 
-    def test_conflict_detection(self):
+    def test_conflict_vertical_spread_same_legs(self):
         spread1 = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
@@ -126,6 +150,98 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         self.assertTrue(spread1.conflicts_with(spread2))
+
+    def test_conflict_vertical_spread_one_same_leg(self):
+        spread1 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=560,
+            short_strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        spread2 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=560,
+            short_strike=555,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        self.assertTrue(spread1.conflicts_with(spread2))
+
+    def test_conflict_vertical_spread_two_different_legs(self):
+        spread1 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=561,
+            short_strike=551,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        spread2 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=560,
+            short_strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        self.assertFalse(spread1.conflicts_with(spread2))
+
+    def test_conflict_vertical_spread_different_option_type(self):
+        spread1 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="PUT",
+            long_strike=560,
+            short_strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        spread2 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=560,
+            short_strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        self.assertFalse(spread1.conflicts_with(spread2))
+
+    def test_conflict_vertical_spread_different_expiration(self):
+        spread1 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=560,
+            short_strike=550,
+            expiration="2024-11-15",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        spread2 = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=560,
+            short_strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        self.assertFalse(spread1.conflicts_with(spread2))
 
     def test_required_capital(self):
         vertical_spread = OptionStrategy.create_vertical_spread(
@@ -152,8 +268,9 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        vertical_spread.update("2024-09-07 15:30:00", self.update_df)
-        self.assertEqual(vertical_spread.DIT, 1)
+        self.assertEqual(vertical_spread.DIT, 0)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        self.assertEqual(vertical_spread.DIT, 3)
 
     def test_close_strategy(self):
         vertical_spread = OptionStrategy.create_vertical_spread(
@@ -166,7 +283,7 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        vertical_spread.close_strategy("2024-09-07 15:30:00", self.update_df)
+        vertical_spread.close_strategy("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(vertical_spread.status, "CLOSED")
 
     def test_won_attribute(self):
@@ -179,10 +296,11 @@ class TestOptionStrategy(unittest.TestCase):
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
+            stop_loss=10,
         )
-        vertical_spread.update("2024-09-06 15:45:00", self.update_df)
-        vertical_spread.close_strategy("2024-09-07 15:30:00", self.update_df)
-        self.assertIsNotNone(vertical_spread.won)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        self.assertFalse(vertical_spread.won)
+
 
 if __name__ == "__main__":
     unittest.main()

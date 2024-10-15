@@ -3,6 +3,7 @@ from loguru import logger
 import pandas as pd
 import numpy as np
 import sys
+from typing import Union
 
 logger.add(
     sys.stderr, format="{time} {level} {message}", filter="my_module", level="ERROR"
@@ -267,7 +268,7 @@ class OptionLeg:
         cls,
         symbol: str,
         option_type: str,
-        target_delta: float,
+        target_delta: Union[str, float],  # Target delta,
         target_dte: float,
         contracts: int,
         entry_time: str,

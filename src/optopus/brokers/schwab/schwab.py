@@ -1,7 +1,7 @@
 from loguru import logger
 import requests
 import json
-from schwab_auth import SchwabAuth
+from .schwab_auth import SchwabAuth
 import sys
 import os
 

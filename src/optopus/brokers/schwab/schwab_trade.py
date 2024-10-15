@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Union
 from loguru import logger
 import dotenv
-from schwab import Schwab
+from .schwab import Schwab
 import sys
 
 logger.add(
