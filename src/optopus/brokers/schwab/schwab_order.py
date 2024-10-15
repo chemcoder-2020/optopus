@@ -5,10 +5,12 @@ from src.optopus.brokers.order import Order
 import pandas as pd
 import os
 import dotenv
-import logging
+from loguru import logger
+import sys
 
-
-logging.basicConfig(level=logging.INFO)
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
+)
 
 dotenv.load_dotenv()
 
@@ -19,11 +21,10 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         option_strategy: OptionStrategy,
         client_id=os.getenv("SCHWAB_CLIENT_ID"),
         client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
-        redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
+        redirect_uri=os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1"),
         token_file=os.getenv("SCHWAB_TOKEN_FILE", "token.json"),
         which_account=0,
     ):
-        self.logger = logging.getLogger(__name__)
         # Initialize SchwabTrade and SchwabData with the token data
         SchwabTrade.__init__(
             self,
@@ -68,7 +69,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
     def generate_entry_payload(self):
         if self.strategy_type == "Vertical Spread":
-            self.logger.info("Generating entry payload for vertical spread.")
+            logger.info("Generating entry payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
                 symbol=self.symbol,
                 expiration=self.legs[0].expiration,
@@ -82,7 +83,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 is_entry=True,
             )
         elif self.strategy_type in ["Naked Put", "Naked Call"]:
-            self.logger.info("Generating entry payload for naked option.")
+            logger.info("Generating entry payload for naked option.")
             payload = self.generate_single_option_json(
                 symbol=self.symbol,
                 expiration=self.legs[0].expiration,
@@ -118,7 +119,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
     def generate_exit_payload(self):
         if self.strategy_type == "Vertical Spread":
-            self.logger.info("Generating exit payload for vertical spread.")
+            logger.info("Generating exit payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
                 symbol=self.symbol,
                 expiration=self.legs[0].expiration,
@@ -132,7 +133,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 is_entry=False,
             )
         elif self.strategy_type in ["Naked Put", "Naked Call"]:
-            self.logger.info("Generating exit payload for naked option.")
+            logger.info("Generating exit payload for naked option.")
             payload = self.generate_single_option_json(
                 self.symbol,
                 self.legs[0].expiration,
@@ -184,7 +185,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             order = self.get_order(order_url=self.order_id)
             if order:
                 self.order_status = order.get("status")
-                self.logger.info(f"Order status updated to: {self.order_status}")
+                logger.info(f"Order status updated to: {self.order_status}")
                 if self.order_status == "FILLED":
                     # Update entry price for each leg
                     for leg_num, leg in enumerate(self.legs):
@@ -202,13 +203,13 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             result = self.cancel_order(order_url=self.order_id)
             if result:
                 self.update_order_status()
-                self.logger.info(
+                logger.info(
                     f"Order canceled successfully. New status: {self.order_status}"
                 )
             else:
-                self.logger.warning("Failed to cancel order.")
+                logger.warning("Failed to cancel order.")
         else:
-            self.logger.warning("No order ID available to cancel.")
+            logger.warning("No order ID available to cancel.")
 
     def modify(self, new_payload):
         if self.order_id:
@@ -216,13 +217,13 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             if result:
                 self.order_id = result[0]
                 self.update_order_status()
-                self.logger.info(
+                logger.info(
                     f"Order modified successfully. New status: {self.order_status}"
                 )
             else:
-                self.logger.warning("Failed to modify order.")
+                logger.warning("Failed to modify order.")
         else:
-            self.logger.warning("No order ID available to modify.")
+            logger.warning("No order ID available to modify.")
 
     def __repr__(self):
         return (
