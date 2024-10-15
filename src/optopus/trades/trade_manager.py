@@ -1,26 +1,33 @@
 import pandas as pd
-from option_manager import OptionBacktester
-from schwab_order import SchwabOptionOrder
-from schwab_auth import SchwabAuth
-from schwab_data import SchwabData
+from .option_manager import OptionBacktester, Config
+from ..brokers.schwab.schwab_order import SchwabOptionOrder
+from ..brokers.schwab.schwab_auth import SchwabAuth
+from ..brokers.schwab.schwab_data import SchwabData
+from ..brokers.broker import OptionBroker
+from ..brokers.order import Order
 from typing import List
 import pickle
 import os
+from loguru import logger
+import sys
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
+)
 
 
 class TradingManager(OptionBacktester):
-    def __init__(self, config):
-        super().__init__(config)
-        self.active_orders: List[SchwabOptionOrder] = []
-        self.closed_orders: List[SchwabOptionOrder] = []
-        self.schwab_data = SchwabData(
-            client_id=os.getenv("SCHWAB_CLIENT_ID"),
-            client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
-            redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
-            token_file="token.json",
-        )
 
-    def add_order(self, order: SchwabOptionOrder) -> bool:
+    @logger.catch
+    def __init__(self, config: Config):
+        super().__init__(config)
+        self.active_orders: List[Order] = []
+        self.closed_orders: List[Order] = []
+        self.option_broker = OptionBroker(config)
+        self.__dict__.update(config.__dict__)
+
+    @logger.catch
+    def add_order(self, order: Order) -> bool:
         if order.market_isOpen():
             if self.add_spread(order):
                 order.submit_entry()
@@ -28,12 +35,19 @@ class TradingManager(OptionBacktester):
                 return True
         return False
 
+    @logger.catch
     def update_orders(self, current_time, option_chain_df=None):
+        """Update the status of all orders."""
+
         if self.active_orders:
             if self.active_orders[0].market_isOpen():
+                if option_chain_df is None:
+                    option_chain_df = self.option_broker.data.get_option_chain(
+                        self.ticker
+                    )
                 for order in self.active_orders:
                     orders_to_close = []
-                    order.update_order(option_chain_df)
+                    order.update_order(option_chain_df)  # update the order part
                     if order.status == "CLOSED":
                         order.submit_exit()
                         orders_to_close.append(order)
@@ -46,17 +60,23 @@ class TradingManager(OptionBacktester):
                             if order.status != "CLOSED"
                         ]
 
-    def get_active_orders(self) -> List[SchwabOptionOrder]:
+                self.update(current_time, option_chain_df)  # update the strategy part
+
+    @logger.catch
+    def get_active_orders(self) -> List[Order]:
         return self.active_orders
 
-    def get_closed_orders(self) -> List[SchwabOptionOrder]:
+    @logger.catch
+    def get_closed_orders(self) -> List[Order]:
         return self.closed_orders
 
+    @logger.catch
     def freeze(self, file_path: str) -> None:
         """Save the TradingManager instance to a pickle file."""
         with open(file_path, "wb") as file:
             pickle.dump(self, file)
 
+    @logger.catch
     def get_orders_dataframe(self) -> pd.DataFrame:
         """Returns a DataFrame containing important information about the active orders."""
         columns = [
@@ -80,10 +100,12 @@ class TradingManager(OptionBacktester):
         ]
         data = []
 
-        for order in self.active_orders+self.closed_orders:
+        for order in self.active_orders + self.closed_orders:
             data.append(
                 [
-                    order.order_id.split("/")[-1],  # Using id to uniquely identify the order
+                    order.order_id.split("/")[
+                        -1
+                    ],  # Using id to uniquely identify the order
                     order.symbol,
                     order.strategy_type,
                     order.contracts,
@@ -104,7 +126,8 @@ class TradingManager(OptionBacktester):
             )
 
         return pd.DataFrame(data, columns=columns)
-    
+
+    @logger.catch
     def get_active_orders_dataframe(self) -> pd.DataFrame:
         """Returns a DataFrame containing important information about the active orders."""
         columns = [
@@ -123,6 +146,7 @@ class TradingManager(OptionBacktester):
             "Ask",
             "Price",
             "Total P/L",
+            "Return (%)",
             "Total Commission",
             "DIT",
         ]
@@ -131,7 +155,9 @@ class TradingManager(OptionBacktester):
         for order in self.active_orders:
             data.append(
                 [
-                    order.order_id.split("/")[-1],  # Using id to uniquely identify the order
+                    order.order_id.split("/")[
+                        -1
+                    ],  # Using id to uniquely identify the order
                     order.symbol,
                     order.strategy_type,
                     order.contracts,
@@ -146,6 +172,7 @@ class TradingManager(OptionBacktester):
                     order.current_ask,
                     order.net_premium,
                     order.total_pl(),
+                    order.return_percentage(),
                     order.calculate_total_commission(),
                     order.DIT,
                 ]
@@ -153,21 +180,22 @@ class TradingManager(OptionBacktester):
 
         return pd.DataFrame(data, columns=columns)
 
-    def auth_refresh(
-        self, client_id, client_secret, redirect_uri, token_file="token.json"
-    ):
+    @logger.catch
+    def auth_refresh(self):
         """Refresh the authentication for all active and closed orders."""
-        new_auth = SchwabAuth(client_id, client_secret, redirect_uri, token_file)
+        # TODO: Add abstract class for auth. Make sure authentication and refreshing works
         try:
-            new_auth.refresh_access_token()
+            self.option_broker.auth.refresh_access_token()
         except Exception as e:
-            self.logger.info(
-                f"{e}... Attempting to get new token by going through the authentication process"
+            logger.exception(
+                "... Attempting to get new token by going through the authentication process"
             )
-            new_auth.authenticate()
-        for order in self.active_orders:
-            order.auth = new_auth
-        for order in self.closed_orders:
-            order.auth = new_auth
+            self.option_broker.auth.authenticate()
 
-        self.schwab_data.auth = new_auth
+        for order in self.active_orders:
+            order.auth = self.option_broker.auth
+        for order in self.closed_orders:
+            order.auth = self.option_broker.auth
+
+        self.data.auth = self.option_broker.auth
+        self.trading.auth = self.option_broker.auth

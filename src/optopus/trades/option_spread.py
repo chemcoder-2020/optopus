@@ -1,13 +1,19 @@
 import pandas as pd
 from pandas import Timestamp, Timedelta
-from option_leg import OptionLeg
+from .option_leg import OptionLeg
 import datetime
 import numpy as np
 import time  # Added for performance profiling
-import logging
+from loguru import logger
 import cProfile
 import pstats
 from pstats import SortKey
+import sys
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="ERROR"
+)
+
 
 class OptionStrategy:
     """
@@ -39,7 +45,8 @@ class OptionStrategy:
         return_percentage(): Calculate the return percentage of the strategy.
         current_delta(): Calculate the current delta of the strategy.
     """
-
+    
+    @logger.catch
     def __init__(
         self,
         symbol: str,
@@ -88,10 +95,9 @@ class OptionStrategy:
         self.exit_underlying_last = None
         self.exit_dit = None
         self.exit_dte = None
-        logging.basicConfig(level=logging.ERROR)
-        self.logger = logging.getLogger(__name__)
 
     @staticmethod
+    @logger.catch
     def _standardize_time(time_value):
         """Convert time to a standard pandas Timestamp object."""
         if isinstance(time_value, str):
@@ -104,18 +110,22 @@ class OptionStrategy:
             raise ValueError(f"Unsupported time format: {type(time_value)}")
 
     @property
+    @logger.catch
     def contracts(self):
         return self._contracts
 
     @contracts.setter
+    @logger.catch
     def contracts(self, value):
         self._contracts = value
         self._update_leg_contracts()
 
+    @logger.catch
     def _update_leg_contracts(self):
         for leg, ratio in zip(self.legs, self.leg_ratios):
             leg.contracts = self._contracts * ratio
 
+    @logger.catch
     def add_leg(self, leg: OptionLeg, ratio: int = 1):
         """
         Add an option leg to the strategy.
@@ -150,6 +160,7 @@ class OptionStrategy:
 
         self.net_premium = self.entry_net_premium
 
+    @logger.catch
     def update(self, current_time: str, option_chain_df: pd.DataFrame):
         """
         Update the strategy with new market data and check exit conditions. This method will close the strategy if the exit conditions are met.
@@ -184,7 +195,8 @@ class OptionStrategy:
 
         # Calculate and store the strategy's bid-ask spread
         self.current_bid, self.current_ask = self.calculate_bid_ask()
-    
+
+    @logger.catch
     def update_entry_net_premium(self):
         """Update the entry net premium. Helpful to update entry net premium after actual trading order is filled."""
         _replace_premium = 0
@@ -197,7 +209,7 @@ class OptionStrategy:
 
         self.entry_net_premium = _replace_premium
 
-
+    @logger.catch
     def _check_exit_conditions(self, option_chain_df):
         """Check and apply exit conditions."""
         current_return = self.return_percentage()
@@ -247,6 +259,7 @@ class OptionStrategy:
             print(f"Current time: {self.current_time}")
             print(f"Leg expiration: {self.legs[0].expiration}")
 
+    @logger.catch
     def _close_strategy(self, option_chain_df):
         if self.status == "CLOSED":
             return  # Already closed, do nothing
@@ -264,6 +277,7 @@ class OptionStrategy:
         self.exit_dit = self.DIT
         self.exit_dte = (pd.to_datetime(self.legs[0].expiration) - self.exit_time).days
 
+    @logger.catch
     def close_strategy(self, close_time: str, option_chain_df: pd.DataFrame):
         """
         Close the option strategy.
@@ -280,15 +294,18 @@ class OptionStrategy:
 
         self.update(close_time, option_chain_df)
         self._close_strategy(option_chain_df)
-    
+
+    @logger.catch
     def calculate_total_commission(self):
         return sum(leg.calculate_total_commission() for leg in self.legs)
 
+    @logger.catch
     def total_pl(self):
         """Calculate the total profit/loss of the strategy."""
         # return sum(leg.pl for leg in self.legs)
         return sum(leg.calculate_pl() for leg in self.legs)
 
+    @logger.catch
     def return_percentage(self):
         """Calculate the return percentage of the strategy."""
         premium = abs(self.entry_net_premium)
@@ -296,10 +313,12 @@ class OptionStrategy:
             return 0
         return (self.total_pl() / (premium * 100 * self.contracts)) * 100
 
+    @logger.catch
     def current_delta(self):
         """Calculate the current delta of the strategy."""
         return sum(leg.current_delta * leg.contracts * 100 for leg in self.legs)
 
+    @logger.catch
     def conflicts_with(self, other_spread):
         """
         Check if this option spread conflicts with another option spread.
@@ -316,39 +335,8 @@ class OptionStrategy:
                     return True
         return False
 
-    def __repr__(self):
-        legs_repr = "\n    ".join(repr(leg) for leg in self.legs)
-        return (
-            f"OptionStrategy(\n"
-            f"  Symbol: {self.symbol},\n"
-            f"  Strategy Type: {self.strategy_type},\n"
-            f"  Status: {self.status},\n"
-            f"  Contracts: {self.contracts},\n"
-            f"  Entry Time: {self.entry_time},\n"
-            f"  Exit Time: {self.exit_time},\n"
-            f"  Current Time: {self.current_time},\n"
-            f"  Profit Target: {self.profit_target},\n"
-            f"  Stop Loss: {self.stop_loss},\n"
-            f"  Trailing Stop: {self.trailing_stop},\n"
-            f"  Highest Return: {self.highest_return:.2f}%,\n"
-            f"  Entry Net Premium: {self.entry_net_premium:.2f},\n"
-            f"  Exit Net Premium: {self.exit_net_premium},\n"
-            f"  Net Premium: {self.net_premium:.2f},\n"
-            f"  Return Percentage: {self.return_percentage():.2f}%,\n"
-            f"  Current Delta: {self.current_delta():.2f},\n"
-            f"  Days in Trade (DIT): {self.DIT},\n"
-            f"  Entry Rate of Return (ROR): {self.entry_ror},\n"
-            f"  Exit Rate of Return (ROR): {self.exit_ror},\n"
-            f"  Entry Underlying Last: {self.entry_underlying_last},\n"
-            f"  Exit Underlying Last: {self.exit_underlying_last},\n"
-            f"  Exit DIT: {self.exit_dit},\n"
-            f"  Exit DTE: {self.exit_dte},\n"
-            f"  Legs:\n    {legs_repr}\n"
-            f"  Total Commission: {self.calculate_total_commission():.2f},\n"
-            f")"
-        )
-
     @staticmethod
+    @logger.catch
     def _get_strike(
         symbol: str,
         option_chain_df: pd.DataFrame,
@@ -378,16 +366,25 @@ class OptionStrategy:
             return strike_selector
         elif strike_selector == "ATM":
             if option_type == "CALL":
-                otm_calls = option_chain_df['STRIKE'].ge(option_chain_df['UNDERLYING_LAST'])
+                otm_calls = option_chain_df["STRIKE"].ge(
+                    option_chain_df["UNDERLYING_LAST"]
+                )
                 option_data = option_chain_df[otm_calls].copy()
-                option_data.sort_values(by='STRIKE', ascending=True, inplace=True)
+                option_data.sort_values(by="STRIKE", ascending=True, inplace=True)
             else:
-                otm_puts = option_chain_df['STRIKE'].le(option_chain_df['UNDERLYING_LAST'])
+                otm_puts = option_chain_df["STRIKE"].le(
+                    option_chain_df["UNDERLYING_LAST"]
+                )
                 option_data = option_chain_df[otm_puts].copy()
-                option_data.sort_values(by='STRIKE', ascending=False, inplace=True)
-            
-            strike = option_data['STRIKE'].iloc[0] if int(option_data['STRIKE'].iloc[0]) == float(option_data['STRIKE'].iloc[0]) else option_data['STRIKE'].iloc[1] 
-            
+                option_data.sort_values(by="STRIKE", ascending=False, inplace=True)
+
+            strike = (
+                option_data["STRIKE"].iloc[0]
+                if int(option_data["STRIKE"].iloc[0])
+                == float(option_data["STRIKE"].iloc[0])
+                else option_data["STRIKE"].iloc[1]
+            )
+
             return strike
         elif isinstance(strike_selector, str):
             if strike_selector.startswith(("+", "-")):
@@ -430,6 +427,7 @@ class OptionStrategy:
             raise ValueError(f"Invalid strike selector: {strike_selector}")
 
     @staticmethod
+    @logger.catch
     def _get_expiration(
         option_chain_df: pd.DataFrame, expiration_input, entry_time: str
     ):
@@ -459,7 +457,6 @@ class OptionStrategy:
             ]
             # valid_expirations = option_chain_df.xs(target_date, level='EXPIRE_DATE')
 
-
             if valid_expirations.empty:
                 raise ValueError(f"No expiration found for date {expiration_input}")
 
@@ -486,6 +483,7 @@ class OptionStrategy:
             )
 
     @classmethod
+    @logger.catch
     def create_vertical_spread(
         cls,
         symbol: str,
@@ -582,12 +580,17 @@ class OptionStrategy:
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
-        if strategy.entry_net_premium > 4/5 * abs(short_strike_value-long_strike_value):
-            raise ValueError("Entry net premium cannot be greater than the spread width.")
+        if strategy.entry_net_premium > 4 / 5 * abs(
+            short_strike_value - long_strike_value
+        ):
+            raise ValueError(
+                "Entry net premium cannot be greater than the spread width."
+            )
 
         return strategy
 
     @classmethod
+    @logger.catch
     def create_iron_condor(
         cls,
         symbol: str,
@@ -629,7 +632,13 @@ class OptionStrategy:
         """
 
         strategy = cls(
-            symbol, "Iron Condor", profit_target, stop_loss, trailing_stop, contracts, commission
+            symbol,
+            "Iron Condor",
+            profit_target,
+            stop_loss,
+            trailing_stop,
+            contracts,
+            commission,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -711,8 +720,13 @@ class OptionStrategy:
         strategy.add_leg(call_short_leg, leg_ratio)
         strategy.add_leg(call_long_leg, leg_ratio)
 
-        if strategy.entry_net_premium > 4/5 * (abs(call_short_strike_value-call_long_strike_value)+abs(put_short_strike_value-put_long_strike_value)):
-            raise ValueError("Entry net premium cannot be greater than the spread width.")
+        if strategy.entry_net_premium > 4 / 5 * (
+            abs(call_short_strike_value - call_long_strike_value)
+            + abs(put_short_strike_value - put_long_strike_value)
+        ):
+            raise ValueError(
+                "Entry net premium cannot be greater than the spread width."
+            )
 
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
@@ -721,6 +735,7 @@ class OptionStrategy:
         return strategy
 
     @classmethod
+    @logger.catch
     def create_straddle(
         cls,
         symbol: str,
@@ -756,7 +771,13 @@ class OptionStrategy:
         """
 
         strategy = cls(
-            symbol, "Straddle", profit_target, stop_loss, trailing_stop, contracts, commission
+            symbol,
+            "Straddle",
+            profit_target,
+            stop_loss,
+            trailing_stop,
+            contracts,
+            commission,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -798,6 +819,7 @@ class OptionStrategy:
         return strategy
 
     @classmethod
+    @logger.catch
     def create_butterfly(
         cls,
         symbol: str,
@@ -836,7 +858,13 @@ class OptionStrategy:
         """
 
         strategy = cls(
-            symbol, "Butterfly", profit_target, stop_loss, trailing_stop, contracts, commission
+            symbol,
+            "Butterfly",
+            profit_target,
+            stop_loss,
+            trailing_stop,
+            contracts,
+            commission,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -908,6 +936,7 @@ class OptionStrategy:
         return strategy
 
     @classmethod
+    @logger.catch
     def create_naked_call(
         cls,
         symbol: str,
@@ -941,7 +970,13 @@ class OptionStrategy:
         """
 
         strategy = cls(
-            symbol, "Naked Call", profit_target, stop_loss, trailing_stop, contracts, commission
+            symbol,
+            "Naked Call",
+            profit_target,
+            stop_loss,
+            trailing_stop,
+            contracts,
+            commission,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -970,6 +1005,7 @@ class OptionStrategy:
         return strategy
 
     @classmethod
+    @logger.catch
     def create_naked_put(
         cls,
         symbol: str,
@@ -1003,7 +1039,13 @@ class OptionStrategy:
         """
 
         strategy = cls(
-            symbol, "Naked Put", profit_target, stop_loss, trailing_stop, contracts, commission
+            symbol,
+            "Naked Put",
+            profit_target,
+            stop_loss,
+            trailing_stop,
+            contracts,
+            commission,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -1031,6 +1073,7 @@ class OptionStrategy:
 
         return strategy
 
+    @logger.catch
     def get_required_capital(self) -> float:
         """
         Calculate the required capital for the option strategy.
@@ -1045,7 +1088,9 @@ class OptionStrategy:
                 abs(leg1.strike - leg2.strike)
                 for leg1, leg2 in zip(self.legs[::2], self.legs[1::2])
             )
-            required_capital = (max_width - self.entry_net_premium) * 100 * self.contracts
+            required_capital = (
+                (max_width - self.entry_net_premium) * 100 * self.contracts
+            )
         elif self.strategy_type == "Straddle":
             required_capital = self.entry_net_premium * 100 * self.contracts
         elif self.strategy_type == "Butterfly":
@@ -1056,9 +1101,9 @@ class OptionStrategy:
         else:
             raise ValueError(f"Unsupported strategy type: {self.strategy_type}")
 
-
         return required_capital + self.calculate_total_commission()
 
+    @logger.catch
     def get_required_capital_per_contract(self) -> float:
         """
         Calculate the required capital per contract for the option strategy.
@@ -1071,7 +1116,8 @@ class OptionStrategy:
         required_capital_per_contract = self.get_required_capital() / self.contracts
 
         return required_capital_per_contract
-    
+
+    @logger.catch
     def calculate_net_premium(self) -> float:
         """
         Calculate the net premium based on the current prices and position sides of the legs.
@@ -1087,6 +1133,7 @@ class OptionStrategy:
                 net_premium -= leg.current_price
         return net_premium
 
+    @logger.catch
     def calculate_bid_ask(self):
         """
         Calculate the bid-ask spread for the entire option strategy.
@@ -1113,6 +1160,7 @@ class OptionStrategy:
         strategy_ask = abs(strategy_ask)
         return min(strategy_bid, strategy_ask), max(strategy_bid, strategy_ask)
 
+    @logger.catch
     def __repr__(self):
         legs_repr = "\n    ".join(repr(leg) for leg in self.legs)
         return (
@@ -1147,6 +1195,7 @@ class OptionStrategy:
             f")"
         )
 
+    @logger.catch
     def return_over_risk(self):
         """
         Calculate the current return over risk value for the spread.
@@ -1158,13 +1207,14 @@ class OptionStrategy:
 
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
             max_risk = self.get_required_capital_per_contract()
-            return_over_risk = self.net_premium * 100 / max_risk if max_risk != 0 else float("inf")
+            return_over_risk = (
+                self.net_premium * 100 / max_risk if max_risk != 0 else float("inf")
+            )
         elif self.strategy_type in ["Straddle", "Naked Call", "Naked Put"]:
             # For strategies with theoretically unlimited risk
             return_over_risk = float("inf")
         else:
             return_over_risk = float("inf")  # Default to infinity if not applicable
-
 
         return return_over_risk
 
@@ -1240,7 +1290,7 @@ if __name__ == "__main__":
     )
     # Test 4: Total cost should remain constant after updates
     entry_net_premium = vertical_spread.entry_net_premium
-    
+
     vertical_spread.update("2024-09-06 15:45:00", update_df)
     new_premium = vertical_spread.entry_net_premium
 
@@ -2403,7 +2453,9 @@ if __name__ == "__main__":
     print(f"Naked call required capital: ${naked_call_capital:.2f}")
     assert naked_call_capital > 0, "Required capital for naked call should be positive"
 
-    print("Naked call tests passed: Creation, updates, and capital calculation work correctly")
+    print(
+        "Naked call tests passed: Creation, updates, and capital calculation work correctly"
+    )
 
     print("\nTesting naked put creation and updates:")
 
@@ -2436,14 +2488,17 @@ if __name__ == "__main__":
     print(f"Naked put required capital: ${naked_put_capital:.2f}")
     assert naked_put_capital > 0, "Required capital for naked put should be positive"
 
-    print("Naked put tests passed: Creation, updates, and capital calculation work correctly")
+    print(
+        "Naked put tests passed: Creation, updates, and capital calculation work correctly"
+    )
 
     # Test 62: Comparing naked call and put required capital
     print("Test 62: Comparing naked call and put required capital")
     print(f"Naked call required capital: ${naked_call_capital:.2f}")
     print(f"Naked put required capital: ${naked_put_capital:.2f}")
-    assert abs(naked_call_capital - naked_put_capital) < 100, "Required capital for naked call and put should be similar"
+    assert (
+        abs(naked_call_capital - naked_put_capital) < 100
+    ), "Required capital for naked call and put should be similar"
     print("Required capital comparison test passed")
 
     print("\nAll tests completed!")
-    

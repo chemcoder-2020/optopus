@@ -106,7 +106,6 @@ class OptionLeg:
         self.update(entry_time, option_chain_df, is_entry=True)
 
     @logger.catch
-    @logger.catch
     def update(self, current_time, option_chain_df, is_entry=False):
         """
         Update the option leg with new market data.

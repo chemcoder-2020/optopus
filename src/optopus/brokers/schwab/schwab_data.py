@@ -278,8 +278,9 @@ class SchwabData(Schwab):
             formatted_df[col] = formatted_df[col].astype("float64")
         return formatted_df
 
-    @logger.catch
+    
     @classmethod
+    @logger.catch
     def _process_option_chain(cls, opt_chain):
         calls = opt_chain["callExpDateMap"]
         puts = opt_chain["putExpDateMap"]

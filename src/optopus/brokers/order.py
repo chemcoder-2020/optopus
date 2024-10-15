@@ -8,7 +8,21 @@ class Order(abc.ABC, OptionStrategy):
     order_status = None
     option_strategy = None
     broker = None
-
+    symbol = None
+    strategy_type = None
+    contracts = None
+    entry_time = None
+    entry_net_premium = None
+    current_time = None
+    exit_time = None
+    order_status = None
+    status = None
+    profit_target = None
+    current_bid = None
+    current_ask = None
+    net_premium = None
+    DIT = None
+    
     def set_strategy(self, option_strategy: OptionStrategy):
         if self.option_strategy is None:
             self.__dict__.update(option_strategy.__dict__)
@@ -52,6 +66,10 @@ class Order(abc.ABC, OptionStrategy):
 
     @abc.abstractmethod
     def modify(self, new_payload):
+        pass
+    
+    @abc.abstractmethod
+    def market_isOpen(self):
         pass
 
     def __repr__(self):

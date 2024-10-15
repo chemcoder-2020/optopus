@@ -1,17 +1,21 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List, Optional
-from option_spread import OptionStrategy
+from .option_spread import OptionStrategy
 from datetime import datetime
-import logging
+from loguru import logger
 from dataclasses import dataclass
 import numpy as np
 from scipy.stats import gaussian_kde
-from traceback import print_tb
+import sys
 
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="ERROR"
+)
 
 @dataclass
-class BacktesterConfig:
+class Config:
     initial_capital: float
     max_positions: int
     max_positions_per_day: Optional[int] = None
@@ -20,10 +24,18 @@ class BacktesterConfig:
     ror_threshold: Optional[float] = None
     gain_reinvesting: bool = False
     verbose: bool = False
+    ticker: str = None
+    broker: str = None
+    client_id: str = None
+    client_secret: str = None
+    redirect_uri: str = None
+    token_file: str = None
 
 
 class OptionBacktester:
-    def __init__(self, config: BacktesterConfig):
+
+    @logger.catch
+    def __init__(self, config: Config):
         self.config = config
         self.capital = config.initial_capital
         self.allocation = config.initial_capital
@@ -35,12 +47,7 @@ class OptionBacktester:
         self.trades_entered_this_week = 0
         self.performance_data = []
 
-        logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
-        if not config.verbose:
-            self.logger.disabled = True
-            # self.logger.setLevel(logging.ERROR)
-
+    @logger.catch
     def update(self, current_time: datetime, option_chain_df: pd.DataFrame) -> None:
         try:
             current_time = pd.to_datetime(current_time)
@@ -75,8 +82,9 @@ class OptionBacktester:
             # Record performance data after update
             self._record_performance_data(current_time, option_chain_df)
         except Exception as e:
-            self.logger.error(f"Error updating backtester: {str(e)}")
+            logger.error(f"Error updating backtester: {str(e)}")
 
+    @logger.catch
     def add_spread(self, new_spread: OptionStrategy) -> bool:
         try:
             if not self._can_add_spread(new_spread):
@@ -86,15 +94,16 @@ class OptionBacktester:
             self.active_trades.append(new_spread)
             self.available_to_trade -= required_capital
             self._update_trade_counts()
-            self.logger.info(f"Added new spread: {new_spread}")
+            logger.info(f"Added new spread: {new_spread}")
             return True
         except Exception as e:
-            self.logger.error(f"Error adding spread: {str(e)}")
+            logger.error(f"Error adding spread: {str(e)}")
             return False
 
+    @logger.catch
     def _can_add_spread(self, new_spread: OptionStrategy) -> bool:
         if self.capital <= 0:
-            self.logger.warning("Cannot add spread: no capital left.")
+            logger.warning("Cannot add spread: no capital left.")
             return False
         max_capital = min(self.allocation * self.config.position_size, self.capital)
         original_contracts = new_spread.contracts
@@ -104,13 +113,13 @@ class OptionBacktester:
         )
 
         if new_spread.contracts == 0:
-            self.logger.warning(
+            logger.warning(
                 f"Spread requires more capital than allowed by position size. Skipping spread: {new_spread}"
             )
             return False
 
         if new_spread.contracts != original_contracts:
-            self.logger.info(
+            logger.info(
                 f"Adjusted spread contracts from {original_contracts} to {new_spread.contracts} to fit position size."
             )
 
@@ -140,14 +149,15 @@ class OptionBacktester:
 
         for condition_name, condition_result in conditions:
             if not condition_result:
-                self.logger.info(
+                logger.info(
                     f"Cannot add spread: {condition_name} condition not met"
                 )
             else:
-                self.logger.debug(f"Spread meets condition: {condition_name}")
+                logger.debug(f"Spread meets condition: {condition_name}")
 
         return all(condition for _, condition in conditions)
 
+    @logger.catch
     def _update_trade_counts(self) -> None:
         self.trades_entered_today = sum(
             1 for trade in self.active_trades if trade.DIT == 0
@@ -156,29 +166,36 @@ class OptionBacktester:
             1 for trade in self.active_trades if trade.DIT < 7
         )
 
+    @logger.catch
     def _check_conflict(self, new_spread: OptionStrategy) -> bool:
         return any(
             existing_spread.conflicts_with(new_spread)
             for existing_spread in self.active_trades
         )
 
+    @logger.catch
     def _check_ror(self, spread: OptionStrategy) -> bool:
         return spread.return_over_risk() >= self.config.ror_threshold
 
+    @logger.catch
     def get_total_pl(self) -> float:
         return sum(
             trade.total_pl() for trade in self.active_trades + self.closed_trades
         )
 
+    @logger.catch
     def get_closed_pl(self) -> float:
         return sum(trade.total_pl() for trade in self.closed_trades)
 
+    @logger.catch
     def get_open_positions(self) -> int:
         return len(self.active_trades)
 
+    @logger.catch
     def get_closed_positions(self) -> int:
         return len(self.closed_trades)
 
+    @logger.catch
     def _record_performance_data(
         self, current_time: datetime, option_chain_df: pd.DataFrame
     ) -> None:
@@ -195,10 +212,11 @@ class OptionBacktester:
             }
         )
 
+    @logger.catch
     def plot_performance(self):
         """Generate performance visualizations."""
         if not self.performance_data:
-            self.logger.warning("No performance data available for plotting.")
+            logger.warning("No performance data available for plotting.")
             return
 
         df = pd.DataFrame(self.performance_data)
@@ -239,6 +257,7 @@ class OptionBacktester:
         plt.tight_layout()
         plt.show()
 
+    @logger.catch
     def get_closed_trades_df(self):
         """
         Compute a dataframe of closed trades with various attributes.
@@ -287,10 +306,11 @@ class OptionBacktester:
 
         return pd.DataFrame(closed_trades_data)
 
+    @logger.catch
     def calculate_performance_metrics(self):
         """Calculate various performance metrics."""
         if not self.performance_data:
-            self.logger.warning("No performance data available for metric calculation.")
+            logger.warning("No performance data available for metric calculation.")
             return None
 
         df = pd.DataFrame(self.performance_data)
@@ -324,6 +344,7 @@ class OptionBacktester:
 
         return metrics
 
+    @logger.catch
     def _calculate_sharpe_ratio(self, daily_returns):
         """Calculate Sharpe Ratio."""
         risk_free_rate = 0.02  # Assume 2% risk-free rate
@@ -332,12 +353,14 @@ class OptionBacktester:
         )  # Assuming 252 trading days
         return np.sqrt(252) * excess_returns.mean() / excess_returns.std()
 
+    @logger.catch
     def _calculate_profit_factor(self, daily_returns):
         """Calculate Profit Factor."""
         profits = daily_returns[daily_returns > 0].sum()
         losses = abs(daily_returns[daily_returns < 0].sum())
         return profits / losses if losses != 0 else np.inf
 
+    @logger.catch
     def _calculate_cagr(self, df):
         """Calculate Compound Annual Growth Rate."""
         start_value = self.config.initial_capital
@@ -349,11 +372,13 @@ class OptionBacktester:
         except ZeroDivisionError:
             return np.nan
 
+    @logger.catch
     def _calculate_avg_monthly_pl(self, df):
         """Calculate Average Monthly P/L."""
         monthly_pl = df.set_index("time")["total_pl"].resample("M").last().diff()
         return monthly_pl.mean()
 
+    @logger.catch
     def _calculate_probability_of_positive_monthly_pl(self, df):
         """Calculate the probability of having a positive monthly P/L."""
         monthly_pl = df.set_index("time")["total_pl"].resample("M").last().diff().dropna()
@@ -361,6 +386,7 @@ class OptionBacktester:
         total_months = monthly_pl[monthly_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
+    @logger.catch
     def _calculate_probability_of_positive_monthly_closed_pl(self, df):
         """Calculate the probability of having a positive monthly closed P/L."""
         monthly_closed_pl = df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
@@ -368,6 +394,7 @@ class OptionBacktester:
         total_months = monthly_closed_pl[monthly_closed_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
+    @logger.catch
     def _calculate_max_drawdown(self, df):
         """Calculate the maximum drawdown percentage and dollars."""
         df["peak"] = df["total_pl"].cummax()
@@ -376,12 +403,14 @@ class OptionBacktester:
         max_drawdown_percentage = (max_drawdown_dollars / self.allocation)
         return max_drawdown_dollars, max_drawdown_percentage
 
+    @logger.catch
     def _calculate_win_rate(self):
         """Calculate Win Rate."""
         total_trades = len(self.closed_trades)
         winning_trades = sum(1 for trade in self.closed_trades if trade.won)
         return winning_trades / total_trades if total_trades > 0 else 0
 
+    @logger.catch
     def monte_carlo_risk_of_ruin(
         self,
         data,
@@ -444,6 +473,7 @@ class OptionBacktester:
 
         return risk_of_ruin
 
+    @logger.catch
     def print_performance_summary(self):
         """Print a summary of performance metrics."""
         metrics = self.calculate_performance_metrics()
@@ -480,7 +510,7 @@ if __name__ == "__main__":
 
     # Test 1: Initialization
     print("\nTest 1: Initialization")
-    config = BacktesterConfig(
+    config = Config(
         initial_capital=10000,
         max_positions=5,
         max_positions_per_day=2,
@@ -711,7 +741,7 @@ if __name__ == "__main__":
     print("\n--- Performance Visualization Test ---")
 
     # Create a backtester with some sample data
-    config = BacktesterConfig(
+    config = Config(
         initial_capital=10000,
         max_positions=5,
         max_positions_per_day=2,
@@ -757,7 +787,7 @@ if __name__ == "__main__":
     print("\n--- Performance Metrics Test ---")
 
     # Create a backtester with some sample data
-    config = BacktesterConfig(
+    config = Config(
         initial_capital=10000,
         max_positions=5,
         max_positions_per_day=2,
