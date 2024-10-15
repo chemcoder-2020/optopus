@@ -1,12 +1,13 @@
-from src.optopus.brokers.schwab.schwab_trade import SchwabTrade
-from src.optopus.brokers.schwab.schwab_data import SchwabData
-from src.optopus.trades.option_spread import OptionStrategy
-from src.optopus.brokers.order import Order
-import pandas as pd
 import os
-import dotenv
-from loguru import logger
 import sys
+import pandas as pd
+from dotenv import load_dotenv
+from loguru import logger
+
+from .schwab_trade import SchwabTrade
+from .schwab_data import SchwabData
+from ..trades.option_spread import OptionStrategy
+from ..order import Order
 
 logger.add(
     sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
