@@ -2,13 +2,11 @@ import logging
 import pandas as pd
 import os
 import dotenv
-import requests
-from schwab_auth import SchwabAuth
+from schwab import Schwab
 
 dotenv.load_dotenv()
 
-
-class SchwabData:
+class SchwabData(Schwab):
     def __init__(
         self,
         client_id,
@@ -17,72 +15,8 @@ class SchwabData:
         token_file="token.json",
         auth=None,  # Add this parameter
     ):
+        super().__init__(client_id, client_secret, redirect_uri, token_file, auth)
         self.marketdata_base_url = "https://api.schwabapi.com/marketdata/v1"
-        self.token_file = token_file
-        if auth is None:
-            self.auth = SchwabAuth(client_id, client_secret, redirect_uri, token_file)
-        else:
-            self.auth = auth
-        try:
-            self.auth.refresh_access_token()
-
-        except Exception as e:
-            self.logger = logging.getLogger(__name__)
-            self.logger.error(f"Refreshing token failed: {e}")
-            try:
-                self.auth.authenticate()
-                self.logger.info("Authenticated successfully")
-            except Exception as e:
-                self.logger.error(f"Failed to authenticate: {e}")
-                raise
-
-    def refresh_token(self):
-        """
-        Refresh the access token.
-
-        Returns:
-            bool: True if the access token was refreshed successfully, False otherwise.
-        """
-
-        try:
-            _ = self.auth.refresh_access_token()
-            self.auth.save_token(self.token_file)
-            return True
-        except Exception as e:
-            print(e)
-            return False
-
-    def _make_request(self, method, url, headers=None, params=None, data=None):
-        """
-        Make a general HTTP request.
-
-        Args:
-            method (str): The HTTP method (GET, POST, PUT, DELETE).
-            url (str): The URL for the request.
-            headers (dict): The headers for the request.
-            params (dict): The query parameters for the request.
-            data (dict): The data for the request.
-
-        Returns:
-            dict: The response data.
-        """
-        self.refresh_token()
-        if not self.auth.access_token:
-            raise Exception("Not authenticated. Call authenticate() first.")
-
-        if headers is None:
-            headers = {}
-        headers["Authorization"] = f"Bearer {self.auth.access_token}"
-        headers["Accept"] = "application/json"
-
-        response = requests.request(
-            method, url, headers=headers, params=params, json=data
-        )
-        # response.raise_for_status()
-        return response
-
-    def _get(self, url, params=None):
-        return self._make_request("GET", url, params=params)
 
     def get_option_chain(
         self,
