@@ -1,8 +1,8 @@
 import logging
 import requests
 import json
-import os
 from schwab_auth import SchwabAuth
+
 
 class Schwab:
     def __init__(
@@ -17,7 +17,11 @@ class Schwab:
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.token_file = token_file
-        self.auth = auth if auth else SchwabAuth(client_id, client_secret, redirect_uri, token_file)
+        self.auth = (
+            auth
+            if auth
+            else SchwabAuth(client_id, client_secret, redirect_uri, token_file)
+        )
         self.logger = logging.getLogger(__name__)
         self.trading_base_url = "https://api.schwabapi.com/trader/v1"
 
@@ -76,3 +80,14 @@ class Schwab:
 
     def _delete(self, url):
         return self._make_request("DELETE", url)
+
+    def _load_token(self):
+        """
+        Load the access token from the token file.
+
+        Returns:
+            str: The access token.
+        """
+        with open(self.token_file, "r") as f:
+            token_data = json.load(f)
+            return token_data

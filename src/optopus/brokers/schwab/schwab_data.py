@@ -6,6 +6,7 @@ from schwab import Schwab
 
 dotenv.load_dotenv()
 
+
 class SchwabData(Schwab):
     def __init__(
         self,
@@ -13,7 +14,7 @@ class SchwabData(Schwab):
         client_secret,
         redirect_uri="https://127.0.0.1",
         token_file="token.json",
-        auth=None,  # Add this parameter
+        auth=None,
     ):
         super().__init__(client_id, client_secret, redirect_uri, token_file, auth)
         self.marketdata_base_url = "https://api.schwabapi.com/marketdata/v1"
@@ -87,16 +88,20 @@ class SchwabData(Schwab):
         response.raise_for_status()
         option_chain = response.json()
         processed_chain = self._process_option_chain(option_chain)
-        
+
         if output_folders:
-            timestamp = pd.Timestamp.now(tz="America/New_York").round("15min").strftime("%Y-%m-%d %H-%M")
+            timestamp = (
+                pd.Timestamp.now(tz="America/New_York")
+                .round("15min")
+                .strftime("%Y-%m-%d %H-%M")
+            )
             filename = f"{symbol}_{timestamp}.parquet"
             if not isinstance(output_folders, list):
                 output_folders = [output_folders]
             for output_folder in output_folders:
                 filepath = os.path.join(output_folder, filename)
                 processed_chain.to_parquet(filepath)
-        
+
         return processed_chain
 
     def get_market_hours(self, market_id, date=None):
@@ -108,7 +113,7 @@ class SchwabData(Schwab):
             date (str, optional): Valid date range is from current date to 1 year from today. It will default to current day if not entered. Date format: YYYY-MM-DD.
         """
         url = f"{self.marketdata_base_url}/markets"
-        params = {"date": date, 'markets': market_id}
+        params = {"date": date, "markets": market_id}
         # Remove None values from params
         params = {k: v for k, v in params.items() if v is not None}
         response = self._get(url, params=params)

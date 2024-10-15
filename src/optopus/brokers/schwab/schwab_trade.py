@@ -1,27 +1,22 @@
 import os
-import json
-import requests
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Union
-from trading import TradingAPI
 import logging
-from schwab_auth import SchwabAuth
 import dotenv
+from schwab import Schwab
 
 dotenv.load_dotenv()
 
-from schwab import Schwab
 
-
-class SchwabTrade(Schwab, TradingAPI):
+class SchwabTrade(Schwab):
     def __init__(
         self,
         client_id,
         client_secret,
         redirect_uri="https://127.0.0.1",
         token_file="token.json",
-        auth=None,  # Add this parameter
+        auth=None,
     ):
         """
         Initialize the SchwabTrade class with the client ID, client secret, redirect URI, token file path, and optional auth instance.
@@ -31,7 +26,7 @@ class SchwabTrade(Schwab, TradingAPI):
             client_secret (str): The client secret.
             redirect_uri (str): The redirect URI.
             token_file (str): The path to the token file.
-            auth (SchwabAuth, optional): An existing SchwabAuth instance. If None, a new instance will be created.
+            auth (SchwabAuth, optional): An optional auth instance. Defaults to None.
         """
         super().__init__(client_id, client_secret, redirect_uri, token_file, auth)
         self.logger = logging.getLogger(__name__)
@@ -45,17 +40,6 @@ class SchwabTrade(Schwab, TradingAPI):
             self.auth.authenticate()
 
         self.trading_base_url = "https://api.schwabapi.com/trader/v1"
-
-    def _load_token(self):
-        """
-        Load the access token from the token file.
-
-        Returns:
-            str: The access token.
-        """
-        with open(self.token_file, "r") as f:
-            token_data = json.load(f)
-            return token_data
 
     def get_account_numbers(self):
         url = f"{self.trading_base_url}/accounts/accountNumbers"
@@ -78,62 +62,6 @@ class SchwabTrade(Schwab, TradingAPI):
             params = {"fields": "positions"}
         response = self._get(url, params=params)
         return response.json()
-
-    def refresh_token(self):
-        """
-        Refresh the access token.
-
-        Returns:
-            bool: True if the access token was refreshed successfully, False otherwise.
-        """
-
-        try:
-            _ = self.auth.refresh_access_token()
-            self.auth.save_token(self.token_file)
-            return True
-        except Exception as e:
-            print(e)
-            return False
-
-    def _make_request(self, method, url, headers=None, params=None, data=None):
-        """
-        Make a general HTTP request.
-
-        Args:
-            method (str): The HTTP method (GET, POST, PUT, DELETE).
-            url (str): The URL for the request.
-            headers (dict): The headers for the request.
-            params (dict): The query parameters for the request.
-            data (dict): The data for the request.
-
-        Returns:
-            dict: The response data.
-        """
-        if not self.auth.access_token:
-            raise Exception("Not authenticated. Call authenticate() first.")
-
-        if headers is None:
-            headers = {}
-        headers["Authorization"] = f"Bearer {self.auth.access_token}"
-        headers["Accept"] = "application/json"
-
-        response = requests.request(
-            method, url, headers=headers, params=params, json=data
-        )
-        # response.raise_for_status()
-        return response
-
-    def _get(self, url, params=None):
-        return self._make_request("GET", url, params=params)
-
-    def _post(self, url, data=None):
-        return self._make_request("POST", url, data=data)
-
-    def _put(self, url, data=None):
-        return self._make_request("PUT", url, data=data)
-
-    def _delete(self, url):
-        return self._make_request("DELETE", url)
 
     def get_orders(
         self,
@@ -284,7 +212,9 @@ class SchwabTrade(Schwab, TradingAPI):
             )
 
         if long_option_type != short_option_type:
-            raise ValueError("Both options in the spread must be of the same type (either both calls or both puts).")
+            raise ValueError(
+                "Both options in the spread must be of the same type (either both calls or both puts)."
+            )
 
         if long_option_type == "P":
             if long_strike_price < short_strike_price:
@@ -617,10 +547,28 @@ def main():
         "SPY", "241115", "P", 561, "P", 562, 1, 0.22, "GOOD_TILL_CANCEL", is_entry=True
     )
     payload2 = schwab_trade.generate_vertical_spread_json(
-        "SPY", "20241115", "P", 561, "P", 562, 1, 0.22, "GOOD_TILL_CANCEL", is_entry=True
+        "SPY",
+        "20241115",
+        "P",
+        561,
+        "P",
+        562,
+        1,
+        0.22,
+        "GOOD_TILL_CANCEL",
+        is_entry=True,
     )
     payload3 = schwab_trade.generate_vertical_spread_json(
-        "SPY", "2024-11-15", "P", 561, "P", 562, 1, 0.22, "GOOD_TILL_CANCEL", is_entry=True
+        "SPY",
+        "2024-11-15",
+        "P",
+        561,
+        "P",
+        562,
+        1,
+        0.22,
+        "GOOD_TILL_CANCEL",
+        is_entry=True,
     )
     payload4 = schwab_trade.generate_vertical_spread_json(
         "SPY",
@@ -632,7 +580,7 @@ def main():
         1,
         0.22,
         "GOOD_TILL_CANCEL",
-        is_entry=True
+        is_entry=True,
     )
     assert payload1 == payload2 == payload3 == payload4, "Expected some payload"
     order_link = schwab_trade.place_order(account_numbers[0]["hashValue"], payload1)[0]
@@ -649,7 +597,9 @@ def main():
     closing_payload = schwab_trade.generate_vertical_spread_json(
         "SPY", "241115", "P", 561, "P", 562, 1, 0.24, "GOOD_TILL_CANCEL", is_entry=False
     )
-    order_link = schwab_trade.place_order(account_numbers[0]["hashValue"], closing_payload)[0]
+    order_link = schwab_trade.place_order(
+        account_numbers[0]["hashValue"], closing_payload
+    )[0]
     assert order_link != "", "Expected non-empty response"
     order = schwab_trade.get_order(order_link)
     assert order.get("status") in [
@@ -659,7 +609,6 @@ def main():
         "FILLED",
     ], "Expected order to be submitted"
     # schwab_trade.cancel_order(order_link)
-
 
     # Test 10: Cancel vertical spread order
     assert schwab_trade.cancel_order(order_link) != "", "Expected empty response"

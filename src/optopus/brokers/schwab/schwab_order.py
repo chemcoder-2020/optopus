@@ -1,7 +1,7 @@
 from src.optopus.brokers.schwab.schwab_trade import SchwabTrade
 from src.optopus.brokers.schwab.schwab_data import SchwabData
 from src.optopus.trades.option_spread import OptionStrategy
-from src.optopus.brokers.order import AbstractOptionOrder
+from src.optopus.brokers.order import Order
 import pandas as pd
 import os
 import dotenv
@@ -13,14 +13,14 @@ logging.basicConfig(level=logging.INFO)
 dotenv.load_dotenv()
 
 
-class SchwabOptionOrder(SchwabTrade, SchwabData, OptionStrategy, AbstractOptionOrder):
+class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def __init__(
         self,
-        client_id,
-        client_secret,
         option_strategy: OptionStrategy,
-        redirect_uri="https://127.0.0.1",
-        token_file="token.json",
+        client_id=os.getenv("SCHWAB_CLIENT_ID"),
+        client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+        redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
+        token_file=os.getenv("SCHWAB_TOKEN_FILE", "token.json"),
         which_account=0,
     ):
         self.logger = logging.getLogger(__name__)
@@ -53,8 +53,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, OptionStrategy, AbstractOptionO
             option_strategy.stop_loss,
             option_strategy.trailing_stop,
             option_strategy.contracts,
+            option_strategy.commission,
         )
-        AbstractOptionOrder.__init__(self, option_strategy)
+        Order.__init__(self)
 
         self.order_status = None
         self.order_id = None
@@ -187,11 +188,14 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, OptionStrategy, AbstractOptionO
                 if self.order_status == "FILLED":
                     # Update entry price for each leg
                     for leg_num, leg in enumerate(self.legs):
-                        leg.update_entry_price(order['orderActivityCollection'][0]['executionLegs'][leg_num]['price'])
+                        leg.update_entry_price(
+                            order["orderActivityCollection"][0]["executionLegs"][
+                                leg_num
+                            ]["price"]
+                        )
 
                     # Update entry net premium
                     self.update_entry_net_premium()
-
 
     def cancel(self):
         if self.order_id:
@@ -223,7 +227,6 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, OptionStrategy, AbstractOptionO
     def __repr__(self):
         return (
             f"SchwabOptionOrder(\n"
-            f"  {super().__repr__()}\n"
             f"  Order ID: {self.order_id},\n"
             f"  Order Status: {self.order_status}\n"
             f")"

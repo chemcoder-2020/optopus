@@ -2,14 +2,18 @@ import abc
 from src.optopus.trades.option_spread import OptionStrategy
 import pandas as pd
 
-class AbstractOptionOrder(abc.ABC):
-    def __init__(self, option_strategy: OptionStrategy, broker="Schwab"):
-        self.__dict__.update(option_strategy.__dict__)
-        self.order_id = None
-        self.order_status = "PENDING"
-        self.option_strategy = option_strategy
-        self._broker = broker
-    
+
+class Order(abc.ABC, OptionStrategy):
+    order_id = None
+    order_status = None
+    option_strategy = None
+    broker = None
+
+    def set_strategy(self, option_strategy: OptionStrategy):
+        if self.option_strategy is None:
+            self.__dict__.update(option_strategy.__dict__)
+            self.option_strategy = option_strategy
+
     @abc.abstractproperty
     def broker(self):
         return self._broker
@@ -52,7 +56,7 @@ class AbstractOptionOrder(abc.ABC):
 
     def __repr__(self):
         return (
-            f"AbstractOptionOrder(\n"
+            f"Order(\n"
             f"  Order ID: {self.order_id},\n"
             f"  Order Status: {self.order_status}\n"
             f")"
