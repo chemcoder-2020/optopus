@@ -17,20 +17,9 @@ class TestOptionBacktester(unittest.TestCase):
             gain_reinvesting=False,
         )
         self.backtester = OptionBacktester(self.config)
-        self.entry_df = pd.DataFrame({
-            "UNDERLYING_LAST": [400],
-            "expiration": ["2024-12-20"],
-            "strike": [400],
-            "option_type": ["CALL"],
-            "entry_time": ["2024-09-06 15:30:00"],
-        })
-        self.update_df = pd.DataFrame({
-            "UNDERLYING_LAST": [410],
-            "expiration": ["2024-12-20"],
-            "strike": [400],
-            "option_type": ["CALL"],
-            "entry_time": ["2024-09-06 15:45:00"],
-        })
+        self.entry_df = pd.read_parquet("data/SPY_2024-09-06 15-30.parquet")
+        self.update_df = pd.read_parquet("data/SPY_2024-09-06 15-45.parquet")
+        self.update_df2 = pd.read_parquet("data/SPY_2024-09-09 09-45.parquet")
 
     def test_initialization(self):
         self.assertEqual(self.backtester.capital, 10000)
@@ -40,8 +29,8 @@ class TestOptionBacktester(unittest.TestCase):
         spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=400,
-            short_strike=390,
+            long_strike=565,
+            short_strike=560,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
@@ -54,8 +43,8 @@ class TestOptionBacktester(unittest.TestCase):
         spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=400,
-            short_strike=390,
+            long_strike=565,
+            short_strike=560,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
@@ -65,8 +54,8 @@ class TestOptionBacktester(unittest.TestCase):
         conflicting_spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=400,
-            short_strike=390,
+            long_strike=565,
+            short_strike=560,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
@@ -79,8 +68,8 @@ class TestOptionBacktester(unittest.TestCase):
         spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=400,
-            short_strike=390,
+            long_strike=565,
+            short_strike=560,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
@@ -91,31 +80,32 @@ class TestOptionBacktester(unittest.TestCase):
         self.backtester.update("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(self.backtester.trades_entered_today, 1)
         self.assertEqual(self.backtester.trades_entered_this_week, 1)
-        self.assertEqual(self.backtester.capital, initial_capital - spread.get_required_capital())
+        self.assertEqual(self.backtester.available_to_trade, initial_capital - spread.get_required_capital())
 
     def test_update_with_position_closing(self):
         spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=400,
-            short_strike=390,
+            long_strike=565,
+            short_strike=560,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
-            profit_target=1,
+            profit_target=0.3,
         )
         self.assertTrue(self.backtester.add_spread(spread))
         self.backtester.update("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(len(self.backtester.active_trades), 0)
+        self.assertEqual(len(self.backtester.closed_trades), 1)
 
     def test_maximum_positions(self):
         for i in range(2):
             spread = OptionStrategy.create_vertical_spread(
                 symbol="SPY",
                 option_type="CALL",
-                long_strike=400 + i,
-                short_strike=390 + i,
+                long_strike=565 + i,
+                short_strike=560 + i,
                 expiration="2024-12-20",
                 contracts=1,
                 entry_time="2024-09-06 15:30:00",
@@ -126,8 +116,8 @@ class TestOptionBacktester(unittest.TestCase):
         spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=402,
-            short_strike=392,
+            long_strike=568,
+            short_strike=563,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
@@ -140,12 +130,13 @@ class TestOptionBacktester(unittest.TestCase):
         spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=400,
-            short_strike=390,
+            long_strike=565,
+            short_strike=560,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
+            profit_target=0.3,
         )
         self.assertTrue(self.backtester.add_spread(spread))
         self.backtester.update("2024-09-06 15:45:00", self.update_df)
@@ -153,14 +144,14 @@ class TestOptionBacktester(unittest.TestCase):
         self.assertIsInstance(total_pl, (float, int))
         closed_pl = self.backtester.get_closed_pl()
         self.assertIsInstance(closed_pl, (float, int))
-        self.assertEqual(closed_pl, 0)
+        self.assertNotEqual(closed_pl, 0)
 
     def test_adjusting_contracts_to_fit_position_size(self):
         spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike=400,
-            short_strike=390,
+            long_strike=565,
+            short_strike=560,
             expiration="2024-12-20",
             contracts=1000,
             entry_time="2024-09-06 15:30:00",
