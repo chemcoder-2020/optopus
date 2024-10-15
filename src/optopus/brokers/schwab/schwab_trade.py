@@ -11,8 +11,10 @@ import dotenv
 
 dotenv.load_dotenv()
 
+from schwab import Schwab
 
-class SchwabTrade(TradingAPI):
+
+class SchwabTrade(Schwab, TradingAPI):
     def __init__(
         self,
         client_id,
@@ -31,13 +33,8 @@ class SchwabTrade(TradingAPI):
             token_file (str): The path to the token file.
             auth (SchwabAuth, optional): An existing SchwabAuth instance. If None, a new instance will be created.
         """
+        super().__init__(client_id, client_secret, redirect_uri, token_file, auth)
         self.logger = logging.getLogger(__name__)
-        if auth is None:
-            self.auth = SchwabAuth(
-                client_id, client_secret, redirect_uri, token_file=token_file
-            )
-        else:
-            self.auth = auth
 
         try:
             self.auth.refresh_access_token()
@@ -47,10 +44,6 @@ class SchwabTrade(TradingAPI):
             )
             self.auth.authenticate()
 
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
-        self.token_file = token_file
         self.trading_base_url = "https://api.schwabapi.com/trader/v1"
 
     def _load_token(self):
