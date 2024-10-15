@@ -1,7 +1,7 @@
 import os
 import sys
 import pandas as pd
-from dotenv import load_dotenv, dotenv_values
+from dotenv import load_dotenv
 from loguru import logger
 
 from .schwab_trade import SchwabTrade
