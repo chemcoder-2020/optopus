@@ -1,5 +1,5 @@
 import abc
-from option_spread import OptionStrategy
+from src.optopus.trades.option_spread import OptionStrategy
 import pandas as pd
 
 class AbstractOptionOrder(abc.ABC):
