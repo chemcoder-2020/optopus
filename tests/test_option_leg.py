@@ -148,20 +148,67 @@ class TestOptionLeg(unittest.TestCase):
         )
         self.assertTrue(option_leg1.conflicts_with(option_leg2))
 
-    def test_schwab_symbol(self):
-        option_leg = OptionLeg(
+    def test_from_delta_and_dte_atm(self):
+        target_delta = "ATM"
+        target_dte = 60
+        option_leg = OptionLeg.from_delta_and_dte(
             symbol=self.symbol,
             option_type=self.option_type,
-            strike=self.strike,
-            expiration=self.expiration,
+            target_delta=target_delta,
+            target_dte=target_dte,
             contracts=self.contracts,
             entry_time=self.entry_time,
             option_chain_df=self.entry_df,
             position_side=self.position_side,
             commission=self.commission,
         )
-        expected_symbol = f"{self.symbol.ljust(6)}241220C00585000"
-        self.assertEqual(option_leg.schwab_symbol, expected_symbol)
+        self.assertEqual(option_leg.symbol, self.symbol)
+        self.assertEqual(option_leg.option_type, self.option_type)
+        self.assertEqual(option_leg.contracts, self.contracts)
+        self.assertEqual(option_leg.position_side, self.position_side)
+        self.assertEqual(option_leg.commission, self.commission)
+
+    def test_from_delta_and_dte_specific_delta(self):
+        target_delta = -0.3
+        target_dte = 60
+        option_leg = OptionLeg.from_delta_and_dte(
+            symbol=self.symbol,
+            option_type="PUT",
+            target_delta=target_delta,
+            target_dte=target_dte,
+            contracts=self.contracts,
+            entry_time=self.entry_time,
+            option_chain_df=self.entry_df,
+            position_side=self.position_side,
+            commission=self.commission,
+        )
+        self.assertEqual(option_leg.symbol, self.symbol)
+        self.assertEqual(option_leg.option_type, "PUT")
+        self.assertEqual(option_leg.contracts, self.contracts)
+        self.assertEqual(option_leg.position_side, self.position_side)
+        self.assertEqual(option_leg.commission, self.commission)
+
+    def test_from_delta_and_dte_relative_strike(self):
+        target_delta = -2
+        target_dte = 60
+        reference_strike = 580
+        option_leg = OptionLeg.from_delta_and_dte(
+            symbol=self.symbol,
+            option_type="PUT",
+            target_delta=target_delta,
+            target_dte=target_dte,
+            contracts=self.contracts,
+            entry_time=self.entry_time,
+            option_chain_df=self.entry_df,
+            position_side=self.position_side,
+            reference_strike=reference_strike,
+            commission=self.commission,
+        )
+        self.assertEqual(option_leg.symbol, self.symbol)
+        self.assertEqual(option_leg.option_type, "PUT")
+        self.assertEqual(option_leg.contracts, self.contracts)
+        self.assertEqual(option_leg.position_side, self.position_side)
+        self.assertEqual(option_leg.commission, self.commission)
 
     def test_calculate_dte_data_types(self):
         expiration_date_str = "2024-12-20"
