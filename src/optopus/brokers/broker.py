@@ -1,25 +1,88 @@
 from ..brokers.order import Order
 from loguru import logger
 import os
+import sys
+
+logger.add(
+    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
+)
 
 
 class OptionBroker:
     def __init__(self, config):
         self.config = config
-    
+        self.auth = self._get_auth_api()
+        self.data = self._get_data_api()
+        self.trading = self._get_trading_api()
+
     def __repr__(self):
         return f"{self.__class__.__name__}(config={self.config}, broker={self.config.get('broker')})"
 
+    def _get_auth_api(self):
+        if self.config.get("broker", "Schwab") == "Schwab":
+            from ..brokers.schwab.schwab_auth import SchwabAuth
+
+            return SchwabAuth(
+                client_id=self.config.get("api_key", os.getenv("SCHWAB_CLIENT_ID")),
+                client_secret=self.config.get(
+                    "client_secret", os.getenv("SCHWAB_CLIENT_SECRET")
+                ),
+                redirect_uri=self.config.get(
+                    "redirect_uri",
+                    os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1"),
+                ),
+                token_file=self.config.get(
+                    "token_file", os.getenv("SCHWAB_TOKEN_FILE", "token.json")
+                ),
+            )
+
     def _get_data_api(self):
         if self.config.get("broker", "Schwab") == "Schwab":
-            from src.optopus.brokers.schwab_data import SchwabData
-            return SchwabData(
-                client_id=self.config.get("api_key"),
-                client_secret=self.config.get("client_secret"),
-                redirect_uri=self.config.get("redirect_uri"),
-                token_file=self.config.get("token_file", "token.json"),
-            )
-        
+            from ..brokers.schwab.schwab_data import SchwabData
+
+            if self.auth is not None:
+                return SchwabData(
+                    client_id=self.config.get("api_key", os.getenv("SCHWAB_CLIENT_ID")),
+                    client_secret=self.config.get(
+                        "client_secret", os.getenv("SCHWAB_CLIENT_SECRET")
+                    ),
+                    redirect_uri=self.config.get(
+                        "redirect_uri",
+                        os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1"),
+                    ),
+                    token_file=self.config.get(
+                        "token_file", os.getenv("SCHWAB_TOKEN_FILE", "token.json")
+                    ),
+                    auth=self.auth,
+                )
+            else:
+                raise Exception(
+                    "Authentication object is required to access Schwab Data API"
+                )
+
+    def _get_trading_api(self):
+        if self.config.get("broker", "Schwab") == "Schwab":
+            from ..brokers.schwab.schwab_trade import SchwabTrade
+
+            if self.auth is not None:
+                return SchwabTrade(
+                    client_id=self.config.get("api_key", os.getenv("SCHWAB_CLIENT_ID")),
+                    client_secret=self.config.get(
+                        "client_secret", os.getenv("SCHWAB_CLIENT_SECRET")
+                    ),
+                    redirect_uri=self.config.get(
+                        "redirect_uri",
+                        os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1"),
+                    ),
+                    token_file=self.config.get(
+                        "token_file", os.getenv("SCHWAB_TOKEN_FILE", "token.json")
+                    ),
+                    auth=self.auth,
+                )
+            else:
+                raise Exception(
+                    "Authentication object is required to access Schwab Trade API"
+                )
 
     def create_order(self) -> Order:
         broker = self.config.get("broker", "Schwab")
@@ -32,7 +95,7 @@ class OptionBroker:
 
         logger.debug(f"Connecting to {broker} broker with API key {masked_api_key}...")
         if broker == "Schwab":
-            from src.optopus.brokers.schwab_order import SchwabOptionOrder
+            from ..brokers.schwab.schwab_order import SchwabOptionOrder
 
             return SchwabOptionOrder(
                 option_strategy=self.config.get("option_strategy"),
@@ -43,7 +106,9 @@ class OptionBroker:
                     else os.getenv("SCHWAB_CLIENT_SECRET")
                 ),
                 redirect_uri=(
-                    redirect_uri if redirect_uri else os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1")
+                    redirect_uri
+                    if redirect_uri
+                    else os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1")
                 ),
                 token_file=(
                     token_file
