@@ -19,7 +19,7 @@ class OptionBroker:
         return f"{self.__class__.__name__}(config={self.config}, broker={self.config.get('broker')})"
 
     def _get_auth_api(self):
-        if self.config.get("broker", "Schwab") == "Schwab":
+        if self.config.get("broker", "Schwab").lower() == "schwab":
             from ..brokers.schwab.schwab_auth import SchwabAuth
 
             return SchwabAuth(
@@ -37,7 +37,7 @@ class OptionBroker:
             )
 
     def _get_data_api(self):
-        if self.config.get("broker", "Schwab") == "Schwab":
+        if self.config.get("broker", "Schwab").lower() == "schwab":
             from ..brokers.schwab.schwab_data import SchwabData
 
             if self.auth is not None:
@@ -61,7 +61,7 @@ class OptionBroker:
                 )
 
     def _get_trading_api(self):
-        if self.config.get("broker", "Schwab") == "Schwab":
+        if self.config.get("broker", "Schwab").lower() == "schwab":
             from ..brokers.schwab.schwab_trade import SchwabTrade
 
             if self.auth is not None:
@@ -94,7 +94,7 @@ class OptionBroker:
         account_number = self.config.get("account_number", 0)
 
         logger.debug(f"Connecting to {broker} broker with API key {masked_api_key}...")
-        if broker == "Schwab":
+        if broker.lower() == "schwab":
             from ..brokers.schwab.schwab_order import SchwabOptionOrder
 
             return SchwabOptionOrder(
