@@ -1,4 +1,4 @@
-from src.optopus.brokers.order import Order
+from ..brokers.order import Order
 from loguru import logger
 import os
 
