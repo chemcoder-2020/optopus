@@ -5,7 +5,6 @@ from abstract_order import AbstractOptionOrder
 import pandas as pd
 import os
 import dotenv
-import json
 import logging
 
 
