@@ -5,7 +5,11 @@ setup(
     version='0.1.0',
     packages=find_packages(),
     install_requires=[
-        # Add your project dependencies here
+        'pandas',
+        'numpy',
+        'requests',
+        'python-dotenv',
+        'loguru',
     ],
     entry_points={
         'console_scripts': [
