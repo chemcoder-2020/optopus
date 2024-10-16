@@ -23,17 +23,17 @@ dynamic = ["dependencies", "scripts"]
 optopus = "optopus.main:main"
 
 [project.dependencies]
-"joblib"
-"loguru"
-"matplotlib"
-"numpy"
-"pandas"
-"python-dotenv"
-"requests"
-"scikit-learn"
-"scipy"
-"setuptools"
-"tqdm"
+dependencies = ["joblib",
+"loguru",
+"matplotlib",
+"numpy",
+"pandas",
+"python-dotenv",
+"requests",
+"scikit-learn",
+"scipy",
+"setuptools",
+"tqdm"]
 
 [tool.black]
 line-length = 88
