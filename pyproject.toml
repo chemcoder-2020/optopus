@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "optopus"
 version = "0.1.0"
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+    { name = "Huy Nguyen", email = "huynguyen2406@gmail.com" }
 ]
 description = "A Python project for options trading and backtesting."
 readme = "README.md"
