@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name='optopus',
     version='0.1.0',
-    packages=find_packages(),
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     install_requires=[
         "joblib",
         "loguru",
@@ -11,8 +12,8 @@ setup(
         "numpy",
         "pandas",
         "python-dotenv",
-        "Requests",
-        "scikit_learn",
+        "requests",
+        "scikit-learn",
         "scipy",
         "setuptools",
         "tqdm"
