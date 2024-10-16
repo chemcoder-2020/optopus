@@ -5,24 +5,6 @@ setup(
     version='0.1.0',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    install_requires=[
-        "joblib",
-        "loguru",
-        "matplotlib",
-        "numpy",
-        "pandas",
-        "python-dotenv",
-        "requests",
-        "scikit-learn",
-        "scipy",
-        "setuptools",
-        "tqdm"
-    ],
-    entry_points={
-        'console_scripts': [
-            'optopus=optopus.main:main',
-        ],
-    },
     author='Huy Nguyen',
     author_email='huynguyen2406@gmail.com',
     description='A Python project for options trading and backtesting.',
