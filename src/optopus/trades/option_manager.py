@@ -26,6 +26,10 @@ class Config:
     redirect_uri: str = None
     token_file: str = None
 
+    def get(self, key, default=None):
+        """Get an attribute with a default value if it does not exist."""
+        return getattr(self, key, default)
+
 
 class OptionBacktester:
 
