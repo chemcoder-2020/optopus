@@ -7,12 +7,7 @@ from loguru import logger
 from dataclasses import dataclass
 import numpy as np
 from scipy.stats import gaussian_kde
-import sys
 
-
-logger.add(
-    sys.stderr, format="{time} {level} {message}", filter="my_module", level="ERROR"
-)
 
 @dataclass
 class Config:
@@ -34,7 +29,6 @@ class Config:
 
 class OptionBacktester:
 
-    @logger.catch
     def __init__(self, config: Config):
         self.config = config
         self.capital = config.initial_capital
@@ -47,7 +41,6 @@ class OptionBacktester:
         self.trades_entered_this_week = 0
         self.performance_data = []
 
-    @logger.catch
     def update(self, current_time: datetime, option_chain_df: pd.DataFrame) -> None:
         try:
             current_time = pd.to_datetime(current_time)
@@ -61,13 +54,19 @@ class OptionBacktester:
 
             # Move closed trades
             if trades_to_close:
-                self.active_trades = [t for t in self.active_trades if t.status != "CLOSED"]
+                self.active_trades = [
+                    t for t in self.active_trades if t.status != "CLOSED"
+                ]
                 self.closed_trades.extend(trades_to_close)
                 pl_change = sum(trade.total_pl() for trade in trades_to_close)
-                recovered_capital = sum(trade.get_required_capital() for trade in trades_to_close)
+                recovered_capital = sum(
+                    trade.get_required_capital() for trade in trades_to_close
+                )
                 self.capital += pl_change
                 self.available_to_trade += recovered_capital
-                assert np.isnan(self.capital) == False, f"Capital is NaN: {self.capital} at {current_time}"
+                assert (
+                    np.isnan(self.capital) == False
+                ), f"Capital is NaN: {self.capital} at {current_time}"
 
                 # Update allocation if gain_reinvesting is True
                 if self.config.gain_reinvesting:
@@ -84,7 +83,6 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error updating backtester: {str(e)}")
 
-    @logger.catch
     def add_spread(self, new_spread: OptionStrategy) -> bool:
         try:
             if not self._can_add_spread(new_spread):
@@ -100,7 +98,6 @@ class OptionBacktester:
             logger.error(f"Error adding spread: {str(e)}")
             return False
 
-    @logger.catch
     def _can_add_spread(self, new_spread: OptionStrategy) -> bool:
         if self.capital <= 0:
             logger.warning("Cannot add spread: no capital left.")
@@ -122,6 +119,7 @@ class OptionBacktester:
             logger.info(
                 f"Adjusted spread contracts from {original_contracts} to {new_spread.contracts} to fit position size."
             )
+            pass
 
         conditions = [
             ("No conflict", not self._check_conflict(new_spread)),
@@ -144,7 +142,10 @@ class OptionBacktester:
                 or self.trades_entered_this_week < self.config.max_positions_per_week,
             ),
             ("Within max capital", new_spread.get_required_capital() <= max_capital),
-            ("Sufficient capital", new_spread.get_required_capital() <= self.available_to_trade),
+            (
+                "Sufficient capital",
+                new_spread.get_required_capital() <= self.available_to_trade,
+            ),
         ]
 
         for condition_name, condition_result in conditions:
@@ -152,12 +153,13 @@ class OptionBacktester:
                 logger.info(
                     f"Cannot add spread: {condition_name} condition not met"
                 )
+                pass
             else:
                 logger.debug(f"Spread meets condition: {condition_name}")
+                pass
 
         return all(condition for _, condition in conditions)
 
-    @logger.catch
     def _update_trade_counts(self) -> None:
         self.trades_entered_today = sum(
             1 for trade in self.active_trades if trade.DIT == 0
@@ -166,42 +168,39 @@ class OptionBacktester:
             1 for trade in self.active_trades if trade.DIT < 7
         )
 
-    @logger.catch
     def _check_conflict(self, new_spread: OptionStrategy) -> bool:
         return any(
             existing_spread.conflicts_with(new_spread)
             for existing_spread in self.active_trades
         )
 
-    @logger.catch
     def _check_ror(self, spread: OptionStrategy) -> bool:
         return spread.return_over_risk() >= self.config.ror_threshold
 
-    @logger.catch
     def get_total_pl(self) -> float:
         return sum(
             trade.total_pl() for trade in self.active_trades + self.closed_trades
         )
 
-    @logger.catch
     def get_closed_pl(self) -> float:
         return sum(trade.total_pl() for trade in self.closed_trades)
 
-    @logger.catch
     def get_open_positions(self) -> int:
         return len(self.active_trades)
 
-    @logger.catch
     def get_closed_positions(self) -> int:
         return len(self.closed_trades)
 
-    @logger.catch
     def _record_performance_data(
         self, current_time: datetime, option_chain_df: pd.DataFrame
     ) -> None:
         total_pl = self.get_total_pl()
         closed_pl = self.get_closed_pl()
-        underlying_last = option_chain_df["UNDERLYING_LAST"].iloc[0] if "UNDERLYING_LAST" in option_chain_df.columns else 0
+        underlying_last = (
+            option_chain_df["UNDERLYING_LAST"].iloc[0]
+            if "UNDERLYING_LAST" in option_chain_df.columns
+            else 0
+        )
 
         self.performance_data.append(
             {
@@ -212,7 +211,6 @@ class OptionBacktester:
             }
         )
 
-    @logger.catch
     def plot_performance(self):
         """Generate performance visualizations."""
         if not self.performance_data:
@@ -257,7 +255,6 @@ class OptionBacktester:
         plt.tight_layout()
         plt.show()
 
-    @logger.catch
     def get_closed_trades_df(self):
         """
         Compute a dataframe of closed trades with various attributes.
@@ -306,7 +303,6 @@ class OptionBacktester:
 
         return pd.DataFrame(closed_trades_data)
 
-    @logger.catch
     def calculate_performance_metrics(self):
         """Calculate various performance metrics."""
         if not self.performance_data:
@@ -333,10 +329,14 @@ class OptionBacktester:
             "risk_of_ruin": self.monte_carlo_risk_of_ruin(
                 closed_trades_df["closed_pl"].values,
                 self.config.initial_capital,
-                distribution="histogram"
+                distribution="histogram",
             ),
-            "probability_of_positive_monthly_pl": self._calculate_probability_of_positive_monthly_pl(df),
-            "probability_of_positive_monthly_closed_pl": self._calculate_probability_of_positive_monthly_closed_pl(df),
+            "probability_of_positive_monthly_pl": self._calculate_probability_of_positive_monthly_pl(
+                df
+            ),
+            "probability_of_positive_monthly_closed_pl": self._calculate_probability_of_positive_monthly_closed_pl(
+                df
+            ),
             "max_drawdown_dollars": max_drawdown_dollars,
             "max_drawdown_percentage": max_drawdown_percentage,
             "average_dit": average_dit,
@@ -344,7 +344,6 @@ class OptionBacktester:
 
         return metrics
 
-    @logger.catch
     def _calculate_sharpe_ratio(self, daily_returns):
         """Calculate Sharpe Ratio."""
         risk_free_rate = 0.02  # Assume 2% risk-free rate
@@ -353,14 +352,12 @@ class OptionBacktester:
         )  # Assuming 252 trading days
         return np.sqrt(252) * excess_returns.mean() / excess_returns.std()
 
-    @logger.catch
     def _calculate_profit_factor(self, daily_returns):
         """Calculate Profit Factor."""
         profits = daily_returns[daily_returns > 0].sum()
         losses = abs(daily_returns[daily_returns < 0].sum())
         return profits / losses if losses != 0 else np.inf
 
-    @logger.catch
     def _calculate_cagr(self, df):
         """Calculate Compound Annual Growth Rate."""
         start_value = self.config.initial_capital
@@ -372,45 +369,43 @@ class OptionBacktester:
         except ZeroDivisionError:
             return np.nan
 
-    @logger.catch
     def _calculate_avg_monthly_pl(self, df):
         """Calculate Average Monthly P/L."""
         monthly_pl = df.set_index("time")["total_pl"].resample("M").last().diff()
         return monthly_pl.mean()
 
-    @logger.catch
     def _calculate_probability_of_positive_monthly_pl(self, df):
         """Calculate the probability of having a positive monthly P/L."""
-        monthly_pl = df.set_index("time")["total_pl"].resample("M").last().diff().dropna()
+        monthly_pl = (
+            df.set_index("time")["total_pl"].resample("M").last().diff().dropna()
+        )
         positive_months = monthly_pl[monthly_pl > 0]
         total_months = monthly_pl[monthly_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
-    @logger.catch
     def _calculate_probability_of_positive_monthly_closed_pl(self, df):
         """Calculate the probability of having a positive monthly closed P/L."""
-        monthly_closed_pl = df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
+        monthly_closed_pl = (
+            df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
+        )
         positive_months = monthly_closed_pl[monthly_closed_pl > 0]
         total_months = monthly_closed_pl[monthly_closed_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
-    @logger.catch
     def _calculate_max_drawdown(self, df):
         """Calculate the maximum drawdown percentage and dollars."""
         df["peak"] = df["total_pl"].cummax()
         df["drawdown"] = df["peak"] - df["total_pl"]
         max_drawdown_dollars = df["drawdown"].max()
-        max_drawdown_percentage = (max_drawdown_dollars / self.allocation)
+        max_drawdown_percentage = max_drawdown_dollars / self.allocation
         return max_drawdown_dollars, max_drawdown_percentage
 
-    @logger.catch
     def _calculate_win_rate(self):
         """Calculate Win Rate."""
         total_trades = len(self.closed_trades)
         winning_trades = sum(1 for trade in self.closed_trades if trade.won)
         return winning_trades / total_trades if total_trades > 0 else 0
 
-    @logger.catch
     def monte_carlo_risk_of_ruin(
         self,
         data,
@@ -473,7 +468,6 @@ class OptionBacktester:
 
         return risk_of_ruin
 
-    @logger.catch
     def print_performance_summary(self):
         """Print a summary of performance metrics."""
         metrics = self.calculate_performance_metrics()
@@ -483,12 +477,18 @@ class OptionBacktester:
             print(f"Profit Factor: {metrics['profit_factor']:.2f}")
             print(f"CAGR: {metrics['cagr']:.2%}")
             print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
-            print(f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}")
-            print(f"Probability of Positive Monthly Closed P/L: {metrics['probability_of_positive_monthly_closed_pl']:.2%}")
+            print(
+                f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}"
+            )
+            print(
+                f"Probability of Positive Monthly Closed P/L: {metrics['probability_of_positive_monthly_closed_pl']:.2%}"
+            )
             print(f"Win Rate: {metrics['win_rate']:.2%}")
             print(f"Risk of Ruin: {metrics['risk_of_ruin']:.2%}")
             print(f"Max Drawdown (Dollars): ${metrics['max_drawdown_dollars']:.2f}")
-            print(f"Max Drawdown (Percentage): {metrics['max_drawdown_percentage']:.2%}")
+            print(
+                f"Max Drawdown (Percentage): {metrics['max_drawdown_percentage']:.2%}"
+            )
             print(f"Average Days in Trade: {metrics['average_dit']:.2f}")
         else:
             print("No performance data available for summary.")
