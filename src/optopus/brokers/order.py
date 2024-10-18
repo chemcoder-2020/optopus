@@ -55,8 +55,8 @@ class Order(abc.ABC, OptionStrategy):
 
     def __repr__(self):
         if self.strategy_type == 'Vertical Spread':
-            long_leg = next((leg for leg in self.legs if leg.option_type == 'CALL' or leg.option_type == 'PUT'), None)
-            short_leg = next((leg for leg in self.legs if leg.option_type != long_leg.option_type), None)
+            long_leg = next((leg for leg in self.legs if leg.option_type == 'CALL'), None)
+            short_leg = next((leg for leg in self.legs if leg.option_type == 'PUT'), None)
             return (
                 f"Order(\n"
                 f"  Order ID: {self.order_id},\n"
