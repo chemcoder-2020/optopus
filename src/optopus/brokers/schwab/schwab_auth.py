@@ -4,19 +4,24 @@ from urllib.parse import urlparse, parse_qs
 import json
 import os
 from loguru import logger
-import sys
-
-logger.add(
-    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
-)
 
 
 class SchwabAuth:
-    def __init__(self, client_id=None, client_secret=None, redirect_uri=None, token_file=None):
+    def __init__(
+        self, client_id=None, client_secret=None, redirect_uri=None, token_file=None
+    ):
         self.client_id = client_id if client_id else os.getenv("SCHWAB_CLIENT_ID")
-        self.client_secret = client_secret if client_secret else os.getenv("SCHWAB_CLIENT_SECRET")
-        self.redirect_uri = redirect_uri if redirect_uri else os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1")
-        self.token_file = token_file if token_file else os.getenv("SCHWAB_TOKEN_FILE", "token.json")
+        self.client_secret = (
+            client_secret if client_secret else os.getenv("SCHWAB_CLIENT_SECRET")
+        )
+        self.redirect_uri = (
+            redirect_uri
+            if redirect_uri
+            else os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1")
+        )
+        self.token_file = (
+            token_file if token_file else os.getenv("SCHWAB_TOKEN_FILE", "token.json")
+        )
         self.access_token = None
         self.refresh_token = None
         self.token_data = None

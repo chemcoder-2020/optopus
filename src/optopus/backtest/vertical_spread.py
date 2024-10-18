@@ -1,13 +1,24 @@
 import pandas as pd
 import os
-from src.optopus.trades.option_manager import OptionBacktester, Config
+from src.optopus.trades.option_manager import OptionBacktester
 from src.optopus.trades.option_spread import OptionStrategy
 import numpy as np
 from loguru import logger
 
 
 class Backtest:
-    def __init__(self, config, entry_signal_file, data_folder, start_date, end_date, trading_start_time, trading_end_time, strategy_params, debug=False):
+    def __init__(
+        self,
+        config,
+        entry_signal_file,
+        data_folder,
+        start_date,
+        end_date,
+        trading_start_time,
+        trading_end_time,
+        strategy_params,
+        debug=False,
+    ):
         self.config = config
         self.entry_signal_file = entry_signal_file
         self.data_folder = data_folder
@@ -61,7 +72,9 @@ class Backtest:
 
             if not os.path.exists(file_path):
                 if self.debug:
-                    logger.warning(f"No data available for {time}. Skipping this update.")
+                    logger.warning(
+                        f"No data available for {time}. Skipping this update."
+                    )
                 continue
 
             option_chain_df = pd.read_parquet(file_path)
@@ -112,7 +125,9 @@ class Backtest:
                                 logger.info(f"  Added new spread at {time}")
                     else:
                         if self.debug:
-                            logger.info(f"{time} Spread not added due to NaN required capital.")
+                            logger.info(
+                                f"{time} Spread not added due to NaN required capital."
+                            )
             except Exception as e:
                 if self.debug:
                     logger.error(f"Error adding new spread: {e} at {time}")
@@ -139,56 +154,3 @@ class Backtest:
             self.backtester.plot_performance()
         self.backtester.print_performance_summary()
         return self.backtester
-
-
-if __name__ == "__main__":
-    # Configuration
-    DATA_FOLDER = (
-        "/Users/traderHuy/Downloads/SPY option backtest analysis/OptionDX/SPY/by_day/by_bar"
-    )
-    ENTRY_SIGNAL_FILE = f"~/Downloads/stockdata/SPY-AggEMARSICCI.csv"
-    START_DATE = "2016-01-04"
-    END_DATE = "2024-10-04"
-    TRADING_START_TIME = "09:45"
-    TRADING_END_TIME = "15:45"
-    DEBUG = False
-
-    # Strategy parameters for vertical spreads
-    STRATEGY_PARAMS = {
-        "option_type": "PUT",
-        "dte": 60,
-        "short_delta": "ATM",
-        "long_delta": "-1",
-        "profit_target": 40,
-        "stop_loss": None,
-        "contracts": 1000,
-        "condition": "close > 0",  # and 30 < RSI < 70
-        "commission": 0.5,
-    }
-
-    BACKTESTER_CONFIG = Config(
-        initial_capital=10000,
-        max_positions=10,
-        max_positions_per_day=1,
-        max_positions_per_week=None,
-        position_size=0.1,
-        ror_threshold=0,
-        gain_reinvesting=False,
-        verbose=False,
-    )
-
-    backtest = Backtest(
-        config=BACKTESTER_CONFIG,
-        entry_signal_file=ENTRY_SIGNAL_FILE,
-        data_folder=DATA_FOLDER,
-        start_date=START_DATE,
-        end_date=END_DATE,
-        trading_start_time=TRADING_START_TIME,
-        trading_end_time=TRADING_END_TIME,
-        strategy_params=STRATEGY_PARAMS,
-        debug=DEBUG
-    )
-    bt = backtest.run_backtest()
-    closed_trades_df = bt.get_closed_trades_df()
-    closed_trades_df["contracts"].hist()
-    # closed_trades_df

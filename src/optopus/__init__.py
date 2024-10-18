@@ -1,3 +1,6 @@
+from loguru import logger
+logger.disable("src.optopus")
+
 from .brokers.broker import OptionBroker
 from .brokers.schwab.schwab import Schwab
 from .brokers.schwab.schwab_auth import SchwabAuth

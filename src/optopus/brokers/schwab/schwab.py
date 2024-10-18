@@ -2,13 +2,7 @@ from loguru import logger
 import requests
 import json
 from .schwab_auth import SchwabAuth
-import sys
 import os
-
-
-logger.add(
-    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
-)
 
 
 class Schwab:
@@ -46,7 +40,6 @@ class Schwab:
             logger.exception(f"Refreshing token failed: {e}")
             return False
 
-    @logger.catch
     def _make_request(self, method, url, headers=None, params=None, data=None):
         """
         Make a general HTTP request.

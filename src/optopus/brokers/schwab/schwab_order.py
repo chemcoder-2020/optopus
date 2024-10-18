@@ -1,5 +1,4 @@
 import os
-import sys
 import pandas as pd
 import dotenv
 from loguru import logger
@@ -8,10 +7,6 @@ from .schwab_trade import SchwabTrade
 from .schwab_data import SchwabData
 from ...trades.option_spread import OptionStrategy
 from ..order import Order
-
-logger.add(
-    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
-)
 
 dotenv.load_dotenv()
 
@@ -47,17 +42,8 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self.account_number_hash_value = self.account_numbers[which_account][
             "hashValue"
         ]
-        OptionStrategy.__init__(
-            self,
-            option_strategy.symbol,
-            option_strategy.strategy_type,
-            option_strategy.profit_target,
-            option_strategy.stop_loss,
-            option_strategy.trailing_stop,
-            option_strategy.contracts,
-            option_strategy.commission,
-        )
-        Order.__init__(self)
+
+        Order.__init__(self, option_strategy)
 
         self.order_status = None
         self.order_id = None
@@ -290,14 +276,3 @@ if __name__ == "__main__":
     print(f"Time: {schwab_order.current_time}")
     print(f"DIT: {schwab_order.DIT}")
     print(f"Net Premium: {schwab_order.net_premium}")
-
-    # Example of placing the order (Note: This won't actually execute without valid credentials)
-
-    # schwab_order.submit_entry()
-    # schwab_order.submit_exit()
-
-    # Example of updating the order
-    # update_df = pd.read_parquet("path/to/your/updated_option_chain_data.parquet")
-    # schwab_order.update_order(update_df)
-    # print(f"Updated Order Status: {schwab_order.order_status}")
-    # print(f"Current Net Premium: {schwab_order.net_premium:.2f}")

@@ -5,11 +5,6 @@ from typing import Union
 from loguru import logger
 import dotenv
 from .schwab import Schwab
-import sys
-
-logger.add(
-    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
-)
 
 
 dotenv.load_dotenv()

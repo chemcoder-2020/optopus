@@ -1,11 +1,6 @@
 from ..brokers.order import Order
 from loguru import logger
 import os
-import sys
-
-logger.add(
-    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
-)
 
 
 class OptionBroker:
@@ -84,21 +79,20 @@ class OptionBroker:
                     "Authentication object is required to access Schwab Trade API"
                 )
 
-    def create_order(self) -> Order:
+    def create_order(self, option_strategy) -> Order:
         broker = self.config.get("broker", "Schwab")
         api_key = self.config.get("api_key")
-        masked_api_key = "*" * (len(api_key) - 4) + api_key[-4:]
         client_secret = self.config.get("client_secret", None)
         redirect_uri = self.config.get("redirect_uri", None)
         token_file = self.config.get("token_file", "token.json")
         account_number = self.config.get("account_number", 0)
 
-        logger.debug(f"Connecting to {broker} broker with API key {masked_api_key}...")
+        logger.debug(f"Connecting to {broker} broker...")
         if broker.lower() == "schwab":
             from ..brokers.schwab.schwab_order import SchwabOptionOrder
 
             return SchwabOptionOrder(
-                option_strategy=self.config.get("option_strategy"),
+                option_strategy=option_strategy,
                 client_id=api_key if api_key else os.getenv("SCHWAB_CLIENT_ID"),
                 client_secret=(
                     client_secret

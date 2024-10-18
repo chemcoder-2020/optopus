@@ -9,16 +9,10 @@ from typing import List
 import pickle
 import os
 from loguru import logger
-import sys
-
-logger.add(
-    sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO"
-)
 
 
 class TradingManager(OptionBacktester):
 
-    @logger.catch
     def __init__(self, config: Config):
         super().__init__(config)
         self.active_orders: List[Order] = []
@@ -26,8 +20,9 @@ class TradingManager(OptionBacktester):
         self.option_broker = OptionBroker(config)
         self.__dict__.update(config.__dict__)
 
-    @logger.catch
     def add_order(self, order: Order) -> bool:
+        """Add an order to the list of active orders."""
+        market_isopen = order.market_isOpen()
         if order.market_isOpen():
             if self.add_spread(order):
                 order.submit_entry()
@@ -35,7 +30,6 @@ class TradingManager(OptionBacktester):
                 return True
         return False
 
-    @logger.catch
     def update_orders(self, current_time, option_chain_df=None):
         """Update the status of all orders."""
 
@@ -62,21 +56,17 @@ class TradingManager(OptionBacktester):
 
                 self.update(current_time, option_chain_df)  # update the strategy part
 
-    @logger.catch
     def get_active_orders(self) -> List[Order]:
         return self.active_orders
 
-    @logger.catch
     def get_closed_orders(self) -> List[Order]:
         return self.closed_orders
 
-    @logger.catch
     def freeze(self, file_path: str) -> None:
         """Save the TradingManager instance to a pickle file."""
         with open(file_path, "wb") as file:
             pickle.dump(self, file)
 
-    @logger.catch
     def get_orders_dataframe(self) -> pd.DataFrame:
         """Returns a DataFrame containing important information about the active orders."""
         columns = [
@@ -127,7 +117,6 @@ class TradingManager(OptionBacktester):
 
         return pd.DataFrame(data, columns=columns)
 
-    @logger.catch
     def get_active_orders_dataframe(self) -> pd.DataFrame:
         """Returns a DataFrame containing important information about the active orders."""
         columns = [
@@ -180,7 +169,6 @@ class TradingManager(OptionBacktester):
 
         return pd.DataFrame(data, columns=columns)
 
-    @logger.catch
     def auth_refresh(self):
         """Refresh the authentication for all active and closed orders."""
         # TODO: Add abstract class for auth. Make sure authentication and refreshing works
@@ -197,5 +185,5 @@ class TradingManager(OptionBacktester):
         for order in self.closed_orders:
             order.auth = self.option_broker.auth
 
-        self.data.auth = self.option_broker.auth
-        self.trading.auth = self.option_broker.auth
+        self.option_broker.data.auth = self.option_broker.auth
+        self.option_broker.trading.auth = self.option_broker.auth
