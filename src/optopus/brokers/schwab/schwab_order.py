@@ -213,6 +213,28 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         else:
             logger.warning("No order ID available to modify.")
 
+    def close_order(self):
+        # Fetch the option chain data
+        symbols = [leg.schwab_symbol for leg in self.legs]
+        option_chain_df = self.get_quote(f"{','.join(symbols)}")
+
+        # Close the strategy
+        self.close_strategy(self.current_time, option_chain_df)
+
+        # Generate the exit payload
+        payload = self.generate_exit_payload()
+
+        # Place the exit order
+        result = super().place_order(self.account_number_hash_value, payload)
+        if result:
+            self.exit_order_id = result[0]
+            assert (
+                self.exit_order_id != "" and self.exit_order_id is not None
+            ), "Order ID is empty when placing exit order."
+            self.update_order_status()
+        else:
+            logger.warning("Failed to place exit order.")
+
     def __repr__(self):
         return (
             f"SchwabOptionOrder(\n"
