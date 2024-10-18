@@ -189,3 +189,22 @@ class TradingManager(OptionBacktester):
 
         self.option_broker.data.auth = self.option_broker.auth
         self.option_broker.trading.auth = self.option_broker.auth
+
+    def close_order(self, order_id: str) -> bool:
+        """Close an order by its ID."""
+        order_to_close = None
+        for order in self.active_orders:
+            if order.order_id == order_id:
+                order_to_close = order
+                break
+
+        if order_to_close:
+            order_to_close.close_order()
+            self.closed_orders.append(order_to_close)
+            self.active_orders = [
+                order for order in self.active_orders if order.order_id != order_id
+            ]
+            return True
+        else:
+            logger.warning(f"Order with ID {order_id} not found.")
+            return False
