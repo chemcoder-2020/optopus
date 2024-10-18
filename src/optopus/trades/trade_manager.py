@@ -194,7 +194,7 @@ class TradingManager(OptionBacktester):
         """Close an order by its ID."""
         order_to_close = None
         for order in self.active_orders:
-            if order.order_id == order_id:
+            if order.order_id.split("/")[-1] == order_id:
                 order_to_close = order
                 break
 
