@@ -54,9 +54,24 @@ class Order(abc.ABC, OptionStrategy):
         pass
 
     def __repr__(self):
-        return (
-            f"Order(\n"
-            f"  Order ID: {self.order_id},\n"
-            f"  Order Status: {self.order_status}\n"
-            f")"
-        )
+        if self.strategy_type == 'Vertical Spread':
+            long_leg = next((leg for leg in self.legs if leg.option_type == 'CALL' or leg.option_type == 'PUT'), None)
+            short_leg = next((leg for leg in self.legs if leg.option_type != long_leg.option_type), None)
+            return (
+                f"Order(\n"
+                f"  Order ID: {self.order_id},\n"
+                f"  Order Status: {self.order_status},\n"
+                f"  Strategy Type: {self.strategy_type},\n"
+                f"  Long Strike: {long_leg.strike if long_leg else 'N/A'},\n"
+                f"  Short Strike: {short_leg.strike if short_leg else 'N/A'},\n"
+                f"  Expiration: {long_leg.expiration if long_leg else 'N/A'},\n"
+                f"  Option Type: {long_leg.option_type if long_leg else 'N/A'}\n"
+                f")"
+            )
+        else:
+            return (
+                f"Order(\n"
+                f"  Order ID: {self.order_id},\n"
+                f"  Order Status: {self.order_status}\n"
+                f")"
+            )
