@@ -82,15 +82,15 @@ class Backtest:
                     continue
 
             try:
-                sps_entry_signal = inp.loc[time, "isSPSEntry"]
+                entry_signal = inp.loc[time, "isEntry"]
             except Exception as e:
                 if self.debug:
                     logger.error(f"Error getting entry signal: {e} at {time}")
                 continue
 
-            # Create SPS spread
+            # Create spread
             try:
-                if sps_entry_signal:
+                if entry_signal:
                     new_spread = OptionStrategy.create_vertical_spread(
                         symbol=self.symbol,
                         option_type=self.strategy_params["option_type"],
