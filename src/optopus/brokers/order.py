@@ -48,6 +48,10 @@ class Order(abc.ABC, OptionStrategy):
     @abc.abstractmethod
     def modify(self, new_payload):
         pass
+
+    @abc.abstractmethod
+    def close_order(self):
+        pass
     
     @abc.abstractmethod
     def market_isOpen(self):
