@@ -208,3 +208,8 @@ class TradingManager(OptionBacktester):
         else:
             logger.warning(f"Order with ID {order_id} not found.")
             return False
+
+    def liquidate_all(self) -> None:
+        """Close all active orders."""
+        for order in self.active_orders[:]:  # Iterate over a copy to avoid modifying the list while iterating
+            self.close_order(order.order_id.split("/")[-1])
