@@ -1,7 +1,12 @@
 import os
+import sys
 import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
+
+# Add the src directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 from src.optopus.brokers.schwab.schwab_order import SchwabOptionOrder
 from src.optopus.trades.option_spread import OptionStrategy, OptionLeg
 
