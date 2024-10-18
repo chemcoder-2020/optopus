@@ -94,7 +94,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         return payload
 
     def submit_entry(self):
-        self.update_order()  # update fresh quotes
+        # self.update_order()  # update fresh quotes
         payload = self.generate_entry_payload()
         result = super().place_order(self.account_number_hash_value, payload)
         if result:
@@ -144,7 +144,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         return payload
 
     def submit_exit(self):
-        self.update_order()  # update fresh quotes
+        # self.update_order()  # update fresh quotes
         payload = self.generate_exit_payload()
         result = super().place_order(self.account_number_hash_value, payload)
         if result:

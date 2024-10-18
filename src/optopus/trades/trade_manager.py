@@ -202,7 +202,7 @@ class TradingManager(OptionBacktester):
             order_to_close.close_order()
             self.closed_orders.append(order_to_close)
             self.active_orders = [
-                order for order in self.active_orders if order.order_id != order_id
+                order for order in self.active_orders if order.status != "CLOSED"
             ]
             return True
         else:
