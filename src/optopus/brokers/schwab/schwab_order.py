@@ -47,6 +47,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
         self.order_status = None
         self.order_id = None
+        self.exit_order_id = None
 
         self._broker = "Schwab"
 
@@ -100,7 +101,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             self.order_id = result[0]
             assert (
                 self.order_id != "" and self.order_id is not None
-            ), "Order ID is empty when placing order."
+            ), "Order ID is empty when placing entry order."
             self.update_order_status()
         return result
 
@@ -147,10 +148,10 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         payload = self.generate_exit_payload()
         result = super().place_order(self.account_number_hash_value, payload)
         if result:
-            self.order_id = result[0]
+            self.exit_order_id = result[0]
             assert (
-                self.order_id != "" and self.order_id is not None
-            ), "Order ID is empty when placing order."
+                self.exit_order_id != "" and self.exit_order_id is not None
+            ), "Order ID is empty when placing exit order."
             self.update_order_status()
         return result
 
