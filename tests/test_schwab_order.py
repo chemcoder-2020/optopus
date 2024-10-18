@@ -118,3 +118,69 @@ class TestSchwabOptionOrder(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+import os
+import pandas as pd
+import pytest
+from src.optopus.brokers.schwab.schwab_order import SchwabOptionOrder
+from src.optopus.trades.option_spread import OptionStrategy
+
+# Load sample option chain data
+entry_df = pd.read_parquet(
+    "/Users/traderHuy/Downloads/SPY option backtest analysis/Tradier Option Data/schwab_chains/SPY/2024/SPY_2024-09-26 15-15.parquet"
+)
+
+# Create a vertical spread strategy
+vertical_spread = OptionStrategy.create_vertical_spread(
+    symbol="SPY",
+    option_type="PUT",
+    long_strike="-2",
+    short_strike="ATM",
+    expiration="2024-11-15",
+    contracts=1,
+    entry_time="2024-09-26 15:15:00",
+    option_chain_df=entry_df,
+)
+
+# Create a SchwabOptionOrder instance
+schwab_order = SchwabOptionOrder(
+    client_id=os.getenv("SCHWAB_CLIENT_ID"),
+    client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+    option_strategy=vertical_spread,
+    token_file="token.json",
+)
+
+def test_schwab_order_details():
+    assert schwab_order.symbol == "SPY"
+    assert schwab_order.strategy_type == "Vertical Spread"
+    assert schwab_order.legs[0].expiration == pd.to_datetime("2024-11-15")
+    assert schwab_order.legs[0].strike == -2
+    assert schwab_order.legs[1].strike == 400  # Assuming ATM strike is 400 for SPY
+    assert schwab_order.contracts == 1
+    assert schwab_order.entry_net_premium is not None
+    assert schwab_order.order_status is None
+    assert schwab_order.current_time is not None
+    assert schwab_order.DIT is not None
+    assert schwab_order.net_premium is not None
+
+def test_schwab_order_update():
+    schwab_order.update_order()
+    assert schwab_order.current_time is not None
+    assert schwab_order.entry_net_premium is not None
+    assert schwab_order.order_status is not None
+    assert schwab_order.DIT is not None
+    assert schwab_order.net_premium is not None
+
+def test_schwab_order_submit_entry():
+    result = schwab_order.submit_entry()
+    assert result is not None
+    assert schwab_order.order_id is not None
+    assert schwab_order.order_status == "FILLED"
+
+def test_schwab_order_submit_exit():
+    result = schwab_order.submit_exit()
+    assert result is not None
+    assert schwab_order.order_id is not None
+    assert schwab_order.order_status == "FILLED"
+
+if __name__ == "__main__":
+    pytest.main(["-v", "test_schwab_order.py"])
