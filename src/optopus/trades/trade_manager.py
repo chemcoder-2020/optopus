@@ -23,7 +23,7 @@ class TradingManager(OptionBacktester):
     def add_order(self, order: Order) -> bool:
         """Add an order to the list of active orders."""
         market_isopen = order.market_isOpen()
-        if order.market_isOpen():
+        if market_isopen:
             if self.add_spread(order):
                 order.submit_entry()
                 self.active_orders.append(order)
@@ -85,6 +85,7 @@ class TradingManager(OptionBacktester):
             "Ask",
             "Price",
             "Total P/L",
+            "Return (%)",
             "Total Commission",
             "DIT",
         ]
@@ -110,6 +111,7 @@ class TradingManager(OptionBacktester):
                     order.current_ask,
                     order.net_premium,
                     order.total_pl(),
+                    order.return_percentage(),
                     order.calculate_total_commission(),
                     order.DIT,
                 ]
