@@ -44,8 +44,9 @@ class Backtest:
         entry_data = self.entry_signal_file
         inp = pd.read_csv(entry_data)
         inp["date"] = pd.DatetimeIndex(inp["date"])
-        inp["isSPSEntry"] = False
+        inp["isEntry"] = False
         inp.loc[inp.query(self.strategy_params["condition"]).index, "isEntry"] = True
+        inp["isEntry"] = inp["isEntry"].astype(bool)
         inp.set_index("date", inplace=True)
         inp = inp[["isEntry"]]
 
