@@ -13,7 +13,7 @@ from loguru import logger
 
 
 class Backtest:
-    def __init__(self, config, entry_signal_file, data_folder, start_date, end_date, trading_start_time, trading_end_time, debug=False):
+    def __init__(self, config, entry_signal_file, data_folder, start_date, end_date, trading_start_time, trading_end_time, strategy_params, debug=False):
         self.config = config
         self.entry_signal_file = entry_signal_file
         self.data_folder = data_folder
@@ -24,17 +24,7 @@ class Backtest:
         self.debug = debug
         self.backtester = OptionBacktester(self.config)
         self.symbol = "SPY"
-        self.put_spread_strategy_params = {
-            "option_type": "PUT",
-            "dte": 60,
-            "short_delta": "ATM",
-            "long_delta": "-1",
-            "profit_target": 40,
-            "stop_loss": None,
-            "contracts": 1000,
-            "condition": "close > 0",  # and 30 < RSI < 70
-            "commission": 0.5,
-        }
+        self.strategy_params = strategy_params
 
     def run_backtest(self, skip_fridays=False, plot_performance=True):
         # Generate time range for trading hours
@@ -55,9 +45,9 @@ class Backtest:
         inp = pd.read_csv(entry_data)
         inp["date"] = pd.DatetimeIndex(inp["date"])
         inp["isSPSEntry"] = False
-        inp.loc[inp.query(self.put_spread_strategy_params["condition"]).index, "isSPSEntry"] = True
+        inp.loc[inp.query(self.strategy_params["condition"]).index, "isEntry"] = True
         inp.set_index("date", inplace=True)
-        inp = inp[["isSPSEntry"]]
+        inp = inp[["isEntry"]]
 
         prev_active_positions = None
         prev_capital = None
@@ -103,16 +93,16 @@ class Backtest:
                 if sps_entry_signal:
                     new_spread = OptionStrategy.create_vertical_spread(
                         symbol=self.symbol,
-                        option_type=self.put_spread_strategy_params["option_type"],
-                        long_strike=self.put_spread_strategy_params["long_delta"],
-                        short_strike=self.put_spread_strategy_params["short_delta"],
-                        expiration=self.put_spread_strategy_params["dte"],
-                        contracts=self.put_spread_strategy_params["contracts"],
+                        option_type=self.strategy_params["option_type"],
+                        long_strike=self.strategy_params["long_delta"],
+                        short_strike=self.strategy_params["short_delta"],
+                        expiration=self.strategy_params["dte"],
+                        contracts=self.strategy_params["contracts"],
                         entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
                         option_chain_df=option_chain_df,
-                        profit_target=self.put_spread_strategy_params["profit_target"],
-                        stop_loss=self.put_spread_strategy_params["stop_loss"],
-                        commission=self.put_spread_strategy_params["commission"],
+                        profit_target=self.strategy_params["profit_target"],
+                        stop_loss=self.strategy_params["stop_loss"],
+                        commission=self.strategy_params["commission"],
                     )
             except Exception as e:
                 if self.debug:
@@ -169,6 +159,18 @@ if __name__ == "__main__":
     DEBUG = False
 
     # Strategy parameters for vertical spreads
+    STRATEGY_PARAMS = {
+        "option_type": "PUT",
+        "dte": 60,
+        "short_delta": "ATM",
+        "long_delta": "-1",
+        "profit_target": 40,
+        "stop_loss": None,
+        "contracts": 1000,
+        "condition": "close > 0",  # and 30 < RSI < 70
+        "commission": 0.5,
+    }
+
     BACKTESTER_CONFIG = Config(
         initial_capital=10000,
         max_positions=10,
@@ -188,6 +190,7 @@ if __name__ == "__main__":
         end_date=END_DATE,
         trading_start_time=TRADING_START_TIME,
         trading_end_time=TRADING_END_TIME,
+        strategy_params=STRATEGY_PARAMS,
         debug=DEBUG
     )
     bt = backtest.run_backtest()
