@@ -1,0 +1,66 @@
+Metadata-Version: 2.1
+Name: optopus
+Version: 0.1.1
+Summary: A Python project for options trading and backtesting.
+Home-page: https://github.com/yourusername/optopus
+Author: Huy Nguyen
+Author-email: Huy Nguyen <huynguyen2406@gmail.com>
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: joblib
+Requires-Dist: loguru
+Requires-Dist: matplotlib
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: python-dotenv
+Requires-Dist: requests
+Requires-Dist: scikit-learn
+Requires-Dist: scipy
+Requires-Dist: setuptools
+Requires-Dist: tqdm
+
+# My Python Project
+
+A brief description of your project.
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/my_python_project.git
+   cd my_python_project
+   ```
+
+2. Create a virtual environment:
+   ```bash
+   python3 -m venv venv
+   ```
+
+3. Activate the virtual environment:
+   ```bash
+   source venv/bin/activate
+   ```
+
+4. Install the project in editable mode:
+   ```bash
+   pip install -e .
+   ```
+
+## Usage
+
+Run the project:
+```bash
+my_python_project
+```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

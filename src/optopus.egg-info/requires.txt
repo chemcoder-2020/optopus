@@ -1,0 +1,11 @@
+joblib
+loguru
+matplotlib
+numpy
+pandas
+python-dotenv
+requests
+scikit-learn
+scipy
+setuptools
+tqdm
