@@ -1,5 +1,5 @@
 from loguru import logger
-logger.disable("src.optopus")
+logger.disable("optopus")
 
 from .brokers.broker import OptionBroker
 from .brokers.schwab.schwab import Schwab
