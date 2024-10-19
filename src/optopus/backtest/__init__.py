@@ -1,3 +1,3 @@
-from .backtest_sps_nDTE import Backtest
+from .vertical_spread import Backtest
 
 __all__ = ["Backtest"]

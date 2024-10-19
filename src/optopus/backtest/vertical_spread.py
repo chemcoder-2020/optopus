@@ -1,7 +1,7 @@
 import pandas as pd
 import os
-from src.optopus.trades.option_manager import OptionBacktester
-from src.optopus.trades.option_spread import OptionStrategy
+from ..trades.option_manager import OptionBacktester
+from ..trades.option_spread import OptionStrategy
 import numpy as np
 from loguru import logger
 
