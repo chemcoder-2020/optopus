@@ -193,16 +193,14 @@ class TradingManager(OptionBacktester):
     def cancel_order(self, order_id: str) -> bool:
         """Cancel an order by its ID."""
         order_to_cancel = None
-        for order in self.active_orders:
+        for i, order in enumerate(self.active_orders):
             if order.order_id.split("/")[-1] == order_id:
                 order_to_cancel = order
                 break
 
         if order_to_cancel:
             order_to_cancel.cancel()
-            self.active_orders = [
-                order for order in self.active_orders if order.status != "CANCELED"
-            ]
+            self.active_orders.pop(i)
             return True
         else:
             logger.warning(f"Order with ID {order_id} not found.")
