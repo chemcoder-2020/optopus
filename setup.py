@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='optopus',
-    version='0.2.0',
+    version='0.2.1',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     author='Huy Nguyen',
@@ -28,6 +28,7 @@ setup(
         "scikit-learn>=1.0.0",
         "scipy>=1.7.0",
         "setuptools>=58.0.0",
-        "tqdm>=4.62.0"
+        "tqdm>=4.62.0",
+        "dill>=0.3.4"
     ],
 )
