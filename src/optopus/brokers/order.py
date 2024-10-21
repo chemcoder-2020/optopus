@@ -62,13 +62,9 @@ class Order(abc.ABC, OptionStrategy):
             long_leg = next((leg for leg in self.legs if leg.position_side == 'BUY'), None)
             short_leg = next((leg for leg in self.legs if leg.position_side == 'SELL'), None)
             return (
-                f"Order ID: {self.order_id}, "
-                f"Status: {self.order_status}, "
-                f"Type: {self.strategy_type}, "
-                f"Long Strike: {long_leg.strike if long_leg else 'N/A'}, "
-                f"Short Strike: {short_leg.strike if short_leg else 'N/A'}, "
+                f"{long_leg.strike if long_leg else 'N/A'}{long_leg.option_type[0]}+ | "
+                f"{short_leg.strike if short_leg else 'N/A'}{short_leg.option_type[0]}- | "
                 f"Expiration: {long_leg.expiration if long_leg else 'N/A'}, "
-                f"Option Type: {long_leg.option_type[0] if long_leg else 'N/A'}"
             )
         elif self.strategy_type == 'Iron Condor':
             put_long_leg = next((leg for leg in self.legs if leg.option_type == 'PUT' and leg.position_side == 'BUY'), None)
@@ -76,24 +72,18 @@ class Order(abc.ABC, OptionStrategy):
             call_long_leg = next((leg for leg in self.legs if leg.option_type == 'CALL' and leg.position_side == 'BUY'), None)
             call_short_leg = next((leg for leg in self.legs if leg.option_type == 'CALL' and leg.position_side == 'SELL'), None)
             return (
-                f"Order ID: {self.order_id}, "
-                f"Status: {self.order_status}, "
-                f"Type: {self.strategy_type}, "
-                f"Put Long Strike: {put_long_leg.strike if put_long_leg else 'N/A'}, "
-                f"Put Short Strike: {put_short_leg.strike if put_short_leg else 'N/A'}, "
-                f"Call Long Strike: {call_long_leg.strike if call_long_leg else 'N/A'}, "
-                f"Call Short Strike: {call_short_leg.strike if call_short_leg else 'N/A'}, "
+                f"{put_long_leg.strike if put_long_leg else 'N/A'}P+ | "
+                f"{put_short_leg.strike if put_short_leg else 'N/A'}P- | "
+                f"{call_long_leg.strike if call_long_leg else 'N/A'}C+ | "
+                f"{call_short_leg.strike if call_short_leg else 'N/A'}C- | "
                 f"Expiration: {put_long_leg.expiration if put_long_leg else 'N/A'}"
             )
         elif self.strategy_type == 'Straddle':
             call_leg = next((leg for leg in self.legs if leg.option_type == 'CALL'), None)
             put_leg = next((leg for leg in self.legs if leg.option_type == 'PUT'), None)
             return (
-                f"Order ID: {self.order_id}, "
-                f"Status: {self.order_status}, "
-                f"Type: {self.strategy_type}, "
-                f"Call Strike: {call_leg.strike if call_leg else 'N/A'}, "
-                f"Put Strike: {put_leg.strike if put_leg else 'N/A'}, "
+                f"{call_leg.strike if call_leg else 'N/A'}C | "
+                f"{put_leg.strike if put_leg else 'N/A'}P | "
                 f"Expiration: {call_leg.expiration if call_leg else 'N/A'}"
             )
         elif self.strategy_type == 'Butterfly':
@@ -101,9 +91,6 @@ class Order(abc.ABC, OptionStrategy):
             middle_leg = next((leg for leg in self.legs if leg.position_side == 'SELL' and leg.strike == sorted(leg.strike for leg in self.legs)[1]), None)
             upper_leg = next((leg for leg in self.legs if leg.position_side == 'BUY' and leg.strike == max(leg.strike for leg in self.legs)), None)
             return (
-                f"Order ID: {self.order_id}, "
-                f"Status: {self.order_status}, "
-                f"Type: {self.strategy_type}, "
                 f"Lower Strike: {lower_leg.strike if lower_leg else 'N/A'}, "
                 f"Middle Strike: {middle_leg.strike if middle_leg else 'N/A'}, "
                 f"Upper Strike: {upper_leg.strike if upper_leg else 'N/A'}, "
@@ -112,9 +99,6 @@ class Order(abc.ABC, OptionStrategy):
         elif self.strategy_type in ['Naked Call', 'Naked Put']:
             leg = self.legs[0]
             return (
-                f"Order ID: {self.order_id}, "
-                f"Status: {self.order_status}, "
-                f"Type: {self.strategy_type}, "
                 f"Strike: {leg.strike}, "
                 f"Expiration: {leg.expiration}, "
                 f"Option Type: {leg.option_type[0]}"
