@@ -64,7 +64,7 @@ class Order(abc.ABC, OptionStrategy):
             return (
                 f"{long_leg.strike if long_leg else 'N/A'}{long_leg.option_type[0]}+ | "
                 f"{short_leg.strike if short_leg else 'N/A'}{short_leg.option_type[0]}- | "
-                f"Expiration: {long_leg.expiration if long_leg else 'N/A'}, "
+                f"Expiration: {long_leg.expiration.strftime('%Y-%m-%d') if long_leg else 'N/A'}, "
             )
         elif self.strategy_type == 'Iron Condor':
             put_long_leg = next((leg for leg in self.legs if leg.option_type == 'PUT' and leg.position_side == 'BUY'), None)
@@ -76,7 +76,7 @@ class Order(abc.ABC, OptionStrategy):
                 f"{put_short_leg.strike if put_short_leg else 'N/A'}P- | "
                 f"{call_long_leg.strike if call_long_leg else 'N/A'}C+ | "
                 f"{call_short_leg.strike if call_short_leg else 'N/A'}C- | "
-                f"Expiration: {put_long_leg.expiration if put_long_leg else 'N/A'}"
+                f"Expiration: {put_long_leg.expiration.strftime('%Y-%m-%d') if put_long_leg else 'N/A'}"
             )
         elif self.strategy_type == 'Straddle':
             call_leg = next((leg for leg in self.legs if leg.option_type == 'CALL'), None)
@@ -84,7 +84,7 @@ class Order(abc.ABC, OptionStrategy):
             return (
                 f"{call_leg.strike if call_leg else 'N/A'}C | "
                 f"{put_leg.strike if put_leg else 'N/A'}P | "
-                f"Expiration: {call_leg.expiration if call_leg else 'N/A'}"
+                f"Expiration: {call_leg.expiration.strftime('%Y-%m-%d') if call_leg else 'N/A'}"
             )
         elif self.strategy_type == 'Butterfly':
             lower_leg = next((leg for leg in self.legs if leg.position_side == 'BUY' and leg.strike == min(leg.strike for leg in self.legs)), None)
@@ -94,13 +94,13 @@ class Order(abc.ABC, OptionStrategy):
                 f"Lower Strike: {lower_leg.strike if lower_leg else 'N/A'}, "
                 f"Middle Strike: {middle_leg.strike if middle_leg else 'N/A'}, "
                 f"Upper Strike: {upper_leg.strike if upper_leg else 'N/A'}, "
-                f"Expiration: {lower_leg.expiration if lower_leg else 'N/A'}"
+                f"Expiration: {lower_leg.expiration.strftime('%Y-%m-%d') if lower_leg else 'N/A'}"
             )
         elif self.strategy_type in ['Naked Call', 'Naked Put']:
             leg = self.legs[0]
             return (
                 f"Strike: {leg.strike}, "
-                f"Expiration: {leg.expiration}, "
+                f"Expiration: {leg.expiration.strftime('%Y-%m-%d')}, "
                 f"Option Type: {leg.option_type[0]}"
             )
         else:
