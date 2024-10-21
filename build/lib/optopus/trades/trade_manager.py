@@ -6,8 +6,7 @@ from ..brokers.schwab.schwab_data import SchwabData
 from ..brokers.broker import OptionBroker
 from ..brokers.order import Order
 from typing import List
-import pickle
-import os
+import dill
 from loguru import logger
 
 
@@ -63,9 +62,9 @@ class TradingManager(OptionBacktester):
         return self.closed_orders
 
     def freeze(self, file_path: str) -> None:
-        """Save the TradingManager instance to a pickle file."""
+        """Save the TradingManager instance to a dill file."""
         with open(file_path, "wb") as file:
-            pickle.dump(self, file)
+            dill.dump(self, file)
 
     def get_orders_dataframe(self) -> pd.DataFrame:
         """Returns a DataFrame containing important information about the active orders."""
@@ -73,6 +72,7 @@ class TradingManager(OptionBacktester):
             "Order ID",
             "Symbol",
             "Strategy Type",
+            "Description",
             "Contracts",
             "Entry Time",
             "Entry Price",
@@ -99,6 +99,7 @@ class TradingManager(OptionBacktester):
                     ],  # Using id to uniquely identify the order
                     order.symbol,
                     order.strategy_type,
+                    order.__repr__(),
                     order.contracts,
                     order.entry_time,
                     order.entry_net_premium,
@@ -125,6 +126,7 @@ class TradingManager(OptionBacktester):
             "Order ID",
             "Symbol",
             "Strategy Type",
+            "Description",
             "Contracts",
             "Entry Time",
             "Entry Price",
@@ -151,6 +153,7 @@ class TradingManager(OptionBacktester):
                     ],  # Using id to uniquely identify the order
                     order.symbol,
                     order.strategy_type,
+                    order.__repr__(),
                     order.contracts,
                     order.entry_time,
                     order.entry_net_premium,
