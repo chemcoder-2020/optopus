@@ -99,7 +99,7 @@ class TradingManager(OptionBacktester):
                     ],  # Using id to uniquely identify the order
                     order.symbol,
                     order.strategy_type,
-                    order.__repr__(),
+                    order.short_description(),
                     order.contracts,
                     order.entry_time,
                     order.entry_net_premium,
@@ -153,7 +153,7 @@ class TradingManager(OptionBacktester):
                     ],  # Using id to uniquely identify the order
                     order.symbol,
                     order.strategy_type,
-                    order.__repr__(),
+                    order.short_description(),
                     order.contracts,
                     order.entry_time,
                     order.entry_net_premium,
