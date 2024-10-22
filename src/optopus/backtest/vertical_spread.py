@@ -165,3 +165,35 @@ class Backtest:
             self.backtester.plot_performance()
         self.backtester.print_performance_summary()
         return self.backtester
+
+    def create_time_ranges(
+        self, start_date: str, end_date: str, n_splits: int, years_per_split: float
+    ) -> List[Tuple[str, str]]:
+        """Create time ranges for cross-validation."""
+        full_range = pd.date_range(start=start_date, end=end_date, freq="15min")
+
+        full_range = pd.Series(full_range).loc[
+            full_range.indexer_between_time("09:45", "15:45")
+        ]
+        full_range = full_range[full_range.dt.weekday < 5]
+        full_range = full_range.sort_values(ascending=True)
+        full_range = full_range.reset_index(drop=True)
+
+        total_days = len(full_range)
+        split_size = int(years_per_split * 252 * 26)
+
+        ts_folds = []
+        for i in range(n_splits):
+            start_idx = int(i * (total_days - split_size) / (n_splits - 1))
+            end_idx = start_idx + split_size
+            if end_idx > total_days:
+                end_idx = total_days
+            fold = full_range.iloc[start_idx:end_idx]
+            ts_folds.append(
+                (
+                    fold.iloc[0].strftime("%Y-%m-%d %H:%M:%S"),
+                    fold.iloc[-1].strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            )
+
+        return ts_folds
