@@ -56,23 +56,23 @@ class Backtest:
             end_date = end_date.strftime("%Y-%m-%d")
         # Generate time range for trading hours
         time_range = pd.date_range(
-            start=f"{start_date} {self.trading_start_time}",
-            end=f"{end_date} {self.trading_end_time}",
+            start=f"{start_date} {cls.trading_start_time}",
+            end=f"{end_date} {cls.trading_end_time}",
             freq="15min",
         )
 
         # Filter time range to only include trading hours
         trading_times = time_range.indexer_between_time(
-            self.trading_start_time, self.trading_end_time
+            cls.trading_start_time, cls.trading_end_time
         )
         time_range = time_range[trading_times]
 
         # Load entry signals
-        entry_data = self.entry_signal_file
+        entry_data = cls.entry_signal_file
         inp = pd.read_csv(entry_data)
         inp["date"] = pd.DatetimeIndex(inp["date"])
         inp["isEntry"] = False
-        inp.loc[inp.query(self.strategy_params["condition"]).index, "isEntry"] = True
+        inp.loc[inp.query(cls.strategy_params["condition"]).index, "isEntry"] = True
         inp["isEntry"] = inp["isEntry"].astype(bool)
         inp.set_index("date", inplace=True)
         inp = inp[["isEntry"]]
@@ -103,7 +103,7 @@ class Backtest:
             if not option_chain_df.empty:
                 backtester.update(time, option_chain_df)
             else:
-                if self.debug:
+                if cls.debug:
                     logger.warning(f"Data is empty for {time}. Skipping this update.")
                 continue
 
@@ -114,7 +114,7 @@ class Backtest:
             try:
                 entry_signal = inp.loc[time, "isEntry"]
             except Exception as e:
-                if self.debug:
+                if cls.debug:
                     logger.error(f"Error getting entry signal: {e} at {time}")
                 continue
 
@@ -135,7 +135,7 @@ class Backtest:
                         commission=cls.strategy_params["commission"],
                     )
             except Exception as e:
-                if self.debug:
+                if cls.debug:
                     logger.error(f"Error creating new spread: {e} at {time}")
                 continue
 
@@ -143,15 +143,15 @@ class Backtest:
                 if new_spread is not None:
                     if not np.isnan(new_spread.get_required_capital()):
                         if backtester.add_spread(new_spread):
-                            if self.debug:
+                            if cls.debug:
                                 logger.info(f"  Added new spread at {time}")
                     else:
-                        if self.debug:
+                        if cls.debug:
                             logger.info(
                                 f"{time} Spread not added due to NaN required capital."
                             )
             except Exception as e:
-                if self.debug:
+                if cls.debug:
                     logger.error(f"Error adding new spread: {e} at {time}")
                 continue
 
