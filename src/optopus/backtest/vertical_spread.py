@@ -34,8 +34,8 @@ class Backtest:
         self.trading_end_time = trading_end_time
         self.debug = debug
         self.backtester = OptionBacktester(self.config)
-        self.symbol = "SPY"
         self.strategy_params = strategy_params
+        self.symbol = self.strategy_params["symbol"]
 
     def run_backtest(self, start_date=None, end_date=None, skip_fridays=False, plot_performance=True):
         if start_date is None:
@@ -209,6 +209,49 @@ class Backtest:
             )
 
         return ts_folds
+    
+    def cross_validate(
+        self,
+        n_splits: int,
+        years_per_split: float,
+    ):
+        """Cross-validate the backtest."""
+        ts_folds = self.create_time_ranges(
+            self.start_date,
+            self.end_date,
+            n_splits,
+            years_per_split,
+            self.trading_start_time,
+            self.trading_end_time,
+        )
+        with tqdm_joblib(tqdm(desc="Backtest Validation", total=n_splits)) as progress_bar:
+            results = Parallel(n_jobs=-1)(
+                delayed(self.run_backtest)(tr[0], tr[1], False, False) for tr in ts_folds
+            )
+
+        # Aggregate results
+        aggregated_results = {}
+        for metric in results[0].keys():
+            values = [result[metric] for result in results]
+            aggregated_results[metric] = {
+                "mean": np.nanmean(values),
+                "median": np.nanmedian(values),
+                "std": np.nanstd(values),
+                "min": np.nanmin(values),
+                "max": np.nanmax(values),
+            }
+        
+        logger.info("\nCross-Validation Results:")
+        logger.info("==========================")
+        for metric, stats in aggregated_results.items():
+            logger.info(f"\n{metric}:")
+            logger.info(f"  Mean: {stats['mean']:.4f}")
+            logger.info(f"  Median: {stats['median']:.4f}")
+            logger.info(f"  Std Dev: {stats['std']:.4f}")
+            logger.info(f"  Min: {stats['min']:.4f}")
+            logger.info(f"  Max: {stats['max']:.4f}")
+
+        return aggregated_results
 
 
 @contextlib.contextmanager
