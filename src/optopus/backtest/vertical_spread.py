@@ -5,6 +5,7 @@ from ..trades.option_spread import OptionStrategy
 import numpy as np
 from loguru import logger
 from datetime import datetime
+from typing import List, Tuple
 
 
 class Backtest:
