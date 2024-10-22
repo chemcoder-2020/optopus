@@ -55,7 +55,6 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def broker(self):
         return self._broker
 
-
     def submit_entry(self, price_step=0.01, max_attempts=5, wait_time=10):
         # self.update_order()  # update fresh quotes
         current_price = self.current_mark
@@ -65,7 +64,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             target_price = self.current_ask
 
         for attempt in range(max_attempts):
-            logger.info(f"Attempt {attempt + 1} to place entry order at price {current_price:.2f}")
+            logger.info(
+                f"Attempt {attempt + 1} to place entry order at price {current_price:.2f}"
+            )
             payload = self.generate_entry_payload(current_price)
             result = super().place_order(self.account_number_hash_value, payload)
             if result:
@@ -76,8 +77,12 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 self.update_order_status()
                 return result
             else:
-                logger.warning(f"Attempt {attempt + 1} failed. Retrying with new price.")
-                current_price += price_step if current_price < target_price else -price_step
+                logger.warning(
+                    f"Attempt {attempt + 1} failed. Retrying with new price."
+                )
+                current_price += (
+                    price_step if current_price < target_price else -price_step
+                )
                 time.sleep(wait_time)
         logger.error("All attempts to place entry order failed.")
         return None
@@ -171,7 +176,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             target_price = self.current_bid
 
         for attempt in range(max_attempts):
-            logger.info(f"Attempt {attempt + 1} to place exit order at price {current_price:.2f}")
+            logger.info(
+                f"Attempt {attempt + 1} to place exit order at price {current_price:.2f}"
+            )
             payload = self.generate_exit_payload(current_price)
             result = super().place_order(self.account_number_hash_value, payload)
             if result:
@@ -182,51 +189,15 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 self.update_order_status()
                 return result
             else:
-                logger.warning(f"Attempt {attempt + 1} failed. Retrying with new price.")
-                current_price += price_step if current_price > target_price else -price_step
+                logger.warning(
+                    f"Attempt {attempt + 1} failed. Retrying with new price."
+                )
+                current_price += (
+                    price_step if current_price > target_price else -price_step
+                )
                 time.sleep(wait_time)
         logger.error("All attempts to place exit order failed.")
         return None
-
-    def generate_exit_payload(self, price=None):
-        if price is None:
-            price = self.current_mark
-        if self.strategy_type == "Vertical Spread":
-            logger.info("Generating exit payload for vertical spread.")
-            payload = self.generate_vertical_spread_json(
-                symbol=self.symbol,
-                expiration=self.legs[0].expiration,
-                long_option_type=self.legs[0].option_type[0],
-                long_strike_price=self.legs[0].strike,
-                short_option_type=self.legs[1].option_type[0],
-                short_strike_price=self.legs[1].strike,
-                quantity=self.contracts,
-                price=abs(price),
-                duration="GOOD_TILL_CANCEL",
-                is_entry=False,
-            )
-        elif self.strategy_type in ["Naked Put", "Naked Call"]:
-            logger.info("Generating exit payload for naked option.")
-            payload = self.generate_single_option_json(
-                self.symbol,
-                self.legs[0].expiration,
-                self.legs[0].option_type[0],
-                self.legs[0].strike,
-                (
-                    "BUY_TO_CLOSE"
-                    if self.legs[0].position_side == "SELL"
-                    else "SELL_TO_CLOSE"
-                ),
-                self.contracts,
-                "LIMIT",
-                abs(price),
-                "GOOD_TILL_CANCEL",
-            )
-        else:
-            raise ValueError(f"Unsupported strategy type: {self.strategy_type}")
-
-        self._exit_payload = payload
-        return payload
 
     def update_order(self, new_option_chain_df=None):
         if new_option_chain_df is None:
@@ -253,7 +224,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     for activity in order["orderActivityCollection"]:
                         activities.append(pd.DataFrame(activity["executionLegs"]))
                     activities = pd.concat(activities, ignore_index=True)
-                    average_prices_per_leg = activities.groupby("legId").apply(lambda x: (x.price * x.quantity / x.quantity.sum()).sum())
+                    average_prices_per_leg = activities.groupby("legId").apply(
+                        lambda x: (x.price * x.quantity / x.quantity.sum()).sum()
+                    )
                     for leg_num, leg in enumerate(self.legs):
                         leg.update_entry_price(average_prices_per_leg[leg_num + 1])
 
