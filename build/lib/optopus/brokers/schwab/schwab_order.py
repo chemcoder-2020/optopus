@@ -2,11 +2,11 @@ import os
 import pandas as pd
 import dotenv
 from loguru import logger
-
 from .schwab_trade import SchwabTrade
 from .schwab_data import SchwabData
 from ...trades.option_spread import OptionStrategy
 from ..order import Order
+import time
 
 dotenv.load_dotenv()
 
@@ -55,7 +55,55 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def broker(self):
         return self._broker
 
-    def generate_entry_payload(self):
+    def submit_entry(self, price_step=0.01, wait_time=10):
+        # self.update_order()  # update fresh quotes
+        current_price = self.current_mark
+        if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
+            target_price = self.current_bid
+        else:
+            target_price = self.current_ask
+
+        max_attempts = int(abs(target_price - current_price) // price_step) + int(
+            abs(target_price - current_price) % price_step != 0
+        )
+
+        for attempt in range(max_attempts):
+            logger.info(
+                f"Attempt {attempt + 1} to place entry order at price {current_price:.2f}"
+            )
+            payload = self.generate_entry_payload(current_price)
+            result = super().place_order(self.account_number_hash_value, payload)
+            if result:
+                assert (
+                    result[0] != "" and result[0] is not None
+                ), "Order ID is empty when placing entry order."
+                logger.info(f"Entry order placed successfully. Order ID: {result[0]}")
+                time.sleep(wait_time)
+                current_order = self.get_order(order_url=result[0])
+                if current_order.get("status") == "FILLED":
+                    logger.info("Entry order filled.")
+                    self.order_id = result[0]
+                    return result
+                elif current_order.get("cancelable"):
+                    logger.warning(
+                        "Entry order not filled. Cancelling order and retrying."
+                    )
+                    if self.cancel_order(order_url=result[0]):
+                        logger.info("Entry order canceled.")
+
+                if target_price > current_price:
+                    current_price += price_step
+                else:
+                    current_price -= price_step
+
+            else:
+                logger.warning(f"Entry attempt {attempt + 1} was not submitted.")
+        logger.error("All attempts to place entry order failed.")
+        return False
+
+    def generate_entry_payload(self, price=None):
+        if price is None:
+            price = self.current_mark
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating entry payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -66,7 +114,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 short_option_type=self.legs[1].option_type[0],
                 short_strike_price=self.legs[1].strike,
                 quantity=self.contracts,
-                price=abs(self.current_bid),
+                price=abs(price),
                 duration="GOOD_TILL_CANCEL",
                 is_entry=True,
             )
@@ -84,7 +132,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 ),
                 quantity=self.contracts,
                 order_type="LIMIT",
-                price=abs(self.entry_net_premium),
+                price=abs(price),
                 duration="DAY",
             )
         else:
@@ -93,19 +141,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self._entry_payload = payload
         return payload
 
-    def submit_entry(self):
-        # self.update_order()  # update fresh quotes
-        payload = self.generate_entry_payload()
-        result = super().place_order(self.account_number_hash_value, payload)
-        if result:
-            self.order_id = result[0]
-            assert (
-                self.order_id != "" and self.order_id is not None
-            ), "Order ID is empty when placing entry order."
-            self.update_order_status()
-        return result
-
-    def generate_exit_payload(self):
+    def generate_exit_payload(self, price=None):
+        if price is None:
+            price = self.current_mark
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating exit payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -116,7 +154,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 short_option_type=self.legs[1].option_type[0],
                 short_strike_price=self.legs[1].strike,
                 quantity=self.contracts,
-                price=abs(self.current_ask),
+                price=abs(price),
                 duration="GOOD_TILL_CANCEL",
                 is_entry=False,
             )
@@ -134,7 +172,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 ),
                 self.contracts,
                 "LIMIT",
-                abs(self.net_premium),
+                abs(price),
                 "GOOD_TILL_CANCEL",
             )
         else:
@@ -143,17 +181,51 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self._exit_payload = payload
         return payload
 
-    def submit_exit(self):
+    def submit_exit(self, price_step=0.01, wait_time=10):
         # self.update_order()  # update fresh quotes
-        payload = self.generate_exit_payload()
-        result = super().place_order(self.account_number_hash_value, payload)
-        if result:
-            self.exit_order_id = result[0]
-            assert (
-                self.exit_order_id != "" and self.exit_order_id is not None
-            ), "Order ID is empty when placing exit order."
-            self.update_order_status()
-        return result
+        current_price = self.current_mark
+        if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
+            target_price = self.current_ask
+        else:
+            target_price = self.current_bid
+
+        max_attempts = int(abs(target_price - current_price) // price_step) + int(
+            abs(target_price - current_price) % price_step != 0
+        )
+
+        for attempt in range(max_attempts):
+            logger.info(
+                f"Attempt {attempt + 1} to place exit order at price {current_price:.2f}"
+            )
+            payload = self.generate_exit_payload(current_price)
+            result = super().place_order(self.account_number_hash_value, payload)
+            if result:
+                assert (
+                    result[0] != "" and result[0] is not None
+                ), "Order ID is empty when placing exit order."
+                logger.info(f"Exit order placed successfully. Order ID: {result[0]}")
+                time.sleep(wait_time)
+                current_order = self.get_order(order_url=result[0])
+                if current_order.get("status") == "FILLED":
+                    logger.info("Exit order filled.")
+                    self.exit_order_id = result[0]
+                    return result
+                elif current_order.get("cancelable"):
+                    logger.warning(
+                        "Exit order not filled. Cancelling order and retrying."
+                    )
+                    if self.cancel_order(order_url=result[0]):
+                        logger.info("Exit order canceled.")
+
+                if target_price > current_price:
+                    current_price += price_step
+                else:
+                    current_price -= price_step
+
+            else:
+                logger.warning(f"Exit attempt {attempt + 1} was not submitted.")
+        logger.error("All attempts to place exit order failed.")
+        return False
 
     def update_order(self, new_option_chain_df=None):
         if new_option_chain_df is None:
@@ -180,7 +252,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     for activity in order["orderActivityCollection"]:
                         activities.append(pd.DataFrame(activity["executionLegs"]))
                     activities = pd.concat(activities, ignore_index=True)
-                    average_prices_per_leg = activities.groupby("legId").apply(lambda x: (x.price * x.quantity / x.quantity.sum()).sum())
+                    average_prices_per_leg = activities.groupby("legId").apply(
+                        lambda x: (x.price * x.quantity / x.quantity.sum()).sum()
+                    )
                     for leg_num, leg in enumerate(self.legs):
                         leg.update_entry_price(average_prices_per_leg[leg_num + 1])
 
