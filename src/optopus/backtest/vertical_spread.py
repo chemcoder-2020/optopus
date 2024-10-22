@@ -35,18 +35,19 @@ class Backtest:
         self.debug = debug
         self.backtester = OptionBacktester(self.config)
         self.strategy_params = strategy_params
-        self.symbol = self.strategy_params["symbol"]
+        cls.symbol = cls.strategy_params["symbol"]
 
+    @classmethod
     def run_backtest(
-        self, start_date=None, end_date=None, skip_fridays=False, plot_performance=True, backtester=None,
+        cls, start_date=None, end_date=None, skip_fridays=False, plot_performance=True, backtester=None,
     ):
 
         if backtester is None:
-            backtester = self.backtester
+            backtester = cls.backtester
         if start_date is None:
-            start_date = self.start_date
+            start_date = cls.start_date
         if end_date is None:
-            end_date = self.end_date
+            end_date = cls.end_date
 
         # Convert start_date and end_date to strings if they are datetime objects
         if isinstance(start_date, (pd.Timestamp, datetime)):
@@ -88,8 +89,8 @@ class Backtest:
             if year != prev_year:
                 logger.info(f"Processing year: {year}")
                 prev_year = year
-            filename = f"{self.symbol}_{time.strftime('%Y-%m-%d %H-%M')}.parquet"
-            file_path = os.path.join(self.data_folder, filename)
+            filename = f"{cls.symbol}_{time.strftime('%Y-%m-%d %H-%M')}.parquet"
+            file_path = os.path.join(cls.data_folder, filename)
 
             if not os.path.exists(file_path):
                 if self.debug:
@@ -121,17 +122,17 @@ class Backtest:
             try:
                 if entry_signal:
                     new_spread = OptionStrategy.create_vertical_spread(
-                        symbol=self.symbol,
-                        option_type=self.strategy_params["option_type"],
-                        long_strike=self.strategy_params["long_delta"],
-                        short_strike=self.strategy_params["short_delta"],
-                        expiration=self.strategy_params["dte"],
-                        contracts=self.strategy_params["contracts"],
+                        symbol=cls.symbol,
+                        option_type=cls.strategy_params["option_type"],
+                        long_strike=cls.strategy_params["long_delta"],
+                        short_strike=cls.strategy_params["short_delta"],
+                        expiration=cls.strategy_params["dte"],
+                        contracts=cls.strategy_params["contracts"],
                         entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
                         option_chain_df=option_chain_df,
-                        profit_target=self.strategy_params["profit_target"],
-                        stop_loss=self.strategy_params["stop_loss"],
-                        commission=self.strategy_params["commission"],
+                        profit_target=cls.strategy_params["profit_target"],
+                        stop_loss=cls.strategy_params["stop_loss"],
+                        commission=cls.strategy_params["commission"],
                     )
             except Exception as e:
                 if self.debug:
@@ -158,7 +159,7 @@ class Backtest:
                 prev_active_positions != len(backtester.active_trades)
                 or prev_capital != backtester.capital
             ):
-                if self.debug:
+                if cls.debug:
                     logger.info(
                         f"  Time: {time}, Active trades: {len(backtester.active_trades)}, Capital: ${backtester.capital:.2f}, PL: ${backtester.get_total_pl():.2f}"
                     )
@@ -215,19 +216,20 @@ class Backtest:
 
         return ts_folds
 
+    @classmethod
     def cross_validate(
-        self,
+        cls,
         n_splits: int,
         years_per_split: float,
     ):
         """Cross-validate the backtest."""
-        ts_folds = self.create_time_ranges(
-            self.start_date,
-            self.end_date,
+        ts_folds = cls.create_time_ranges(
+            cls.start_date,
+            cls.end_date,
             n_splits,
             years_per_split,
-            self.trading_start_time,
-            self.trading_end_time,
+            cls.trading_start_time,
+            cls.trading_end_time,
         )
 
         def run_backtest_for_timerange(time_range: Tuple[str, str]) -> dict:
@@ -237,7 +239,7 @@ class Backtest:
             backtester = OptionBacktester(self.config)
 
             # Modify run_backtest to accept start_date and end_date parameters
-            self.run_backtest(
+            cls.run_backtest(
                 start_date, end_date, skip_fridays=False, plot_performance=False, backtester=backtester
             )
 
