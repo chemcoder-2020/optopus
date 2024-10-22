@@ -59,9 +59,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         # self.update_order()  # update fresh quotes
         current_price = self.current_mark
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
-            target_price = self.current_ask
-        else:
             target_price = self.current_bid
+        else:
+            target_price = self.current_ask
 
         max_attempts = int(abs(target_price - current_price) // price_step) + int(
             abs(target_price - current_price) % price_step != 0
@@ -91,7 +91,10 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     if self.cancel_order(order_url=result[0]):
                         logger.info("Entry order canceled.")
 
-                current_price += price_step
+                if target_price > current_price:
+                    current_price += price_step
+                else:
+                    current_price -= price_step
 
             else:
                 logger.warning(f"Entry attempt {attempt + 1} was not submitted.")
@@ -214,7 +217,10 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     if self.cancel_order(order_url=result[0]):
                         logger.info("Exit order canceled.")
 
-                current_price += price_step
+                if target_price > current_price:
+                    current_price += price_step
+                else:
+                    current_price -= price_step
 
             else:
                 logger.warning(f"Exit attempt {attempt + 1} was not submitted.")
