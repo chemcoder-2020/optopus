@@ -176,12 +176,13 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 logger.info(f"Order status updated to: {self.order_status}")
                 if self.order_status == "FILLED":
                     # Update entry price for each leg
+                    activities = []
+                    for activity in order["orderActivityCollection"]:
+                        activities.append(pd.DataFrame(activity["executionLegs"]))
+                    activities = pd.concat(activities, ignore_index=True)
+                    average_prices_per_leg = activities.groupby("legId").apply(lambda x: (x.price * x.quantity / x.quantity.sum()).sum())
                     for leg_num, leg in enumerate(self.legs):
-                        leg.update_entry_price(
-                            order["orderActivityCollection"][0]["executionLegs"][
-                                leg_num
-                            ]["price"]
-                        )
+                        leg.update_entry_price(average_prices_per_leg[leg_num])
 
                     # Update entry net premium
                     self.update_entry_net_premium()
