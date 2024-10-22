@@ -167,14 +167,21 @@ class Backtest:
         self.backtester.print_performance_summary()
         return self.backtester
 
+    @classmethod
     def create_time_ranges(
-        self, start_date: str, end_date: str, n_splits: int, years_per_split: float
+        cls,
+        start_date: str,
+        end_date: str,
+        n_splits: int,
+        years_per_split: float,
+        trading_start_time: str,
+        trading_end_time: str,
     ) -> List[Tuple[str, str]]:
         """Create time ranges for cross-validation."""
         full_range = pd.date_range(start=start_date, end=end_date, freq="15min")
 
         full_range = pd.Series(full_range).loc[
-            full_range.indexer_between_time("09:45", "15:45")
+            full_range.indexer_between_time(trading_start_time, trading_end_time)
         ]
         full_range = full_range[full_range.dt.weekday < 5]
         full_range = full_range.sort_values(ascending=True)
