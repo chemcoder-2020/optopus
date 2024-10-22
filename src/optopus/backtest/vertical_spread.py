@@ -31,11 +31,15 @@ class Backtest:
         self.symbol = "SPY"
         self.strategy_params = strategy_params
 
-    def run_backtest(self, skip_fridays=False, plot_performance=True):
+    def run_backtest(self, start_date=None, end_date=None, skip_fridays=False, plot_performance=True):
+        if start_date is None:
+            start_date = self.start_date
+        if end_date is None:
+            end_date = self.end_date
         # Generate time range for trading hours
         time_range = pd.date_range(
-            start=f"{self.start_date} {self.trading_start_time}",
-            end=f"{self.end_date} {self.trading_end_time}",
+            start=f"{start_date} {self.trading_start_time}",
+            end=f"{end_date} {self.trading_end_time}",
             freq="15min",
         )
 
