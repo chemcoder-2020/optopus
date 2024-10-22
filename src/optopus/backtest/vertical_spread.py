@@ -9,6 +9,7 @@ from typing import List, Tuple
 import contextlib
 import joblib
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 
 class Backtest:
