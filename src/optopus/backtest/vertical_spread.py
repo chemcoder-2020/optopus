@@ -93,7 +93,7 @@ class Backtest:
             file_path = os.path.join(cls.data_folder, filename)
 
             if not os.path.exists(file_path):
-                if self.debug:
+                if cls.debug:
                     logger.warning(
                         f"No data available for {time}. Skipping this update."
                     )
