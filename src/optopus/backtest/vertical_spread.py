@@ -37,7 +37,12 @@ class Backtest:
         self.strategy_params = strategy_params
         self.symbol = self.strategy_params["symbol"]
 
-    def run_backtest(self, start_date=None, end_date=None, skip_fridays=False, plot_performance=True):
+    def run_backtest(
+        self, start_date=None, end_date=None, skip_fridays=False, plot_performance=True, backtester=None,
+    ):
+
+        if backtester is None:
+            backtester = self.backtester
         if start_date is None:
             start_date = self.start_date
         if end_date is None:
@@ -45,9 +50,9 @@ class Backtest:
 
         # Convert start_date and end_date to strings if they are datetime objects
         if isinstance(start_date, (pd.Timestamp, datetime)):
-            start_date = start_date.strftime('%Y-%m-%d')
+            start_date = start_date.strftime("%Y-%m-%d")
         if isinstance(end_date, (pd.Timestamp, datetime)):
-            end_date = end_date.strftime('%Y-%m-%d')
+            end_date = end_date.strftime("%Y-%m-%d")
         # Generate time range for trading hours
         time_range = pd.date_range(
             start=f"{start_date} {self.trading_start_time}",
@@ -95,7 +100,7 @@ class Backtest:
 
             option_chain_df = pd.read_parquet(file_path)
             if not option_chain_df.empty:
-                self.backtester.update(time, option_chain_df)
+                backtester.update(time, option_chain_df)
             else:
                 if self.debug:
                     logger.warning(f"Data is empty for {time}. Skipping this update.")
@@ -136,7 +141,7 @@ class Backtest:
             try:
                 if new_spread is not None:
                     if not np.isnan(new_spread.get_required_capital()):
-                        if self.backtester.add_spread(new_spread):
+                        if backtester.add_spread(new_spread):
                             if self.debug:
                                 logger.info(f"  Added new spread at {time}")
                     else:
@@ -150,26 +155,26 @@ class Backtest:
                 continue
 
             if (
-                prev_active_positions != len(self.backtester.active_trades)
-                or prev_capital != self.backtester.capital
+                prev_active_positions != len(backtester.active_trades)
+                or prev_capital != backtester.capital
             ):
                 if self.debug:
                     logger.info(
-                        f"  Time: {time}, Active trades: {len(self.backtester.active_trades)}, Capital: ${self.backtester.capital:.2f}, PL: ${self.backtester.get_total_pl():.2f}"
+                        f"  Time: {time}, Active trades: {len(backtester.active_trades)}, Capital: ${backtester.capital:.2f}, PL: ${backtester.get_total_pl():.2f}"
                     )
-                prev_active_positions = len(self.backtester.active_trades)
-                prev_capital = self.backtester.capital
+                prev_active_positions = len(backtester.active_trades)
+                prev_capital = backtester.capital
 
         print("\nBacktest completed!")
-        print(f"Final capital: ${self.backtester.capital:.2f}")
-        print(f"Total P&L: ${self.backtester.get_total_pl():.2f}")
-        print(f"Closed P&L: ${self.backtester.get_closed_pl():.2f}")
-        print(f"Number of closed positions: {self.backtester.get_closed_positions()}")
+        print(f"Final capital: ${backtester.capital:.2f}")
+        print(f"Total P&L: ${backtester.get_total_pl():.2f}")
+        print(f"Closed P&L: ${backtester.get_closed_pl():.2f}")
+        print(f"Number of closed positions: {backtester.get_closed_positions()}")
 
         if plot_performance:
-            self.backtester.plot_performance()
-        self.backtester.print_performance_summary()
-        return self.backtester
+            backtester.plot_performance()
+        backtester.print_performance_summary()
+        return backtester
 
     @classmethod
     def create_time_ranges(
@@ -209,7 +214,7 @@ class Backtest:
             )
 
         return ts_folds
-    
+
     def cross_validate(
         self,
         n_splits: int,
@@ -224,9 +229,29 @@ class Backtest:
             self.trading_start_time,
             self.trading_end_time,
         )
-        with tqdm_joblib(tqdm(desc="Backtest Validation", total=n_splits)) as progress_bar:
+
+        def run_backtest_for_timerange(time_range: Tuple[str, str]) -> dict:
+            """Run backtest for a specific time range and return performance metrics."""
+
+            start_date, end_date = time_range
+            backtester = OptionBacktester(self.config)
+
+            # Modify run_backtest to accept start_date and end_date parameters
+            self.run_backtest(
+                start_date, end_date, skip_fridays=False, plot_performance=False, backtester=backtester
+            )
+
+            # Calculate and return performance metrics
+            metrics = backtester.calculate_performance_metrics()
+            profitable = backtester.get_closed_pl() > 0
+            metrics.update({"profitable": profitable})
+            return metrics
+
+        with tqdm_joblib(
+            tqdm(desc="Backtest Validation", total=n_splits)
+        ) as progress_bar:
             results = Parallel(n_jobs=-1)(
-                delayed(self.run_backtest)(tr[0], tr[1], False, False) for tr in ts_folds
+                delayed(run_backtest_for_timerange)(tr) for tr in ts_folds
             )
 
         # Aggregate results
@@ -240,7 +265,7 @@ class Backtest:
                 "min": np.nanmin(values),
                 "max": np.nanmax(values),
             }
-        
+
         logger.info("\nCross-Validation Results:")
         logger.info("==========================")
         for metric, stats in aggregated_results.items():
