@@ -162,7 +162,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self._entry_payload = payload
         return payload
 
-    def generate_exit_payload(self):
+    def generate_exit_payload(self, price=None):
+        if price is None:
+            price = self.current_mark
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating exit payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -173,7 +175,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 short_option_type=self.legs[1].option_type[0],
                 short_strike_price=self.legs[1].strike,
                 quantity=self.contracts,
-                price=abs(self.current_ask),
+                price=abs(price),
                 duration="GOOD_TILL_CANCEL",
                 is_entry=False,
             )
@@ -191,7 +193,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 ),
                 self.contracts,
                 "LIMIT",
-                abs(self.net_premium),
+                abs(price),
                 "GOOD_TILL_CANCEL",
             )
         else:
@@ -204,9 +206,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         # self.update_order()  # update fresh quotes
         current_price = self.current_mark
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
-            target_price = self.current_bid
-        else:
             target_price = self.current_ask
+        else:
+            target_price = self.current_bid
 
         for attempt in range(max_attempts):
             logger.info(f"Attempt {attempt + 1} to place exit order at price {current_price:.2f}")
@@ -221,7 +223,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 return result
             else:
                 logger.warning(f"Attempt {attempt + 1} failed. Retrying with new price.")
-                current_price += price_step if current_price < target_price else -price_step
+                current_price += price_step if current_price > target_price else -price_step
                 time.sleep(wait_time)
         logger.error("All attempts to place exit order failed.")
         return None
