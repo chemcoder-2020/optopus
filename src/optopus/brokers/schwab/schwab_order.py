@@ -2,12 +2,11 @@ import os
 import pandas as pd
 import dotenv
 from loguru import logger
-import time
-
 from .schwab_trade import SchwabTrade
 from .schwab_data import SchwabData
 from ...trades.option_spread import OptionStrategy
 from ..order import Order
+import time
 
 dotenv.load_dotenv()
 
@@ -56,45 +55,6 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def broker(self):
         return self._broker
 
-    def generate_entry_payload(self):
-        if self.strategy_type == "Vertical Spread":
-            logger.info("Generating entry payload for vertical spread.")
-            payload = self.generate_vertical_spread_json(
-                symbol=self.symbol,
-                expiration=self.legs[0].expiration,
-                long_option_type=self.legs[0].option_type[0],
-                long_strike_price=self.legs[0].strike,
-                short_option_type=self.legs[1].option_type[0],
-                short_strike_price=self.legs[1].strike,
-                quantity=self.contracts,
-                price=abs(self.current_bid),
-                duration="GOOD_TILL_CANCEL",
-                is_entry=True,
-            )
-        elif self.strategy_type in ["Naked Put", "Naked Call"]:
-            logger.info("Generating entry payload for naked option.")
-            payload = self.generate_single_option_json(
-                symbol=self.symbol,
-                expiration=self.legs[0].expiration,
-                option_type=self.legs[0].option_type[0],
-                strike_price=self.legs[0].strike,
-                instruction=(
-                    "BUY_TO_OPEN"
-                    if self.legs[0].position_side == "BUY"
-                    else "SELL_TO_OPEN"
-                ),
-                quantity=self.contracts,
-                order_type="LIMIT",
-                price=abs(self.entry_net_premium),
-                duration="DAY",
-            )
-        else:
-            raise ValueError(f"Unsupported strategy type: {self.strategy_type}")
-
-        self._entry_payload = payload
-        return payload
-
-    import time
 
     def submit_entry(self, price_step=0.01, max_attempts=5, wait_time=10):
         # self.update_order()  # update fresh quotes
