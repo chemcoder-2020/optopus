@@ -14,7 +14,7 @@ from joblib import Parallel, delayed
 
 class Backtest:
     def __init__(
-        self,
+        cls,
         config,
         entry_signal_file,
         data_folder,
@@ -25,16 +25,16 @@ class Backtest:
         strategy_params,
         debug=False,
     ):
-        self.config = config
-        self.entry_signal_file = entry_signal_file
-        self.data_folder = data_folder
-        self.start_date = start_date
-        self.end_date = end_date
-        self.trading_start_time = trading_start_time
-        self.trading_end_time = trading_end_time
-        self.debug = debug
-        self.backtester = OptionBacktester(self.config)
-        self.strategy_params = strategy_params
+        cls.config = config
+        cls.entry_signal_file = entry_signal_file
+        cls.data_folder = data_folder
+        cls.start_date = start_date
+        cls.end_date = end_date
+        cls.trading_start_time = trading_start_time
+        cls.trading_end_time = trading_end_time
+        cls.debug = debug
+        cls.backtester = OptionBacktester(cls.config)
+        cls.strategy_params = strategy_params
         cls.symbol = cls.strategy_params["symbol"]
 
     @classmethod
@@ -236,7 +236,7 @@ class Backtest:
             """Run backtest for a specific time range and return performance metrics."""
 
             start_date, end_date = time_range
-            backtester = OptionBacktester(self.config)
+            backtester = OptionBacktester(cls.config)
 
             # Modify run_backtest to accept start_date and end_date parameters
             cls.run_backtest(
