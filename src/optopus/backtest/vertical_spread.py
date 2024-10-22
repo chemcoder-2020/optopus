@@ -4,6 +4,7 @@ from ..trades.option_manager import OptionBacktester
 from ..trades.option_spread import OptionStrategy
 import numpy as np
 from loguru import logger
+from datetime import datetime
 
 
 class Backtest:
