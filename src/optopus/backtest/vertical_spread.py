@@ -36,6 +36,12 @@ class Backtest:
             start_date = self.start_date
         if end_date is None:
             end_date = self.end_date
+
+        # Convert start_date and end_date to strings if they are datetime objects
+        if isinstance(start_date, (pd.Timestamp, datetime)):
+            start_date = start_date.strftime('%Y-%m-%d')
+        if isinstance(end_date, (pd.Timestamp, datetime)):
+            end_date = end_date.strftime('%Y-%m-%d')
         # Generate time range for trading hours
         time_range = pd.date_range(
             start=f"{start_date} {self.trading_start_time}",
