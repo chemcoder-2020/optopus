@@ -167,13 +167,17 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self._exit_payload = payload
         return payload
 
-    def submit_exit(self, price_step=0.01, max_attempts=5, wait_time=10):
+    def submit_exit(self, price_step=0.01, wait_time=10):
         # self.update_order()  # update fresh quotes
         current_price = self.current_mark
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
             target_price = self.current_ask
         else:
             target_price = self.current_bid
+
+        max_attempts = int(abs(target_price - current_price) // price_step) + int(
+            abs(target_price - current_price) % price_step != 0
+        )
 
         for attempt in range(max_attempts):
             logger.info(
@@ -182,22 +186,29 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             payload = self.generate_exit_payload(current_price)
             result = super().place_order(self.account_number_hash_value, payload)
             if result:
-                self.exit_order_id = result[0]
                 assert (
-                    self.exit_order_id != "" and self.exit_order_id is not None
+                    result[0] != "" and result[0] is not None
                 ), "Order ID is empty when placing exit order."
-                self.update_order_status()
-                return result
-            else:
-                logger.warning(
-                    f"Attempt {attempt + 1} failed. Retrying with new price."
-                )
-                current_price += (
-                    price_step if current_price > target_price else -price_step
-                )
+                logger.info(f"Exit order placed successfully. Order ID: {result[0]}")
                 time.sleep(wait_time)
+                current_order = self.get_order(order_url=result[0])
+                if current_order.get("status") == "FILLED":
+                    logger.info("Exit order filled.")
+                    self.exit_order_id = result[0]
+                    return result
+                elif current_order.get("cancelable"):
+                    logger.warning(
+                        "Exit order not filled. Cancelling order and retrying."
+                    )
+                    if self.cancel_order(order_url=result[0]):
+                        logger.info("Exit order canceled.")
+
+                current_price += price_step
+
+            else:
+                logger.warning(f"Exit attempt {attempt + 1} was not submitted.")
         logger.error("All attempts to place exit order failed.")
-        return None
+        return False
 
     def update_order(self, new_option_chain_df=None):
         if new_option_chain_df is None:
