@@ -232,3 +232,14 @@ class TradingManager(OptionBacktester):
         """Close all active orders."""
         for order in self.active_orders[:]:  # Iterate over a copy to avoid modifying the list while iterating
             self.close_order(order.order_id.split("/")[-1])
+
+    def update_config(self, config: Config) -> None:
+        """
+        Update the trading manager's configuration.
+        
+        Args:
+            config (Config): New configuration object
+        """
+        self.config = config
+        self.__dict__.update(config.__dict__)
+        self.option_broker.update_config(config)
