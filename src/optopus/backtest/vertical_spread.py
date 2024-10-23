@@ -37,17 +37,16 @@ class Backtest:
         self.strategy_params = strategy_params
         self.symbol = self.strategy_params["symbol"]
 
-    @classmethod
     def run_backtest(
-        cls, start_date=None, end_date=None, skip_fridays=False, plot_performance=True, backtester=None,
+        self, start_date=None, end_date=None, skip_fridays=False, plot_performance=True, backtester=None,
     ):
 
         if backtester is None:
-            backtester = cls.backtester
+            backtester = self.backtester
         if start_date is None:
-            start_date = cls.start_date
+            start_date = self.start_date
         if end_date is None:
-            end_date = cls.end_date
+            end_date = self.end_date
 
         # Convert start_date and end_date to strings if they are datetime objects
         if isinstance(start_date, (pd.Timestamp, datetime)):
@@ -56,23 +55,23 @@ class Backtest:
             end_date = end_date.strftime("%Y-%m-%d")
         # Generate time range for trading hours
         time_range = pd.date_range(
-            start=f"{start_date} {cls.trading_start_time}",
-            end=f"{end_date} {cls.trading_end_time}",
+            start=f"{start_date} {self.trading_start_time}",
+            end=f"{end_date} {self.trading_end_time}",
             freq="15min",
         )
 
         # Filter time range to only include trading hours
         trading_times = time_range.indexer_between_time(
-            cls.trading_start_time, cls.trading_end_time
+            self.trading_start_time, self.trading_end_time
         )
         time_range = time_range[trading_times]
 
         # Load entry signals
-        entry_data = cls.entry_signal_file
+        entry_data = self.entry_signal_file
         inp = pd.read_csv(entry_data)
         inp["date"] = pd.DatetimeIndex(inp["date"])
         inp["isEntry"] = False
-        inp.loc[inp.query(cls.strategy_params["condition"]).index, "isEntry"] = True
+        inp.loc[inp.query(self.strategy_params["condition"]).index, "isEntry"] = True
         inp["isEntry"] = inp["isEntry"].astype(bool)
         inp.set_index("date", inplace=True)
         inp = inp[["isEntry"]]
@@ -89,11 +88,11 @@ class Backtest:
             if year != prev_year:
                 logger.info(f"Processing year: {year}")
                 prev_year = year
-            filename = f"{cls.symbol}_{time.strftime('%Y-%m-%d %H-%M')}.parquet"
-            file_path = os.path.join(cls.data_folder, filename)
+            filename = f"{self.symbol}_{time.strftime('%Y-%m-%d %H-%M')}.parquet"
+            file_path = os.path.join(self.data_folder, filename)
 
             if not os.path.exists(file_path):
-                if cls.debug:
+                if self.debug:
                     logger.warning(
                         f"No data available for {time}. Skipping this update."
                     )
@@ -103,7 +102,7 @@ class Backtest:
             if not option_chain_df.empty:
                 backtester.update(time, option_chain_df)
             else:
-                if cls.debug:
+                if self.debug:
                     logger.warning(f"Data is empty for {time}. Skipping this update.")
                 continue
 
@@ -114,7 +113,7 @@ class Backtest:
             try:
                 entry_signal = inp.loc[time, "isEntry"]
             except Exception as e:
-                if cls.debug:
+                if self.debug:
                     logger.error(f"Error getting entry signal: {e} at {time}")
                 continue
 
@@ -122,20 +121,20 @@ class Backtest:
             try:
                 if entry_signal:
                     new_spread = OptionStrategy.create_vertical_spread(
-                        symbol=cls.symbol,
-                        option_type=cls.strategy_params["option_type"],
-                        long_strike=cls.strategy_params["long_delta"],
-                        short_strike=cls.strategy_params["short_delta"],
-                        expiration=cls.strategy_params["dte"],
-                        contracts=cls.strategy_params["contracts"],
+                        symbol=self.symbol,
+                        option_type=self.strategy_params["option_type"],
+                        long_strike=self.strategy_params["long_delta"],
+                        short_strike=self.strategy_params["short_delta"],
+                        expiration=self.strategy_params["dte"],
+                        contracts=self.strategy_params["contracts"],
                         entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
                         option_chain_df=option_chain_df,
-                        profit_target=cls.strategy_params["profit_target"],
-                        stop_loss=cls.strategy_params["stop_loss"],
-                        commission=cls.strategy_params["commission"],
+                        profit_target=self.strategy_params["profit_target"],
+                        stop_loss=self.strategy_params["stop_loss"],
+                        commission=self.strategy_params["commission"],
                     )
             except Exception as e:
-                if cls.debug:
+                if self.debug:
                     logger.error(f"Error creating new spread: {e} at {time}")
                 continue
 
@@ -143,15 +142,15 @@ class Backtest:
                 if new_spread is not None:
                     if not np.isnan(new_spread.get_required_capital()):
                         if backtester.add_spread(new_spread):
-                            if cls.debug:
+                            if self.debug:
                                 logger.info(f"  Added new spread at {time}")
                     else:
-                        if cls.debug:
+                        if self.debug:
                             logger.info(
                                 f"{time} Spread not added due to NaN required capital."
                             )
             except Exception as e:
-                if cls.debug:
+                if self.debug:
                     logger.error(f"Error adding new spread: {e} at {time}")
                 continue
 
@@ -159,7 +158,7 @@ class Backtest:
                 prev_active_positions != len(backtester.active_trades)
                 or prev_capital != backtester.capital
             ):
-                if cls.debug:
+                if self.debug:
                     logger.info(
                         f"  Time: {time}, Active trades: {len(backtester.active_trades)}, Capital: ${backtester.capital:.2f}, PL: ${backtester.get_total_pl():.2f}"
                     )
@@ -216,30 +215,29 @@ class Backtest:
 
         return ts_folds
 
-    @classmethod
     def cross_validate(
-        cls,
+        self,
         n_splits: int,
         years_per_split: float,
     ):
         """Cross-validate the backtest."""
-        ts_folds = cls.create_time_ranges(
-            cls.start_date,
-            cls.end_date,
+        ts_folds = self.create_time_ranges(
+            self.start_date,
+            self.end_date,
             n_splits,
             years_per_split,
-            cls.trading_start_time,
-            cls.trading_end_time,
+            self.trading_start_time,
+            self.trading_end_time,
         )
 
         def run_backtest_for_timerange(time_range: Tuple[str, str]) -> dict:
             """Run backtest for a specific time range and return performance metrics."""
 
             start_date, end_date = time_range
-            backtester = OptionBacktester(cls.config)
+            backtester = OptionBacktester(self.config)
 
             # Modify run_backtest to accept start_date and end_date parameters
-            cls.run_backtest(
+            self.run_backtest(
                 start_date, end_date, skip_fridays=False, plot_performance=False, backtester=backtester
             )
 
