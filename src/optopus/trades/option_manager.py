@@ -473,6 +473,37 @@ class OptionBacktester:
 
         return risk_of_ruin
 
+    def update_config(self, **kwargs):
+        """
+        Update configuration parameters.
+        
+        Args:
+            **kwargs: Configuration parameters to update.
+                     Only existing attributes in Config will be updated.
+        
+        Returns:
+            bool: True if any parameters were updated, False otherwise.
+        """
+        updated = False
+        for key, value in kwargs.items():
+            if hasattr(self.config, key):
+                setattr(self.config, key, value)
+                # Update related attributes that depend on config
+                if key == 'initial_capital':
+                    self.capital = value
+                    self.allocation = value
+                    self.available_to_trade = value
+                elif key == 'position_size':
+                    # Validate position size is between 0 and 1
+                    if not 0 < value <= 1:
+                        logger.warning(f"Invalid position_size {value}. Must be between 0 and 1.")
+                        continue
+                updated = True
+            else:
+                logger.warning(f"Unknown configuration parameter: {key}")
+        
+        return updated
+
     def print_performance_summary(self):
         """Print a summary of performance metrics."""
         metrics = self.calculate_performance_metrics()
