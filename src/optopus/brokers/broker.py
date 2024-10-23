@@ -79,18 +79,6 @@ class OptionBroker:
                     "Authentication object is required to access Schwab Trade API"
                 )
 
-    def update_config(self, config) -> None:
-        """
-        Update broker configuration and reinitialize API connections.
-        
-        Args:
-            config: New configuration object
-        """
-        self.config = config
-        self.auth = self._get_auth_api()
-        self.data = self._get_data_api()
-        self.trading = self._get_trading_api()
-
     def create_order(self, option_strategy) -> Order:
         broker = self.config.get("broker", "Schwab")
         api_key = self.config.get("api_key")

@@ -489,10 +489,12 @@ class OptionBacktester:
             if hasattr(self.config, key):
                 setattr(self.config, key, value)
                 # Update related attributes that depend on config
-                if key == 'initial_capital':
-                    self.capital = value
+                if key == 'initial_capital' or key == 'allocation':
+                    new_allocation = value
+                    added_allocation = new_allocation - self.allocation
                     self.allocation = value
-                    self.available_to_trade = value
+                    self.available_to_trade += added_allocation
+                    self.capital += added_allocation
                 elif key == 'position_size':
                     # Validate position size is between 0 and 1
                     if not 0 < value <= 1:

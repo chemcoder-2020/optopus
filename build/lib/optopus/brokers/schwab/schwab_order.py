@@ -57,7 +57,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
     def submit_entry(self, price_step=0.01, wait_time=10):
         # self.update_order()  # update fresh quotes
-        current_price = self.current_mark
+        current_price = (self.current_bid + self.current_ask) / 2
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
             target_price = self.current_bid
         else:
@@ -103,7 +103,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
     def generate_entry_payload(self, price=None):
         if price is None:
-            price = self.current_mark
+            price = (self.current_bid + self.current_ask) / 2
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating entry payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -143,7 +143,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
     def generate_exit_payload(self, price=None):
         if price is None:
-            price = self.current_mark
+            price = (self.current_bid + self.current_ask) / 2
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating exit payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -183,7 +183,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
     def submit_exit(self, price_step=0.01, wait_time=10):
         # self.update_order()  # update fresh quotes
-        current_price = self.current_mark
+        current_price = (self.current_bid + self.current_ask) / 2
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
             target_price = self.current_ask
         else:
