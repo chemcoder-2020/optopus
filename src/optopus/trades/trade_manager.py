@@ -30,7 +30,7 @@ class TradingManager(OptionBacktester):
                 return True
         return False
 
-    def _process_order(self, order, option_chain_df):
+    def _process_order(self, order, option_chain_df=None):
         """Helper function to process individual orders."""
         order.update_order(option_chain_df)
         if order.status == "CLOSED":
