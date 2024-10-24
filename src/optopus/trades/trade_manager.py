@@ -34,10 +34,6 @@ class TradingManager(OptionBacktester):
 
         if self.active_orders:
             if self.active_orders[0].market_isOpen():
-                if option_chain_df is None:
-                    option_chain_df = self.option_broker.data.get_option_chain(
-                        self.ticker
-                    )
                 for order in self.active_orders:
                     orders_to_close = []
                     order.update_order(option_chain_df)  # update the order part
@@ -52,8 +48,7 @@ class TradingManager(OptionBacktester):
                             for order in self.active_orders
                             if order.status != "CLOSED"
                         ]
-
-                self.update(current_time, option_chain_df)  # update the strategy part
+                self._update_trade_counts()
 
     def get_active_orders(self) -> List[Order]:
         return self.active_orders
@@ -230,5 +225,7 @@ class TradingManager(OptionBacktester):
 
     def liquidate_all(self) -> None:
         """Close all active orders."""
-        for order in self.active_orders[:]:  # Iterate over a copy to avoid modifying the list while iterating
+        for order in self.active_orders[
+            :
+        ]:  # Iterate over a copy to avoid modifying the list while iterating
             self.close_order(order.order_id.split("/")[-1])
