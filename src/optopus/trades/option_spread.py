@@ -196,6 +196,18 @@ class OptionStrategy:
 
         self.entry_net_premium = _replace_premium
 
+    def update_exit_net_premium(self):
+        """Update the exit net premium. Helpful to update exit net premium after actual trading order is filled."""
+        _replace_premium = 0
+        for leg, ratio in zip(self.legs, self.leg_ratios):
+            premium_adjustment = leg.exit_price * ratio
+            if leg.position_side == "SELL":
+                _replace_premium += premium_adjustment
+            else:  # BUY
+                _replace_premium -= premium_adjustment
+
+        self.exit_net_premium = _replace_premium
+
     def _check_exit_conditions(self, option_chain_df):
         """Check and apply exit conditions."""
         current_return = self.return_percentage()
