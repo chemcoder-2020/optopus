@@ -1,4 +1,5 @@
 import pandas as pd
+from joblib import Parallel, delayed
 from .option_manager import OptionBacktester, Config
 from ..brokers.schwab.schwab_order import SchwabOptionOrder
 from ..brokers.schwab.schwab_auth import SchwabAuth
@@ -24,37 +25,39 @@ class TradingManager(OptionBacktester):
         market_isopen = order.market_isOpen()
         if market_isopen:
             if self.add_spread(order):
-                order.submit_entry()
-                self.active_orders.append(order)
-                return True
+                if order.submit_entry():
+                    self.active_orders.append(order)
+                    return True
         return False
 
+    def _process_order(self, order, option_chain_df=None):
+        """Helper function to process individual orders."""
+        order.update_order(option_chain_df)
+        if order.status == "CLOSED":
+            if order.submit_exit():
+                return order
+        return None
+
     def update_orders(self, current_time, option_chain_df=None):
-        """Update the status of all orders."""
-
-        if self.active_orders:
-            if self.active_orders[0].market_isOpen():
-                # if option_chain_df is None:
-                #     option_chain_df = self.option_broker.data.get_option_chain(
-                #         self.ticker
-                #     )
-                for order in self.active_orders:
-                    orders_to_close = []
-                    order.update_order(option_chain_df)  # update the order part
-                    if order.status == "CLOSED":
-                        order.submit_exit()
-                        orders_to_close.append(order)
-
-                    if orders_to_close:
-                        self.closed_orders.extend(orders_to_close)
-                        self.active_orders = [
-                            order
-                            for order in self.active_orders
-                            if order.status != "CLOSED"
-                        ]
-                self._update_trade_counts()
-
-                # self.update(current_time, option_chain_df)  # update the strategy part
+        """Update the status of all orders using parallel processing."""
+        if self.active_orders and self.active_orders[0].market_isOpen():
+            # Process orders in parallel
+            results = Parallel(n_jobs=-1)(
+                delayed(self._process_order)(order, option_chain_df)
+                for order in self.active_orders
+            )
+            
+            # Filter out None results and get orders to close
+            orders_to_close = [order for order in results if order is not None]
+            
+            if orders_to_close:
+                self.closed_orders.extend(orders_to_close)
+                self.active_orders = [
+                    order for order in self.active_orders 
+                    if order.status != "CLOSED"
+                ]
+            
+            self._update_trade_counts()
 
     def get_active_orders(self) -> List[Order]:
         return self.active_orders

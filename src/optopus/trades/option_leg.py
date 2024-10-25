@@ -91,6 +91,8 @@ class OptionLeg:
         self.current_bid = None
         self.current_ask = None
         self.current_delta = None
+        self.exit_price = None
+        self.exit_underlying_last = None
         self.underlying_last = None
         self.underlying_diff = None
         self.is_itm = None
@@ -251,8 +253,8 @@ class OptionLeg:
 
     def update_exit_price(self, new_price: float):
         """Modify the current price of the option leg. Helpful for updating exit prices after actual trading order is filled."""
-        self.current_price = new_price
-        self.price_diff = self.current_price - self.entry_price
+        self.exit_price = new_price
+        self.price_diff = self.exit_price - self.entry_price
         self.pl = self.calculate_pl()
 
     def __repr__(self):

@@ -25,17 +25,17 @@ class TradingManager(OptionBacktester):
         market_isopen = order.market_isOpen()
         if market_isopen:
             if self.add_spread(order):
-                order.submit_entry()
-                self.active_orders.append(order)
-                return True
+                if order.submit_entry():
+                    self.active_orders.append(order)
+                    return True
         return False
 
     def _process_order(self, order, option_chain_df=None):
         """Helper function to process individual orders."""
         order.update_order(option_chain_df)
         if order.status == "CLOSED":
-            order.submit_exit()
-            return order
+            if order.submit_exit():
+                return order
         return None
 
     def update_orders(self, current_time, option_chain_df=None):
