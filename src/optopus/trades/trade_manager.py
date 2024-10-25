@@ -1,5 +1,4 @@
 import pandas as pd
-from joblib import Parallel, delayed
 from .option_manager import OptionBacktester, Config
 from ..brokers.schwab.schwab_order import SchwabOptionOrder
 from ..brokers.schwab.schwab_auth import SchwabAuth
