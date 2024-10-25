@@ -43,14 +43,6 @@ class TradingManager(OptionBacktester):
     def update_orders(self, option_chain_df=None):
         """Update the status of all orders using parallel processing."""
         if self.active_orders and self.active_orders[0].market_isOpen():
-            # Process orders in parallel
-            # results = Parallel(n_jobs=-1)(
-            #     delayed(self._process_order)(order, option_chain_df)
-            #     for order in self.active_orders
-            # )
-            
-            # # Filter out None results and get orders to close
-            # orders_to_close = [order for order in results if order is not None]
 
             orders_to_close = [self._process_order(order, option_chain_df) for order in self.active_orders]
             
