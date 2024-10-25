@@ -47,6 +47,7 @@ class TradingManager(OptionBacktester):
             with ThreadPoolExecutor() as executor:
                 orders_to_close = list(executor.map(lambda order: self._process_order(order, option_chain_df), self.active_orders))
             
+            orders_to_close = [order for order in orders_to_close if order]
             if orders_to_close:
                 self.closed_orders.extend(orders_to_close)
                 self.active_orders = [
