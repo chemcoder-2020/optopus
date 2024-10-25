@@ -256,7 +256,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                                 for leg_num, leg in enumerate(self.legs):
                                     leg.update_exit_price(average_prices_per_leg[leg_num + 1])
 
-                                # Update entry net premium
+                                # Update exit net premium
                                 self.update_exit_net_premium()
                                 break
         self.update_order_status()
@@ -265,9 +265,11 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         if self.order_id:
             order = self.get_order(order_url=self.order_id)
             if order:
+                previous_order_status = self.order_status
                 self.order_status = order.get("status")
-                logger.info(f"Order status updated to: {self.order_status}")
-                if self.order_status == "FILLED":
+                if previous_order_status != self.order_status:
+                    logger.info(f"Order status updated to: {self.order_status}")
+                if self.order_status == "FILLED" and previous_order_status != "FILLED":
                     # Update entry price for each leg
                     activities = []
                     for activity in order["orderActivityCollection"]:

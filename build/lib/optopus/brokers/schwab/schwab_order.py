@@ -237,16 +237,39 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
         self.update(self.current_time, new_option_chain_df)
         if self.status == "CLOSED":
-            self.submit_exit()
+            for i in range(3):
+                if self.submit_exit():
+                    if self.exit_order_id:
+                        exit_order = self.get_order(order_url=self.exit_order_id)
+                        if exit_order:
+                            self.exit_order_status = exit_order.get("status")
+                            logger.info(f"Order status updated to: {self.exit_order_status}")
+                            if self.exit_order_status == "FILLED":
+                                # Update entry price for each leg
+                                activities = []
+                                for activity in exit_order["orderActivityCollection"]:
+                                    activities.append(pd.DataFrame(activity["executionLegs"]))
+                                activities = pd.concat(activities, ignore_index=True)
+                                average_prices_per_leg = activities.groupby("legId").apply(
+                                    lambda x: (x.price * x.quantity / x.quantity.sum()).sum()
+                                )
+                                for leg_num, leg in enumerate(self.legs):
+                                    leg.update_exit_price(average_prices_per_leg[leg_num + 1])
+
+                                # Update entry net premium
+                                self.update_exit_net_premium()
+                                break
         self.update_order_status()
 
     def update_order_status(self):
         if self.order_id:
             order = self.get_order(order_url=self.order_id)
             if order:
+                previous_order_status = self.order_status
                 self.order_status = order.get("status")
-                logger.info(f"Order status updated to: {self.order_status}")
-                if self.order_status == "FILLED":
+                if previous_order_status != self.order_status:
+                    logger.info(f"Order status updated to: {self.order_status}")
+                if self.order_status == "FILLED" and previous_order_status != "FILLED":
                     # Update entry price for each leg
                     activities = []
                     for activity in order["orderActivityCollection"]:

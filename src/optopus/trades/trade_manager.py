@@ -34,7 +34,7 @@ class TradingManager(OptionBacktester):
         """Helper function to process individual orders."""
         order.update_order(option_chain_df)
         if order.status == "CLOSED":
-            if order.submit_exit():
+            if order.exit_order_id:
                 return order
         return None
 
