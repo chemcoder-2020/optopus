@@ -1,5 +1,4 @@
 import pandas as pd
-from joblib import Parallel, delayed
 from .option_manager import OptionBacktester, Config
 from ..brokers.schwab.schwab_order import SchwabOptionOrder
 from ..brokers.schwab.schwab_auth import SchwabAuth
@@ -9,6 +8,7 @@ from ..brokers.order import Order
 from typing import List
 import dill
 from loguru import logger
+from concurrent.futures import ThreadPoolExecutor
 
 
 class TradingManager(OptionBacktester):
@@ -44,7 +44,8 @@ class TradingManager(OptionBacktester):
         """Update the status of all orders using parallel processing."""
         if self.active_orders and self.active_orders[0].market_isOpen():
 
-            orders_to_close = [self._process_order(order, option_chain_df) for order in self.active_orders]
+            with ThreadPoolExecutor() as executor:
+                orders_to_close = list(executor.map(lambda order: self._process_order(order, option_chain_df), self.active_orders))
             
             if orders_to_close:
                 self.closed_orders.extend(orders_to_close)
