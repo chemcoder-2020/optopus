@@ -249,6 +249,12 @@ class OptionLeg:
         self.price_diff = self.current_price - self.entry_price
         self.pl = self.calculate_pl()
 
+    def update_exit_price(self, new_price: float):
+        """Modify the current price of the option leg. Helpful for updating exit prices after actual trading order is filled."""
+        self.current_price = new_price
+        self.price_diff = self.current_price - self.entry_price
+        self.pl = self.calculate_pl()
+
     def __repr__(self):
         return f"OptionLeg(symbol={self.symbol}, option_type={self.option_type}, strike={self.strike}, expiration={self.expiration}, contracts={self.contracts}, entry_price={self.entry_price}, current_price={self.current_price}, current_mark={self.current_mark}, current_last={self.current_last}, current_delta={self.current_delta}, entry_underlying_last={self.entry_underlying_last}, underlying_last={self.underlying_last}, underlying_diff={self.underlying_diff}, is_itm={self.is_itm}, price_diff={self.price_diff}, pl={self.pl}, position_side={self.position_side}, dte={self.dte}, commission={self.commission})"
 
