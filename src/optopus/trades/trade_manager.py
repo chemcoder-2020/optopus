@@ -35,20 +35,24 @@ class TradingManager(OptionBacktester):
         order.update_order(option_chain_df)
         if order.status == "CLOSED":
             if order.exit_order_id:
+                logger.info(f"Closed order {order.order_id}.")
                 return order
+        logger.info(f"Successfully updated order {order.order_id}.")
         return None
 
-    def update_orders(self, current_time, option_chain_df=None):
+    def update_orders(self, option_chain_df=None):
         """Update the status of all orders using parallel processing."""
         if self.active_orders and self.active_orders[0].market_isOpen():
             # Process orders in parallel
-            results = Parallel(n_jobs=-1)(
-                delayed(self._process_order)(order, option_chain_df)
-                for order in self.active_orders
-            )
+            # results = Parallel(n_jobs=-1)(
+            #     delayed(self._process_order)(order, option_chain_df)
+            #     for order in self.active_orders
+            # )
             
-            # Filter out None results and get orders to close
-            orders_to_close = [order for order in results if order is not None]
+            # # Filter out None results and get orders to close
+            # orders_to_close = [order for order in results if order is not None]
+
+            orders_to_close = [self._process_order(order, option_chain_df) for order in self.active_orders]
             
             if orders_to_close:
                 self.closed_orders.extend(orders_to_close)

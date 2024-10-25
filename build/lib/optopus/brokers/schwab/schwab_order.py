@@ -256,7 +256,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                                 for leg_num, leg in enumerate(self.legs):
                                     leg.update_exit_price(average_prices_per_leg[leg_num + 1])
 
-                                # Update entry net premium
+                                # Update exit net premium
                                 self.update_exit_net_premium()
                                 break
         self.update_order_status()
