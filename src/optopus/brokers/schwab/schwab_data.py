@@ -265,6 +265,87 @@ class SchwabData(Schwab):
             formatted_df[col] = formatted_df[col].astype("float64")
         return formatted_df
 
+    def format_equity_quote(self, raw_quote):
+        """
+        Format the equity quote data into a DataFrame.
+
+        Parameters:
+            raw_quote (dict): The raw quote data from the API response.
+
+        Returns:
+            pd.DataFrame: The formatted equity quote data.
+        """
+        formatted_quotes = []
+        for symbol, data in raw_quote.items():
+            quote = data["quote"]
+            formatted_quote = {
+                "SYMBOL": symbol,
+                "52WEEK_HIGH": quote.get("52WeekHigh", 0.0),
+                "52WEEK_LOW": quote.get("52WeekLow", 0.0),
+                "ASK_PRICE": quote.get("askPrice", 0.0),
+                "ASK_SIZE": quote.get("askSize", 0),
+                "ASK_TIME": pd.to_datetime(quote.get("askTime", 0), unit="ms")
+                .tz_localize("UTC")
+                .tz_convert("America/New_York")
+                .tz_localize(None),
+                "BID_PRICE": quote.get("bidPrice", 0.0),
+                "BID_SIZE": quote.get("bidSize", 0),
+                "BID_TIME": pd.to_datetime(quote.get("bidTime", 0), unit="ms")
+                .tz_localize("UTC")
+                .tz_convert("America/New_York")
+                .tz_localize(None),
+                "CLOSE_PRICE": quote.get("closePrice", 0.0),
+                "HIGH_PRICE": quote.get("highPrice", 0.0),
+                "LAST_PRICE": quote.get("lastPrice", 0.0),
+                "LAST_SIZE": quote.get("lastSize", 0),
+                "LOW_PRICE": quote.get("lowPrice", 0.0),
+                "MARK": quote.get("mark", 0.0),
+                "MARK_CHANGE": quote.get("markChange", 0.0),
+                "MARK_PERCENT_CHANGE": quote.get("markPercentChange", 0.0),
+                "NET_CHANGE": quote.get("netChange", 0.0),
+                "NET_PERCENT_CHANGE": quote.get("netPercentChange", 0.0),
+                "OPEN_PRICE": quote.get("openPrice", 0.0),
+                "POST_MARKET_CHANGE": quote.get("postMarketChange", 0.0),
+                "POST_MARKET_PERCENT_CHANGE": quote.get("postMarketPercentChange", 0.0),
+                "QUOTE_TIME": pd.to_datetime(quote.get("quoteTime", 0), unit="ms")
+                .tz_localize("UTC")
+                .tz_convert("America/New_York")
+                .tz_localize(None),
+                "SECURITY_STATUS": quote.get("securityStatus", ""),
+                "TOTAL_VOLUME": quote.get("totalVolume", 0),
+                "TRADE_TIME": pd.to_datetime(quote.get("tradeTime", 0), unit="ms")
+                .tz_localize("UTC")
+                .tz_convert("America/New_York")
+                .tz_localize(None),
+            }
+            formatted_quotes.append(formatted_quote)
+
+        formatted_df = pd.DataFrame(formatted_quotes)
+        for col in [
+            "52WEEK_HIGH",
+            "52WEEK_LOW",
+            "ASK_PRICE",
+            "ASK_SIZE",
+            "BID_PRICE",
+            "BID_SIZE",
+            "CLOSE_PRICE",
+            "HIGH_PRICE",
+            "LAST_PRICE",
+            "LAST_SIZE",
+            "LOW_PRICE",
+            "MARK",
+            "MARK_CHANGE",
+            "MARK_PERCENT_CHANGE",
+            "NET_CHANGE",
+            "NET_PERCENT_CHANGE",
+            "OPEN_PRICE",
+            "POST_MARKET_CHANGE",
+            "POST_MARKET_PERCENT_CHANGE",
+            "TOTAL_VOLUME",
+        ]:
+            formatted_df[col] = formatted_df[col].astype("float64")
+        return formatted_df
+
     def process_price_history(self, price_history_json, frequency_type):
         """
         Process the price history JSON response and return a DataFrame.
