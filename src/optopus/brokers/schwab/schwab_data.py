@@ -265,18 +265,21 @@ class SchwabData(Schwab):
             formatted_df[col] = formatted_df[col].astype("float64")
         return formatted_df
 
-    def process_price_history(self, price_history_json):
+    def process_price_history(self, price_history_json, frequency_type):
         """
         Process the price history JSON response and return a DataFrame.
 
         Parameters:
             price_history_json (dict): The JSON response from the price history API.
+            frequency_type (str): The time frequency type. Valid values depend on period_type.
 
         Returns:
             pd.DataFrame: DataFrame with columns open, high, low, close, volume, datetime.
         """
         df = pd.DataFrame(price_history_json["candles"])
         df["datetime"] = pd.to_datetime(df["datetime"], unit="ms").dt.tz_localize("UTC").dt.tz_convert("America/New_York").dt.tz_localize(None)
+        if frequency_type in ["daily", "weekly", "monthly"]:
+            df["datetime"] = df["datetime"].dt.date
         df = df[["open", "high", "low", "close", "volume", "datetime"]]
         return df
 
@@ -331,7 +334,7 @@ class SchwabData(Schwab):
         response = self._get(url, params=params)
         response.raise_for_status()
         price_history_json = response.json()
-        return self.process_price_history(price_history_json)
+        return self.process_price_history(price_history_json, frequency_type)
 
     @classmethod
     def _process_option_chain(cls, opt_chain):
