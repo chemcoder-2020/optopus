@@ -325,7 +325,13 @@ class SchwabData(Schwab):
             "ytd": ["daily", "weekly"],
         }
         if frequency_type not in valid_combinations.get(period_type, []):
-            raise ValueError(f"Invalid combination of period_type '{period_type}' and frequency_type '{frequency_type}'")
+            valid_combinations_str = ", ".join(
+                f"{pt}: {', '.join(ft for ft in valid_combinations[pt])}"
+                for pt in valid_combinations
+            )
+            raise ValueError(
+                f"Invalid combination of period_type '{period_type}' and frequency_type '{frequency_type}'. Valid combinations are: {valid_combinations_str}"
+            )
 
         url = f"{self.marketdata_base_url}/pricehistory"
         params = {
