@@ -267,6 +267,50 @@ class SchwabData(Schwab):
             formatted_df[col] = formatted_df[col].astype("float64")
         return formatted_df
 
+    def get_price_history(
+        self,
+        symbol,
+        period_type="day",
+        period=None,
+        frequency_type="minute",
+        frequency=1,
+        start_date=None,
+        end_date=None,
+        need_extended_hours_data=False,
+        need_previous_close=False,
+    ):
+        """
+        Get historical Open, High, Low, Close, and Volume for a given frequency.
+
+        Parameters:
+            symbol (str): The Equity symbol used to look up price history.
+            period_type (str): The chart period being requested. Valid values: day, month, year, ytd.
+            period (int): The number of chart period types.
+            frequency_type (str): The time frequency type. Valid values depend on period_type.
+            frequency (int): The time frequency duration. Valid values depend on frequency_type.
+            start_date (int): The start date, Time in milliseconds since the UNIX epoch.
+            end_date (int): The end date, Time in milliseconds since the UNIX epoch.
+            need_extended_hours_data (bool): Need extended hours data.
+            need_previous_close (bool): Need previous close price/date.
+        """
+        url = f"{self.marketdata_base_url}/pricehistory"
+        params = {
+            "symbol": symbol,
+            "periodType": period_type,
+            "period": period,
+            "frequencyType": frequency_type,
+            "frequency": frequency,
+            "startDate": start_date,
+            "endDate": end_date,
+            "needExtendedHoursData": str(need_extended_hours_data).lower(),
+            "needPreviousClose": str(need_previous_close).lower(),
+        }
+        # Remove None values from params
+        params = {k: v for k, v in params.items() if v is not None}
+        response = self._get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+
     @classmethod
     def _process_option_chain(cls, opt_chain):
         calls = opt_chain["callExpDateMap"]
