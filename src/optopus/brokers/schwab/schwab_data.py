@@ -1,10 +1,8 @@
 from loguru import logger
 import pandas as pd
 import os
-import dotenv
 from .schwab import Schwab
 
-dotenv.load_dotenv()
 
 
 class SchwabData(Schwab):
