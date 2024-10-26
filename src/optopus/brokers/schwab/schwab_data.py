@@ -283,9 +283,9 @@ class SchwabData(Schwab):
     def get_price_history(
         self,
         symbol,
-        period_type="day",
-        period=None,
-        frequency_type="minute",
+        period_type="year",
+        period=1,
+        frequency_type="daily",
         frequency=1,
         start_date=None,
         end_date=None,
@@ -309,9 +309,9 @@ class SchwabData(Schwab):
         url = f"{self.marketdata_base_url}/pricehistory"
         params = {
             "symbol": symbol,
-            "periodType": period_type,
-            "period": period,
-            "frequencyType": frequency_type,
+            "periodType": period_type or "year",
+            "period": period or 1,
+            "frequencyType": frequency_type or "daily",
             "frequency": frequency,
             "startDate": start_date,
             "endDate": end_date,
