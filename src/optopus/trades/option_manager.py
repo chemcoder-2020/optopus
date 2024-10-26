@@ -330,6 +330,7 @@ class OptionBacktester:
             ),
             "cagr": self._calculate_cagr(df),
             "avg_monthly_pl": self._calculate_avg_monthly_pl(df),
+            "avg_monthly_pl_nonzero": self.calculate_avg_monthly_pl_nonzero(df),
             "win_rate": self._calculate_win_rate(),
             "risk_of_ruin": self.monte_carlo_risk_of_ruin(
                 closed_trades_df["closed_pl"].values,
@@ -396,6 +397,12 @@ class OptionBacktester:
         positive_months = monthly_closed_pl[monthly_closed_pl > 0]
         total_months = monthly_closed_pl[monthly_closed_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
+
+    def calculate_avg_monthly_pl_nonzero(self, df):
+        """Calculate the average monthly P/L, considering only non-zero months."""
+        monthly_pl = df.set_index("time")["total_pl"].resample("M").last().diff().dropna()
+        non_zero_months = monthly_pl[monthly_pl != 0]
+        return non_zero_months.mean() if not non_zero_months.empty else 0
 
     def _calculate_max_drawdown(self, df):
         """Calculate the maximum drawdown percentage and dollars."""
