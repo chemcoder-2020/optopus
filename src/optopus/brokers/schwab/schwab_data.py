@@ -297,10 +297,18 @@ class SchwabData(Schwab):
 
         Parameters:
             symbol (str): The Equity symbol used to look up price history.
-            period_type (str): The chart period being requested. Valid values: day, month, year, ytd.
-            period (int): The number of chart period types.
-            frequency_type (str): The time frequency type. Valid values depend on period_type.
-            frequency (int): The time frequency duration. Valid values depend on frequency_type.
+            period_type (str): The chart period being requested. Valid values: 'day', 'month', 'year', 'ytd'.
+            period (int): The number of chart period types. For example, if period_type is 'year', period=1 means 1 year.
+            frequency_type (str): The time frequency type. Valid values depend on period_type:
+                - 'day': 'minute'
+                - 'month': 'daily', 'weekly'
+                - 'year': 'daily', 'weekly', 'monthly'
+                - 'ytd': 'daily', 'weekly'
+            frequency (int): The time frequency duration. Valid values depend on frequency_type:
+                - 'minute': 1, 5, 10, 15, 30
+                - 'daily': 1
+                - 'weekly': 1
+                - 'monthly': 1
             start_date (int): The start date, Time in milliseconds since the UNIX epoch.
             end_date (int): The end date, Time in milliseconds since the UNIX epoch.
             need_extended_hours_data (bool): Need extended hours data.
