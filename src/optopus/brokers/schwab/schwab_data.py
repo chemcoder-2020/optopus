@@ -317,6 +317,16 @@ class SchwabData(Schwab):
             need_extended_hours_data (bool): Need extended hours data.
             need_previous_close (bool): Need previous close price/date.
         """
+        # Validate period_type and frequency_type combination
+        valid_combinations = {
+            "day": ["minute"],
+            "month": ["daily", "weekly"],
+            "year": ["daily", "weekly", "monthly"],
+            "ytd": ["daily", "weekly"],
+        }
+        if frequency_type not in valid_combinations.get(period_type, []):
+            raise ValueError(f"Invalid combination of period_type '{period_type}' and frequency_type '{frequency_type}'")
+
         url = f"{self.marketdata_base_url}/pricehistory"
         params = {
             "symbol": symbol,
