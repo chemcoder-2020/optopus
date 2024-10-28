@@ -287,6 +287,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.status, "CLOSED")
 
     def test_won_attribute(self):
+        stop_loss_condition = StopLossCondition(stop_loss=10)
         vertical_spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
@@ -296,7 +297,7 @@ class TestOptionStrategy(unittest.TestCase):
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
-            stop_loss=10,
+            exit_scheme=stop_loss_condition,
         )
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertFalse(vertical_spread.won)
@@ -304,3 +305,18 @@ class TestOptionStrategy(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+    def test_stop_loss_condition(self):
+        stop_loss_condition = StopLossCondition(stop_loss=10)
+        vertical_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike="+2",
+            short_strike="+0.3",
+            expiration="2024-10-31",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+            exit_scheme=stop_loss_condition,
+        )
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        self.assertFalse(vertical_spread.won)
