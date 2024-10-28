@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
-from typing import Union
+from typing import Union, List
 from .option_spread import OptionStrategy
 
 class ExitConditionChecker(ABC):
