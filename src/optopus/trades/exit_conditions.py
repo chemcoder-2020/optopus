@@ -14,7 +14,7 @@ class ExitConditionChecker(ABC):
     """
 
     @abstractmethod
-    def check_exit_conditions(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
         Check if the exit conditions are met for the option strategy.
 
@@ -44,7 +44,7 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         self.profit_target = profit_target
 
-    def check_exit_conditions(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
         Check if the profit target is met.
 
