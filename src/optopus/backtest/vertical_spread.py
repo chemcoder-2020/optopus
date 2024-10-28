@@ -132,6 +132,7 @@ class Backtest:
                         profit_target=self.strategy_params["profit_target"],
                         stop_loss=self.strategy_params["stop_loss"],
                         commission=self.strategy_params["commission"],
+                        exit_scheme=self.strategy_params["exit_scheme"],
                     )
             except Exception as e:
                 if self.debug:
