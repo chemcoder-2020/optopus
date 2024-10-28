@@ -204,3 +204,42 @@ class CompositeExitCondition(ExitConditionChecker):
             return any(results)
         else:
             raise ValueError("Logical operation must be 'AND' or 'OR'")
+
+
+class DefaultExitCondition(ExitConditionChecker):
+    """
+    Default exit condition that combines a profit target and a time-based condition.
+
+    Attributes:
+        profit_target (float): The profit target percentage.
+        exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
+    """
+
+    def __init__(self):
+        """
+        Initialize the DefaultExitCondition.
+
+        Args:
+            profit_target (float): The profit target percentage.
+            exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
+        """
+        profit_target_condition = ProfitTargetCondition(profit_target=0.40)
+        time_based_condition = TimeBasedCondition(exit_time_before_expiration=pd.Timedelta(minutes=15))
+        self.composite_condition = CompositeExitCondition(
+            conditions=[profit_target_condition, time_based_condition],
+            logical_operation='OR'
+        )
+
+    def should_exit(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+        """
+        Check if the default exit condition is met.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to check.
+            current_time (datetime): The current time for evaluation.
+            option_chain_df (pd.DataFrame): The updated option chain data.
+
+        Returns:
+            bool: True if the default exit condition is met, False otherwise.
+        """
+        return self.composite_condition.should_exit(strategy, current_time, option_chain_df)
