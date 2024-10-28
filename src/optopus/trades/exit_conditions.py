@@ -163,3 +163,44 @@ class TrailingStopCondition(ExitConditionChecker):
             return (highest_return - current_return) >= self.stop_loss
 
         return False
+
+class CompositeExitCondition(ExitConditionChecker):
+    """
+    Composite exit condition that combines multiple exit conditions.
+
+    Attributes:
+        conditions (List[ExitConditionChecker]): List of exit conditions to combine.
+        logical_operation (str): The logical operation to combine the conditions ('AND' or 'OR').
+    """
+
+    def __init__(self, conditions: List[ExitConditionChecker], logical_operation: str = 'AND'):
+        """
+        Initialize the CompositeExitCondition.
+
+        Args:
+            conditions (List[ExitConditionChecker]): List of exit conditions to combine.
+            logical_operation (str): The logical operation to combine the conditions ('AND' or 'OR').
+        """
+        self.conditions = conditions
+        self.logical_operation = logical_operation
+
+    def should_exit(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+        """
+        Check if the composite exit condition is met.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to check.
+            current_time (datetime): The current time for evaluation.
+            option_chain_df (pd.DataFrame): The updated option chain data.
+
+        Returns:
+            bool: True if the composite exit condition is met, False otherwise.
+        """
+        results = [condition.should_exit(strategy, current_time, option_chain_df) for condition in self.conditions]
+
+        if self.logical_operation == 'AND':
+            return all(results)
+        elif self.logical_operation == 'OR':
+            return any(results)
+        else:
+            raise ValueError("Logical operation must be 'AND' or 'OR'")
