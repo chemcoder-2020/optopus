@@ -6,8 +6,8 @@ A brief description of your project.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/my_python_project.git
-   cd my_python_project
+   git clone https://github.com/chemcoder-2020/optopus.git
+   cd optopus
    ```
 
 2. Create a virtual environment:
