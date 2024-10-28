@@ -56,7 +56,7 @@ Optopus is an option trading library designed to support multiple brokers. Curre
    ```python
    from src.optopus.trades.option_spread import OptionStrategy, OptionLeg
 
-   strategy = OptionStrategy(symbol="AAPL", strategy_type="VERTICAL")
+   strategy = OptionStrategy(symbol="AAPL", strategy_type="Vertical Spread")
    strategy.add_leg(OptionLeg(symbol="AAPL", option_type="CALL", strike=150, expiration=datetime(2023, 10, 1), contracts=1))
    strategy.add_leg(OptionLeg(symbol="AAPL", option_type="CALL", strike=160, expiration=datetime(2023, 10, 1), contracts=1))
    print(strategy.total_pl())
