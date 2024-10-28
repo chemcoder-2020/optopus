@@ -50,6 +50,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         contracts: int = 1,
         commission: float = 0.5,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition()
     ):
         """
         Initialize an OptionStrategy object.
@@ -61,6 +62,7 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             contracts (int, optional): The number of contracts for the strategy. Defaults to 1.
+            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use. Defaults to DefaultExitCondition.
         """
         self.symbol = symbol
         self.strategy_type = strategy_type
@@ -89,6 +91,7 @@ class OptionStrategy:
         self.exit_underlying_last = None
         self.exit_dit = None
         self.exit_dte = None
+        self.exit_scheme = exit_scheme
 
     @staticmethod
     def _standardize_time(time_value):
@@ -215,47 +218,52 @@ class OptionStrategy:
         # Update highest return for trailing stop
         self.highest_return = max(self.highest_return, current_return)
 
-        # Check profit target
-        if self.profit_target and current_return >= self.profit_target:
-            self._close_strategy(option_chain_df)
-            return
-
-        # Check stop loss
-        if self.stop_loss and current_return <= -self.stop_loss:
-            self._close_strategy(option_chain_df)
-            return
-
-        # Check trailing stop
-        if (
-            self.trailing_stop
-            and (self.highest_return - current_return) >= self.trailing_stop
-        ):
-            self._close_strategy(option_chain_df)
-            return
-
-        # Check time-based conditions
-        try:
-            expiration_date = pd.Timestamp(self.legs[0].expiration).date()
-            expiration_datetime = pd.Timestamp.combine(
-                expiration_date, pd.Timestamp("16:00:00").time()
-            )
-
-            # Close if within 15 minutes of expiration
-            if self.current_time >= expiration_datetime - Timedelta(minutes=15):
+        if self.exit_scheme:
+            if self.exit_scheme.should_exit(self, self.current_time, option_chain_df):
+                self._close_strategy(option_chain_df)
+                return
+        else:
+            # Check profit target
+            if self.profit_target and current_return >= self.profit_target:
                 self._close_strategy(option_chain_df)
                 return
 
-            # Close if past expiration
-            if self.current_time > expiration_datetime:
+            # Check stop loss
+            if self.stop_loss and current_return <= -self.stop_loss:
                 self._close_strategy(option_chain_df)
-                logger.warning(
-                    f"Option strategy has expired before: {self.legs[0].expiration}"
+                return
+
+            # Check trailing stop
+            if (
+                self.trailing_stop
+                and (self.highest_return - current_return) >= self.trailing_stop
+            ):
+                self._close_strategy(option_chain_df)
+                return
+
+            # Check time-based conditions
+            try:
+                expiration_date = pd.Timestamp(self.legs[0].expiration).date()
+                expiration_datetime = pd.Timestamp.combine(
+                    expiration_date, pd.Timestamp("16:00:00").time()
                 )
-                return
-        except (AttributeError, ValueError, TypeError) as e:
-            print(f"Error in time-based exit check: {e}")
-            print(f"Current time: {self.current_time}")
-            print(f"Leg expiration: {self.legs[0].expiration}")
+
+                # Close if within 15 minutes of expiration
+                if self.current_time >= expiration_datetime - Timedelta(minutes=15):
+                    self._close_strategy(option_chain_df)
+                    return
+
+                # Close if past expiration
+                if self.current_time > expiration_datetime:
+                    self._close_strategy(option_chain_df)
+                    logger.warning(
+                        f"Option strategy has expired before: {self.legs[0].expiration}"
+                    )
+                    return
+            except (AttributeError, ValueError, TypeError) as e:
+                print(f"Error in time-based exit check: {e}")
+                print(f"Current time: {self.current_time}")
+                print(f"Leg expiration: {self.legs[0].expiration}")
 
     def _close_strategy(self, option_chain_df):
         if self.status == "CLOSED":
