@@ -163,7 +163,10 @@ class SchwabData(Schwab):
         response = self._get(url, params=params)
         response.raise_for_status()
         raw_quote = response.json()
-        return self.format_quote(raw_quote)
+        if all(len(sym) <= 5 for sym in symbols.split(",")):
+            return self.format_equity_quote(raw_quote)
+        else:
+            return self.format_quote(raw_quote)
 
     def format_quote(self, raw_quote):
         """

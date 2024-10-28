@@ -1,2 +1,6 @@
 .aider*
 .DS_Store
+.env
+dist/*
+build/*
+example_scripts/*
