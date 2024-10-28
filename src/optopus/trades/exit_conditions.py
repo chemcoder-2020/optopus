@@ -232,7 +232,7 @@ class DefaultExitCondition(ExitConditionChecker):
         exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
     """
 
-    def __init__(self):
+    def __init__(self, profit_target: float=40, exit_time_before_expiration: pd.Timedelta=pd.Timedelta(minutes=15)):
         """
         Initialize the DefaultExitCondition.
 
@@ -240,8 +240,8 @@ class DefaultExitCondition(ExitConditionChecker):
             profit_target (float): The profit target percentage.
             exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
         """
-        profit_target_condition = ProfitTargetCondition(profit_target=40)
-        time_based_condition = TimeBasedCondition(exit_time_before_expiration=pd.Timedelta(minutes=15))
+        profit_target_condition = ProfitTargetCondition(profit_target=profit_target)
+        time_based_condition = TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration)
         self.composite_condition = CompositeExitCondition(
             conditions=[profit_target_condition, time_based_condition],
             logical_operation='OR'

@@ -2,8 +2,15 @@ import unittest
 import pandas as pd
 from src.optopus.trades.option_spread import OptionStrategy
 from src.optopus.trades.option_leg import OptionLeg
-from src.optopus.trades.exit_conditions import DefaultExitCondition, CompositeExitCondition, TimeBasedCondition, ProfitTargetCondition, StopLossCondition
+from src.optopus.trades.exit_conditions import (
+    DefaultExitCondition,
+    CompositeExitCondition,
+    TimeBasedCondition,
+    ProfitTargetCondition,
+    StopLossCondition,
+)
 from loguru import logger
+
 
 class TestOptionStrategy(unittest.TestCase):
 
@@ -318,21 +325,54 @@ class TestOptionStrategy(unittest.TestCase):
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertFalse(vertical_spread.won)
 
-if __name__ == "__main__":
-    unittest.main()
-    
     def test_profit_target_condition(self):
-        profit_target_condition = ProfitTargetCondition(profit_target=1)
+        profit_target_condition = ProfitTargetCondition(profit_target=5)
         vertical_spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
-            option_type="CALL",
-            long_strike="+2",
-            short_strike="+0.3",
+            option_type="PUT",
+            long_strike="-2",
+            short_strike="-0.3",
             expiration="2024-10-31",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
             exit_scheme=profit_target_condition,
         )
-        vertical_spread.update("2024-09-06 15:45:00", self.update_df)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertTrue(vertical_spread.won)
+
+    def test_time_based_condition(self):
+        time_based_condition = TimeBasedCondition(exit_time_before_expiration=pd.Timedelta(minutes=15))
+        vertical_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="PUT",
+            long_strike="-2",
+            short_strike="-0.3",
+            expiration="2024-09-06",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+            exit_scheme=time_based_condition,
+        )
+        vertical_spread.update("2024-09-06 15:45:00", self.update_df)
+        self.assertTrue(vertical_spread.status == "CLOSED")
+    
+    def test_default_exit_condition(self):
+        default_exit_condition = DefaultExitCondition()
+        vertical_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="PUT",
+            long_strike="-2",
+            short_strike="-0.3",
+            expiration="2024-09-06",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+            exit_scheme=default_exit_condition,
+        )
+        vertical_spread.update("2024-09-06 15:45:00", self.update_df)
+        self.assertTrue(vertical_spread.status == "CLOSED")
+
+
+if __name__ == "__main__":
+    unittest.main()
