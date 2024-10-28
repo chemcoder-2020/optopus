@@ -58,3 +58,35 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         current_return = strategy.return_percentage()
         return current_return >= self.profit_target
+
+class StopLossCondition(ExitConditionChecker):
+    """
+    Exit condition based on a stop loss.
+
+    Attributes:
+        stop_loss (float): The stop loss percentage.
+    """
+
+    def __init__(self, stop_loss: float):
+        """
+        Initialize the StopLossCondition.
+
+        Args:
+            stop_loss (float): The stop loss percentage.
+        """
+        self.stop_loss = stop_loss
+
+    def should_exit(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+        """
+        Check if the stop loss is met.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to check.
+            current_time (datetime): The current time for evaluation.
+            option_chain_df (pd.DataFrame): The updated option chain data.
+
+        Returns:
+            bool: True if the stop loss is met, False otherwise.
+        """
+        current_return = strategy.return_percentage()
+        return current_return <= -self.stop_loss
