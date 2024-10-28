@@ -123,3 +123,43 @@ class TimeBasedCondition(ExitConditionChecker):
         current_time = pd.Timestamp(current_time)
         expiration_time = pd.Timestamp(strategy.legs[0].expiration).replace(hour=16, minute=0, second=0, microsecond=0)
         return current_time >= (expiration_time - self.exit_time_before_expiration)
+
+class TrailingStopCondition(ExitConditionChecker):
+    """
+    Exit condition based on a trailing stop.
+
+    Attributes:
+        trigger (float): The trigger percentage for the trailing stop.
+        stop_loss (float): The stop loss percentage.
+    """
+
+    def __init__(self, trigger: float, stop_loss: float):
+        """
+        Initialize the TrailingStopCondition.
+
+        Args:
+            trigger (float): The trigger percentage for the trailing stop.
+            stop_loss (float): The stop loss percentage.
+        """
+        self.trigger = trigger
+        self.stop_loss = stop_loss
+
+    def should_exit(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+        """
+        Check if the trailing stop condition is met.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to check.
+            current_time (datetime): The current time for evaluation.
+            option_chain_df (pd.DataFrame): The updated option chain data.
+
+        Returns:
+            bool: True if the trailing stop condition is met, False otherwise.
+        """
+        current_return = strategy.return_percentage()
+        highest_return = strategy.highest_return
+
+        if highest_return >= self.trigger:
+            return (highest_return - current_return) >= self.stop_loss
+
+        return False
