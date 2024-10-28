@@ -27,7 +27,7 @@ A brief description of your project.
 
 5. Alternatively, you can install the library using the binary distribution:
    ```bash
-   pip install dist/optopus-0.1.1-py3-none-any.whl
+   pip install dist/optopus-0.4.2-py3-none-any.whl
    ```
 
 ## Usage
