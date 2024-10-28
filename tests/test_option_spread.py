@@ -302,9 +302,6 @@ class TestOptionStrategy(unittest.TestCase):
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertFalse(vertical_spread.won)
 
-
-if __name__ == "__main__":
-    unittest.main()
     def test_stop_loss_condition(self):
         stop_loss_condition = StopLossCondition(stop_loss=10)
         vertical_spread = OptionStrategy.create_vertical_spread(
@@ -320,3 +317,7 @@ if __name__ == "__main__":
         )
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertFalse(vertical_spread.won)
+
+if __name__ == "__main__":
+    unittest.main()
+    
