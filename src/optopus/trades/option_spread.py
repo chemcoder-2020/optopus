@@ -496,6 +496,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
+        exit_scheme: ExitConditionChecker = None,
     ):
         """
         Create a vertical spread option strategy.
@@ -527,6 +528,7 @@ class OptionStrategy:
             trailing_stop,
             contracts,
             commission,
+            exit_scheme,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -603,6 +605,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
+        exit_scheme: ExitConditionChecker = None,
     ):
         """
         Create an iron condor option strategy.
@@ -635,6 +638,7 @@ class OptionStrategy:
             trailing_stop,
             contracts,
             commission,
+            exit_scheme,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -744,6 +748,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
+        exit_scheme: ExitConditionChecker = None,
     ):
         """
         Create a straddle option strategy.
@@ -773,6 +778,7 @@ class OptionStrategy:
             trailing_stop,
             contracts,
             commission,
+            exit_scheme,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -829,6 +835,7 @@ class OptionStrategy:
         stop_loss: float = None,
         trailing_stop: float = None,
         commission: float = 0.5,
+        exit_scheme: ExitConditionChecker = None,
     ):
         """
         Create a butterfly option strategy.
@@ -859,6 +866,7 @@ class OptionStrategy:
             trailing_stop,
             contracts,
             commission,
+            exit_scheme,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -942,6 +950,7 @@ class OptionStrategy:
         stop_loss: float = None,
         trailing_stop: float = None,
         commission: float = 0.5,
+        exit_scheme: ExitConditionChecker = None,
     ):
         """
         Create a naked call option strategy.
@@ -970,6 +979,7 @@ class OptionStrategy:
             trailing_stop,
             contracts,
             commission,
+            exit_scheme,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
@@ -1010,6 +1020,7 @@ class OptionStrategy:
         stop_loss: float = None,
         trailing_stop: float = None,
         commission: float = 0.5,
+        exit_scheme: ExitConditionChecker = None,
     ):
         """
         Create a naked put option strategy.
@@ -1038,6 +1049,7 @@ class OptionStrategy:
             trailing_stop,
             contracts,
             commission,
+            exit_scheme,
         )
 
         expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
