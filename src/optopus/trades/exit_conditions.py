@@ -90,3 +90,36 @@ class StopLossCondition(ExitConditionChecker):
         """
         current_return = strategy.return_percentage()
         return current_return <= -self.stop_loss
+
+class TimeBasedCondition(ExitConditionChecker):
+    """
+    Exit condition based on a specific time before expiration.
+
+    Attributes:
+        exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
+    """
+
+    def __init__(self, exit_time_before_expiration: pd.Timedelta):
+        """
+        Initialize the TimeBasedCondition.
+
+        Args:
+            exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
+        """
+        self.exit_time_before_expiration = exit_time_before_expiration
+
+    def should_exit(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+        """
+        Check if the current time is within the specified time before expiration.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to check.
+            current_time (datetime): The current time for evaluation.
+            option_chain_df (pd.DataFrame): The updated option chain data.
+
+        Returns:
+            bool: True if the current time is within the specified time before expiration, False otherwise.
+        """
+        current_time = pd.Timestamp(current_time)
+        expiration_time = pd.Timestamp(strategy.legs[0].expiration).replace(hour=16, minute=0, second=0, microsecond=0)
+        return current_time >= (expiration_time - self.exit_time_before_expiration)
