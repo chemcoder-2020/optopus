@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
+from typing import Union
+from .option_spread import OptionStrategy
 
 class ExitConditionChecker(ABC):
     """
@@ -12,7 +14,7 @@ class ExitConditionChecker(ABC):
     """
 
     @abstractmethod
-    def check_exit_conditions(self, current_time: datetime, option_chain_df: pd.DataFrame) -> bool:
+    def check_exit_conditions(self, strategy: OptionStrategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
         Check if the exit conditions are met for the option strategy.
 
