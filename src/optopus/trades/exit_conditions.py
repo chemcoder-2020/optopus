@@ -12,6 +12,9 @@ class ExitConditionChecker(ABC):
             Check if the exit conditions are met for the option strategy.
     """
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}()"
+
     @abstractmethod
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -42,6 +45,9 @@ class ProfitTargetCondition(ExitConditionChecker):
             profit_target (float): The profit target percentage.
         """
         self.profit_target = profit_target
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(profit_target={self.profit_target})"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -75,6 +81,9 @@ class StopLossCondition(ExitConditionChecker):
         """
         self.stop_loss = stop_loss
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(stop_loss={self.stop_loss})"
+
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
         Check if the stop loss is met.
@@ -106,6 +115,9 @@ class TimeBasedCondition(ExitConditionChecker):
             exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
         """
         self.exit_time_before_expiration = exit_time_before_expiration
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(exit_time_before_expiration={self.exit_time_before_expiration})"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -142,6 +154,9 @@ class TrailingStopCondition(ExitConditionChecker):
         """
         self.trigger = trigger
         self.stop_loss = stop_loss
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(trigger={self.trigger}, stop_loss={self.stop_loss})"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -182,6 +197,9 @@ class CompositeExitCondition(ExitConditionChecker):
         """
         self.conditions = conditions
         self.logical_operation = logical_operation
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(conditions={self.conditions}, logical_operation='{self.logical_operation}')"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -228,6 +246,9 @@ class DefaultExitCondition(ExitConditionChecker):
             conditions=[profit_target_condition, time_based_condition],
             logical_operation='OR'
         )
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(composite_condition={self.composite_condition})"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
