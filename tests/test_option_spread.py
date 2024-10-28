@@ -2,8 +2,8 @@ import unittest
 import pandas as pd
 from src.optopus.trades.option_spread import OptionStrategy
 from src.optopus.trades.option_leg import OptionLeg
+from src.optopus.trades.exit_conditions import DefaultExitCondition, CompositeExitCondition, TimeBasedCondition, ProfitTargetCondition, StopLossCondition
 from loguru import logger
-
 
 class TestOptionStrategy(unittest.TestCase):
 

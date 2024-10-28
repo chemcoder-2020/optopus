@@ -51,7 +51,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         contracts: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition()
+        exit_scheme: ExitConditionChecker = None
     ):
         """
         Initialize an OptionStrategy object.
@@ -1179,6 +1179,7 @@ class OptionStrategy:
             f"  Strategy Ask: {self.current_ask:.2f},\n"
             f"  Legs:\n    {legs_repr}\n"
             f"  Total Commission: {self.calculate_total_commission():.2f},\n"
+            f"  Exit Scheme:{self.exit_scheme.__repr__() if self.exit_scheme is not None else None}\n"
             f")"
         )
 
