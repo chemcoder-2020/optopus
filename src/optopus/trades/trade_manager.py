@@ -144,6 +144,7 @@ class TradingManager(OptionBacktester):
             "Price",
             "Total P/L",
             "Return (%)",
+            "Highest Return",
             "Total Commission",
             "DIT",
         ]
@@ -171,6 +172,7 @@ class TradingManager(OptionBacktester):
                     order.net_premium,
                     order.total_pl(),
                     order.return_percentage(),
+                    order.highest_return,
                     order.calculate_total_commission(),
                     order.DIT,
                 ]
