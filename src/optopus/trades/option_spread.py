@@ -1160,6 +1160,19 @@ class OptionStrategy:
         strategy_ask = abs(strategy_ask)
         return min(strategy_bid, strategy_ask), max(strategy_bid, strategy_ask)
 
+    def set_attribute(self, attr_name, attr_value):
+        """
+        Set an attribute dynamically.
+
+        Args:
+            attr_name (str): The name of the attribute to set.
+            attr_value: The value to set the attribute to.
+        """
+        if hasattr(self, attr_name):
+            setattr(self, attr_name, attr_value)
+        else:
+            raise AttributeError(f"'OptionStrategy' object has no attribute '{attr_name}'")
+
     def __repr__(self):
         legs_repr = "\n    ".join(repr(leg) for leg in self.legs)
         return (
