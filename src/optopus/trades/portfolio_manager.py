@@ -1,4 +1,5 @@
 import logging
+import pandas as pd
 from typing import List, Dict
 from .trade_manager import TradingManager
 
