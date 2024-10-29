@@ -219,7 +219,7 @@ class OptionStrategy:
         # Update highest return for trailing stop
         self.highest_return = max(self.highest_return, current_return)
 
-        if self.exit_scheme:
+        if hasattr(self, "exit_scheme") and self.exit_scheme:
             if self.exit_scheme.should_exit(self, self.current_time, option_chain_df):
                 self._close_strategy(option_chain_df)
                 return
@@ -1204,7 +1204,7 @@ class OptionStrategy:
             f"  Strategy Ask: {self.current_ask:.2f},\n"
             f"  Legs:\n    {legs_repr}\n"
             f"  Total Commission: {self.calculate_total_commission():.2f},\n"
-            f"  Exit Scheme:{self.exit_scheme.__repr__() if self.exit_scheme is not None else None}\n"
+            f"  Exit Scheme:{self.exit_scheme.__repr__() if hasattr(self, 'exit_scheme') and self.exit_scheme is not None else None}\n"
             f")"
         )
 
