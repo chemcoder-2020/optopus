@@ -12,7 +12,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 
 
-class Backtest:
+class BacktestVerticalSpread:
     def __init__(
         self,
         config,

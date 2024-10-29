@@ -1,3 +1,4 @@
-from .vertical_spread import Backtest
+from .vertical_spread import BacktestVerticalSpread
+from .bidirectional_vertical_spread import BacktestBidirectionalVerticalSpread
 
-__all__ = ["Backtest"]
+__all__ = ["BacktestVerticalSpread", "BacktestBidirectionalVerticalSpread"]
