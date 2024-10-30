@@ -1,8 +1,8 @@
 Metadata-Version: 2.1
 Name: optopus
-Version: 0.5.7
+Version: 0.5.8
 Summary: A Python project for options trading and backtesting.
-Home-page: https://github.com/yourusername/optopus
+Home-page: https://github.com/chemcoder-2020/optopus
 Author: Huy Nguyen
 Author-email: Huy Nguyen <huynguyen2406@gmail.com>
 License: MIT License
