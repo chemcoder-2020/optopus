@@ -73,6 +73,7 @@ src/optopus/trades/exit_conditions.py
 src/optopus/trades/option_leg.py
 src/optopus/trades/option_manager.py
 src/optopus/trades/option_spread.py
+src/optopus/trades/portfolio_manager.py
 src/optopus/trades/trade_manager.py
 src/optopus/trades/__pycache__/__init__.cpython-312.pyc
 src/optopus/trades/__pycache__/option_leg.cpython-312.pyc
