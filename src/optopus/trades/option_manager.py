@@ -331,28 +331,58 @@ class OptionBacktester:
         max_drawdown_dollars, max_drawdown_percentage = self._calculate_max_drawdown(df)
 
         metrics = {
-            "sharpe_ratio": self._calculate_sharpe_ratio(trade_returns_per_allocation),
-            "profit_factor": self._calculate_profit_factor(
-                trade_returns_per_allocation
-            ),
-            "cagr": self._calculate_cagr(df),
-            "avg_monthly_pl": self._calculate_avg_monthly_pl(df),
-            "avg_monthly_pl_nonzero": self.calculate_avg_monthly_pl_nonzero(df),
-            "win_rate": self._calculate_win_rate(),
-            "risk_of_ruin": self.monte_carlo_risk_of_ruin(
-                closed_trades_df["closed_pl"].values,
-                self.config.initial_capital,
-                distribution="histogram",
-            ),
-            "probability_of_positive_monthly_pl": self._calculate_probability_of_positive_monthly_pl(
-                df
-            ),
-            "probability_of_positive_monthly_closed_pl": self._calculate_probability_of_positive_monthly_closed_pl(
-                df
-            ),
+            "sharpe_ratio": None,
+            "profit_factor": None,
+            "cagr": None,
+            "avg_monthly_pl": None,
+            "avg_monthly_pl_nonzero": None,
+            "win_rate": None,
+            "risk_of_ruin": None,
+            "probability_of_positive_monthly_pl": None,
+            "probability_of_positive_monthly_closed_pl": None,
             "max_drawdown_dollars": max_drawdown_dollars,
             "max_drawdown_percentage": max_drawdown_percentage,
             "average_dit": average_dit,
+            try:
+                metrics["sharpe_ratio"] = self._calculate_sharpe_ratio(trade_returns_per_allocation)
+            except Exception as e:
+                logger.error(f"Error calculating Sharpe Ratio: {str(e)}")
+            try:
+                metrics["profit_factor"] = self._calculate_profit_factor(trade_returns_per_allocation)
+            except Exception as e:
+                logger.error(f"Error calculating Profit Factor: {str(e)}")
+            try:
+                metrics["cagr"] = self._calculate_cagr(df)
+            except Exception as e:
+                logger.error(f"Error calculating CAGR: {str(e)}")
+            try:
+                metrics["avg_monthly_pl"] = self._calculate_avg_monthly_pl(df)
+            except Exception as e:
+                logger.error(f"Error calculating Average Monthly P/L: {str(e)}")
+            try:
+                metrics["avg_monthly_pl_nonzero"] = self.calculate_avg_monthly_pl_nonzero(df)
+            except Exception as e:
+                logger.error(f"Error calculating Average Monthly P/L (Non-Zero Months): {str(e)}")
+            try:
+                metrics["win_rate"] = self._calculate_win_rate()
+            except Exception as e:
+                logger.error(f"Error calculating Win Rate: {str(e)}")
+            try:
+                metrics["risk_of_ruin"] = self.monte_carlo_risk_of_ruin(
+                    closed_trades_df["closed_pl"].values,
+                    self.config.initial_capital,
+                    distribution="histogram",
+                )
+            except Exception as e:
+                logger.error(f"Error calculating Risk of Ruin: {str(e)}")
+            try:
+                metrics["probability_of_positive_monthly_pl"] = self._calculate_probability_of_positive_monthly_pl(df)
+            except Exception as e:
+                logger.error(f"Error calculating Probability of Positive Monthly P/L: {str(e)}")
+            try:
+                metrics["probability_of_positive_monthly_closed_pl"] = self._calculate_probability_of_positive_monthly_closed_pl(df)
+            except Exception as e:
+                logger.error(f"Error calculating Probability of Positive Monthly Closed P/L: {str(e)}")
         }
 
         return metrics
