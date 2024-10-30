@@ -157,46 +157,32 @@ class OptionLeg:
             delta_key = f"{prefix}DELTA"
             itm_key = f"{prefix}ITM"
 
-            if bid_key in option_data:
+            if bid_key in option_data.columns:
                 self.current_bid = option_data[bid_key].iloc[0]
-
-            if ask_key in option_data:
-                self.current_ask = option_data[ask_key].iloc[0]
-
-            if mark_key in option_data:
-                self.current_mark = option_data[mark_key].iloc[0]
             else:
-                bid = (
-                    option_data[bid_key].iloc[0]
-                    if bid_key in option_data.columns
-                    else None
-                )
-                ask = (
-                    option_data[ask_key].iloc[0]
-                    if ask_key in option_data.columns
-                    else None
-                )
+                self.current_bid = np.nan
 
-                if pd.notna(bid) and pd.notna(ask):
-                    self.current_mark = (bid + ask) / 2
-                else:
-                    logger.warning(f"Unable to calculate mark price for {self}")
-                    self.current_mark = np.nan
+            if ask_key in option_data.columns:
+                self.current_ask = option_data[ask_key].iloc[0]
+            else:
+                self.current_ask = np.nan
+
+            self.current_mark = (self.current_bid + self.current_ask) / 2
 
             self.current_last = (
                 option_data[last_key].iloc[0]
                 if last_key in option_data.columns
-                else None
+                else np.nan
             )
             self.current_delta = (
                 option_data[delta_key].iloc[0]
                 if delta_key in option_data.columns
-                else None
+                else np.nan
             )
             self.underlying_last = (
                 option_data["UNDERLYING_LAST"].iloc[0]
                 if "UNDERLYING_LAST" in option_data.columns
-                else None
+                else np.nan
             )
             self.is_itm = (
                 option_data[itm_key].iloc[0] if itm_key in option_data.columns else None
@@ -302,7 +288,7 @@ class OptionLeg:
         filtered_df = option_chain_df[option_chain_df[f"{prefix}DELTA"].notna()]
 
         # Calculate DTE for each expiration
-        current_date = pd.to_datetime(entry_time).tz_localize(None)
+        # current_date = pd.to_datetime(entry_time).tz_localize(None)
 
         # Filter by DTE
         if max_dte:

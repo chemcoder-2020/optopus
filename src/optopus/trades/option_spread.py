@@ -1126,12 +1126,6 @@ class OptionStrategy:
         Returns:
             float: The calculated net premium.
         """
-        # net_premium = 0.0
-        # for leg in self.legs:
-        #     if leg.position_side == "SELL":
-        #         net_premium += leg.current_price
-        #     else:  # BUY
-        #         net_premium -= leg.current_price
         bid, ask = self.calculate_bid_ask()
         net_premium = (bid + ask) / 2
         return net_premium

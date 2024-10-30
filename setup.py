@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='optopus',
-    version='0.5.7',
+    version='0.5.8',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     author='Huy Nguyen',
@@ -10,7 +10,7 @@ setup(
     description='A Python project for options trading and backtesting.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/yourusername/optopus',
+    url='https://github.com/chemcoder-2020/optopus',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
