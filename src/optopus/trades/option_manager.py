@@ -318,8 +318,15 @@ class OptionBacktester:
         df.set_index("time", inplace=True)
 
         closed_trades_df = self.get_closed_trades_df()
-        trade_returns_per_allocation = closed_trades_df["closed_pl"] / self.allocation
-        average_dit = closed_trades_df["dit"].mean()
+        try:
+            trade_returns_per_allocation = closed_trades_df["closed_pl"] / self.allocation
+        except KeyError:
+            trade_returns_per_allocation = np.nan
+        
+        try:
+            average_dit = closed_trades_df["dit"].mean()
+        except KeyError:
+            average_dit = np.nan
 
         max_drawdown_dollars, max_drawdown_percentage = self._calculate_max_drawdown(df)
 
