@@ -257,3 +257,37 @@ class TradingManager(OptionBacktester):
             :
         ]:  # Iterate over a copy to avoid modifying the list while iterating
             self.close_order(order.order_id.split("/")[-1])
+
+    def override_order(self, order_id: str) -> bool:
+        """Override an order by its ID, removing it from all lists."""
+        order_to_override = None
+        for i, order in enumerate(self.active_orders):
+            if order.order_id.split("/")[-1] == order_id:
+                order_to_override = order
+                break
+
+        if order_to_override:
+            self.active_orders.pop(i)
+            return True
+
+        for i, order in enumerate(self.closed_orders):
+            if order.order_id.split("/")[-1] == order_id:
+                order_to_override = order
+                break
+
+        if order_to_override:
+            self.closed_orders.pop(i)
+            return True
+
+        for i, trade in enumerate(self.active_trades):
+            if any(leg.order_id.split("/")[-1] == order_id for leg in trade.legs):
+                self.active_trades.pop(i)
+                return True
+
+        for i, trade in enumerate(self.closed_trades):
+            if any(leg.order_id.split("/")[-1] == order_id for leg in trade.legs):
+                self.closed_trades.pop(i)
+                return True
+
+        logger.warning(f"Order with ID {order_id} not found.")
+        return False
