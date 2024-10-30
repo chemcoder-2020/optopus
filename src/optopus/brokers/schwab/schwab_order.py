@@ -243,18 +243,28 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                         exit_order = self.get_order(order_url=self.exit_order_id)
                         if exit_order:
                             self.exit_order_status = exit_order.get("status")
-                            logger.info(f"Order status updated to: {self.exit_order_status}")
+                            logger.info(
+                                f"Order status updated to: {self.exit_order_status}"
+                            )
                             if self.exit_order_status == "FILLED":
                                 # Update entry price for each leg
                                 activities = []
                                 for activity in exit_order["orderActivityCollection"]:
-                                    activities.append(pd.DataFrame(activity["executionLegs"]))
+                                    activities.append(
+                                        pd.DataFrame(activity["executionLegs"])
+                                    )
                                 activities = pd.concat(activities, ignore_index=True)
-                                average_prices_per_leg = activities.groupby("legId").apply(
-                                    lambda x: (x.price * x.quantity / x.quantity.sum()).sum()
+                                average_prices_per_leg = activities.groupby(
+                                    "legId"
+                                ).apply(
+                                    lambda x: (
+                                        x.price * x.quantity / x.quantity.sum()
+                                    ).sum()
                                 )
                                 for leg_num, leg in enumerate(self.legs):
-                                    leg.update_exit_price(average_prices_per_leg[leg_num + 1])
+                                    leg.update_exit_price(
+                                        average_prices_per_leg[leg_num + 1]
+                                    )
 
                                 # Update exit net premium
                                 self.update_exit_net_premium()
@@ -312,26 +322,47 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             logger.warning("No order ID available to modify.")
 
     def close_order(self):
-        # Fetch the option chain data
+        # Fetch quotes
         symbols = [leg.schwab_symbol for leg in self.legs]
-        option_chain_df = self.get_quote(f"{','.join(symbols)}")
+        new_option_chain_df = self.get_quote(f"{','.join(symbols)}")
 
-        # Close the strategy
-        self.close_strategy(self.current_time, option_chain_df)
+        self.current_time = new_option_chain_df["QUOTE_READTIME"].iloc[0]
 
-        # Generate the exit payload
-        payload = self.generate_exit_payload()
+        self.update(self.current_time, new_option_chain_df)
+        self.close_strategy(self.current_time, new_option_chain_df)
+        if self.status == "CLOSED":
+            for i in range(3):
+                if self.submit_exit():
+                    if self.exit_order_id:
+                        exit_order = self.get_order(order_url=self.exit_order_id)
+                        if exit_order:
+                            self.exit_order_status = exit_order.get("status")
+                            logger.info(
+                                f"Order status updated to: {self.exit_order_status}"
+                            )
+                            if self.exit_order_status == "FILLED":
+                                # Update entry price for each leg
+                                activities = []
+                                for activity in exit_order["orderActivityCollection"]:
+                                    activities.append(
+                                        pd.DataFrame(activity["executionLegs"])
+                                    )
+                                activities = pd.concat(activities, ignore_index=True)
+                                average_prices_per_leg = activities.groupby(
+                                    "legId"
+                                ).apply(
+                                    lambda x: (
+                                        x.price * x.quantity / x.quantity.sum()
+                                    ).sum()
+                                )
+                                for leg_num, leg in enumerate(self.legs):
+                                    leg.update_exit_price(
+                                        average_prices_per_leg[leg_num + 1]
+                                    )
 
-        # Place the exit order
-        result = super().place_order(self.account_number_hash_value, payload)
-        if result:
-            self.exit_order_id = result[0]
-            assert (
-                self.exit_order_id != "" and self.exit_order_id is not None
-            ), "Order ID is empty when placing exit order."
-            self.update_order_status()
-        else:
-            logger.warning("Failed to place exit order.")
+                                # Update exit net premium
+                                self.update_exit_net_premium()
+                                break
 
     def __repr__(self):
         return (

@@ -13,17 +13,22 @@ from concurrent.futures import ThreadPoolExecutor
 
 class TradingManager(OptionBacktester):
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, name: str = "TradingManager"):
         super().__init__(config)
         self.active_orders: List[Order] = []
         self.closed_orders: List[Order] = []
         self.option_broker = OptionBroker(config)
         self.__dict__.update(config.__dict__)
+        self.automation_on = True
+        self.management_on = True
+        self.name = name
 
     def add_order(self, order: Order) -> bool:
         """Add an order to the list of active orders."""
         market_isopen = order.market_isOpen()
-        if market_isopen:
+        if market_isopen and (
+            hasattr(self, "automation_on") == False or self.automation_on
+        ):
             if self.add_spread(order):
                 if order.submit_entry():
                     self.active_orders.append(order)
@@ -42,19 +47,27 @@ class TradingManager(OptionBacktester):
 
     def update_orders(self, option_chain_df=None):
         """Update the status of all orders using parallel processing."""
-        if self.active_orders and self.active_orders[0].market_isOpen():
+        if (
+            self.active_orders
+            and self.active_orders[0].market_isOpen()
+            and (hasattr(self, "management_on") == False or self.management_on)
+        ):
 
             with ThreadPoolExecutor() as executor:
-                orders_to_close = list(executor.map(lambda order: self._process_order(order, option_chain_df), self.active_orders))
-            
+                orders_to_close = list(
+                    executor.map(
+                        lambda order: self._process_order(order, option_chain_df),
+                        self.active_orders,
+                    )
+                )
+
             orders_to_close = [order for order in orders_to_close if order]
             if orders_to_close:
                 self.closed_orders.extend(orders_to_close)
                 self.active_orders = [
-                    order for order in self.active_orders 
-                    if order.status != "CLOSED"
+                    order for order in self.active_orders if order.status != "CLOSED"
                 ]
-            
+
             self._update_trade_counts()
 
     def get_active_orders(self) -> List[Order]:

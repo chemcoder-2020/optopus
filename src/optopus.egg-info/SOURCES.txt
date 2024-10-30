@@ -47,6 +47,7 @@ src/optopus.egg-info/requires.txt
 src/optopus.egg-info/top_level.txt
 src/optopus/__pycache__/__init__.cpython-312.pyc
 src/optopus/backtest/__init__.py
+src/optopus/backtest/bidirectional_vertical_spread.py
 src/optopus/backtest/vertical_spread.py
 src/optopus/brokers/__init__.py
 src/optopus/brokers/broker.py
