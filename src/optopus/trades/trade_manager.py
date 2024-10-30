@@ -122,7 +122,11 @@ class TradingManager(OptionBacktester):
                     order.entry_net_premium,
                     order.current_time,
                     order.exit_time if hasattr(order, "exit_time") else None,
-                    order.exit_order_id.split("/")[-1] if hasattr(order, "exit_order_id") and order.exit_order_id else None,
+                    (
+                        order.exit_order_id.split("/")[-1]
+                        if hasattr(order, "exit_order_id") and order.exit_order_id
+                        else None
+                    ),
                     order.order_status,
                     order.status,
                     order.profit_target,
@@ -180,7 +184,11 @@ class TradingManager(OptionBacktester):
                     order.entry_net_premium,
                     order.current_time,
                     order.exit_time if hasattr(order, "exit_time") else None,
-                    order.exit_order_id.split("/")[-1] if hasattr(order, "exit_order_id") and order.exit_order_id else None,
+                    (
+                        order.exit_order_id.split("/")[-1]
+                        if hasattr(order, "exit_order_id") and order.exit_order_id
+                        else None
+                    ),
                     order.order_status,
                     order.status,
                     order.profit_target,
@@ -279,15 +287,8 @@ class TradingManager(OptionBacktester):
             self.closed_orders.pop(i)
             return True
 
-        for i, trade in enumerate(self.active_trades):
-            if any(leg.order_id.split("/")[-1] == order_id for leg in trade.legs):
-                self.active_trades.pop(i)
-                return True
-
-        for i, trade in enumerate(self.closed_trades):
-            if any(leg.order_id.split("/")[-1] == order_id for leg in trade.legs):
-                self.closed_trades.pop(i)
-                return True
+        self.active_trades = self.active_orders
+        self.closed_trades = self.closed_orders  # sync active and closed trades
 
         logger.warning(f"Order with ID {order_id} not found.")
         return False
