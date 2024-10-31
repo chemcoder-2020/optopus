@@ -7,3 +7,6 @@ opt_chain.pkl
 sps_60dte_trader.py
 tradier_option_pull.py
 trading.py
+src/optopus.egg-info/*
+src/optopus/__pycache__/*
+src/optopus/trades/__pycache__/*
