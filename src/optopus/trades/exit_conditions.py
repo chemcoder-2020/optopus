@@ -185,6 +185,7 @@ class CompositeExitCondition(ExitConditionChecker):
     Attributes:
         conditions (List[ExitConditionChecker]): List of exit conditions to combine.
         logical_operation (str): The logical operation to combine the conditions ('AND' or 'OR').
+        attributes (dict): A dictionary containing the attributes of each condition.
     """
 
     def __init__(self, conditions: List[ExitConditionChecker], logical_operation: str = 'AND'):
@@ -197,6 +198,7 @@ class CompositeExitCondition(ExitConditionChecker):
         """
         self.conditions = conditions
         self.logical_operation = logical_operation
+        self.attributes = {i: condition.__dict__ for i, condition in enumerate(conditions)}
 
     def __repr__(self):
         return f"{self.__class__.__name__}(conditions={self.conditions}, logical_operation='{self.logical_operation}')"
