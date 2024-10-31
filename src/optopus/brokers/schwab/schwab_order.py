@@ -184,11 +184,31 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def submit_exit(self, price_step=0.01, wait_time=10):
         # self.update_order()  # update fresh quotes
         current_price = (self.current_bid + self.current_ask) / 2
-        
+
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
             target_price = self.current_ask
         else:
             target_price = self.current_bid
+
+        # Guarding against false price
+
+        if (
+            hasattr(self, "exit_scheme")
+            and not hasattr(self.exit_scheme, "stoploss")
+            and hasattr(self.exit_scheme, "profit_target")
+        ):  # if exit scheme has profit target but no stoploss
+            if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
+                if current_price >= self.entry_net_premium:
+                    logger.info(
+                        "Exit scheme doesn't have stoploss, only profit target. Current exit price exceeds entry price. Will not profit, so no exit. A false price has been detected. Exiting..."
+                    )
+                    return False
+            elif self.strategy_type in ["Naked Put", "Naked Call"]:
+                if current_price <= self.entry_net_premium:
+                    logger.info(
+                        "Exit scheme doesn't have stoploss, only profit target. Current exit price less than entry price. Will not profit, so no exit. A false price has been detected. Exiting..."
+                    )
+                    return False
 
         max_attempts = int(abs(target_price - current_price) // price_step) + int(
             abs(target_price - current_price) % price_step != 0
@@ -352,9 +372,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                                     pd.DataFrame(activity["executionLegs"])
                                 )
                             activities = pd.concat(activities, ignore_index=True)
-                            average_prices_per_leg = activities.groupby(
-                                "legId"
-                            ).apply(
+                            average_prices_per_leg = activities.groupby("legId").apply(
                                 lambda x: (
                                     x.price * x.quantity / x.quantity.sum()
                                 ).sum()
