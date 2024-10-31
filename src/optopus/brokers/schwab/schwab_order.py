@@ -184,6 +184,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def submit_exit(self, price_step=0.01, wait_time=10):
         # self.update_order()  # update fresh quotes
         current_price = (self.current_bid + self.current_ask) / 2
+        
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
             target_price = self.current_ask
         else:

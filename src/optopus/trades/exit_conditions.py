@@ -198,7 +198,8 @@ class CompositeExitCondition(ExitConditionChecker):
         """
         self.conditions = conditions
         self.logical_operation = logical_operation
-        self.attributes = {i: condition.__dict__ for i, condition in enumerate(conditions)}
+        for condition in conditions:
+            self.__dict__.update(condition.__dict__)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(conditions={self.conditions}, logical_operation='{self.logical_operation}')"
@@ -248,6 +249,7 @@ class DefaultExitCondition(ExitConditionChecker):
             conditions=[profit_target_condition, time_based_condition],
             logical_operation='OR'
         )
+        self.__dict__.update(self.composite_condition.__dict__)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(composite_condition={self.composite_condition})"
