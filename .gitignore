@@ -4,9 +4,6 @@
 dist/*
 build/*
 opt_chain.pkl
-backtest_cross_validation.py
-backtest_sps_nDTE.py
-backtest.log
 sps_60dte_trader.py
 tradier_option_pull.py
 trading.py
