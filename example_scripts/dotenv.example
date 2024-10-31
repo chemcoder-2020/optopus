@@ -1,0 +1,4 @@
+SCHWAB_CLIENT_ID="client_id"
+SCHWAB_CLIENT_SECRET="client_secret"
+SCHWAB_REDIRECT_URI="https://127.0.0.1"
+SCHWAB_TOKEN_FILE="path/to/token/file.json"

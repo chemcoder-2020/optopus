@@ -3,7 +3,6 @@
 .env
 dist/*
 build/*
-example_scripts/*
 opt_chain.pkl
 backtest_cross_validation.py
 backtest_sps_nDTE.py
