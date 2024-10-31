@@ -11,3 +11,4 @@ src/optopus.egg-info/*
 src/optopus/__pycache__/*
 src/optopus/trades/__pycache__/*
 src/optopus/brokers/schwab/__pycache__/*
+src/optopus/.DS_Store
