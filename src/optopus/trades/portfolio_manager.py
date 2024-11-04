@@ -1,9 +1,7 @@
-import logging
 import pandas as pd
 from typing import List, Dict
 from .trade_manager import TradingManager
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class PortfolioManager:
