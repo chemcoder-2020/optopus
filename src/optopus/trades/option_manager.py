@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.stats import gaussian_kde
 import os
+from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
 
 
 @dataclass
@@ -26,6 +27,7 @@ class Config:
     client_secret: str = None
     redirect_uri: str = None
     token_file: str = None
+    entry_condition: EntryConditionChecker = DefaultEntryCondition()
 
     def get(self, key, default=None):
         """Get an attribute with a default value if it does not exist."""
