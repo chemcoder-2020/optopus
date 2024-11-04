@@ -155,7 +155,7 @@ class OptionBacktester:
             ),
             (
                 "Entry condition met",
-                self.config.entry_condition.should_enter(current_time, option_chain_df),
+                self.config.entry_condition.should_enter(),
             ),
         ]
 
