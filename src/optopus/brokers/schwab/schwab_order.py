@@ -56,6 +56,20 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         return self._broker
 
     def submit_entry(self, price_step=0.01, wait_time=10):
+        # Ritual to avoid false price
+
+        # 1. Fetch quotes
+        symbols = [leg.schwab_symbol for leg in self.legs]
+        new_option_chain_df = self.get_quote(f"{','.join(symbols)}")
+
+        # 2. Update the current attributes of each leg
+        current_time = new_option_chain_df["QUOTE_READTIME"].iloc[0]
+        for leg in self.legs:
+            leg.update(current_time, new_option_chain_df)
+        
+        # 3. Update the current price
+        self.current_bid, self.current_ask = self.calculate_bid_ask()
+
         current_price = (self.current_bid + self.current_ask) / 2
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
             target_price = self.current_bid
