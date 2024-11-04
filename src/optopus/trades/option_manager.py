@@ -153,6 +153,10 @@ class OptionBacktester:
                 "Sufficient capital",
                 new_spread.get_required_capital() <= self.available_to_trade,
             ),
+            (
+                "Entry condition met",
+                self.config.entry_condition.should_enter(current_time, option_chain_df),
+            ),
         ]
 
         for condition_name, condition_result in conditions:
@@ -160,10 +164,8 @@ class OptionBacktester:
                 logger.info(
                     f"Cannot add spread: {condition_name} condition not met"
                 )
-                pass
             else:
                 logger.debug(f"Spread meets condition: {condition_name}")
-                pass
 
         return all(condition for _, condition in conditions)
 
