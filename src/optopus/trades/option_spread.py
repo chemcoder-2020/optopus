@@ -282,6 +282,17 @@ class OptionStrategy:
         self.exit_underlying_last = self.legs[0].underlying_last
         self.exit_dit = self.DIT
         self.exit_dte = (pd.to_datetime(self.legs[0].expiration) - self.exit_time).days
+    
+    def _reopen_strategy(self):
+        self.status = "OPEN"
+        self.won = None
+        self.exit_time = None
+        self.exit_net_premium = None
+        self.exit_ror = None
+        self.exit_underlying_last = None
+        self.exit_dit = None
+        self.exit_dte = None
+        self.highest_return = max(0, self.return_percentage())
 
     def close_strategy(self, close_time: str, option_chain_df: pd.DataFrame):
         """

@@ -1,5 +1,6 @@
 import pandas as pd
 from .option_manager import OptionBacktester, Config
+from .option_leg import calculate_dte
 from ..brokers.schwab.schwab_order import SchwabOptionOrder
 from ..brokers.schwab.schwab_auth import SchwabAuth
 from ..brokers.schwab.schwab_data import SchwabData
@@ -88,6 +89,7 @@ class TradingManager(OptionBacktester):
             "Symbol",
             "Strategy Type",
             "Description",
+            "Expiration",
             "Contracts",
             "Entry Time",
             "Entry Price",
@@ -105,6 +107,7 @@ class TradingManager(OptionBacktester):
             "Highest Return",
             "Total Commission",
             "DIT",
+            "DTE",
         ]
         data = []
 
@@ -117,6 +120,7 @@ class TradingManager(OptionBacktester):
                     order.symbol,
                     order.strategy_type,
                     order.short_description(),
+                    order.min_expiration,
                     order.contracts,
                     order.entry_time,
                     order.entry_net_premium,
@@ -138,6 +142,7 @@ class TradingManager(OptionBacktester):
                     order.highest_return,
                     order.calculate_total_commission(),
                     order.DIT,
+                    calculate_dte(order.min_expiration, order.current_time),
                 ]
             )
 
@@ -150,6 +155,7 @@ class TradingManager(OptionBacktester):
             "Symbol",
             "Strategy Type",
             "Description",
+            "Expiration",
             "Contracts",
             "Entry Time",
             "Entry Price",
@@ -167,6 +173,7 @@ class TradingManager(OptionBacktester):
             "Highest Return",
             "Total Commission",
             "DIT",
+            "DTE",
         ]
         data = []
 
@@ -179,6 +186,7 @@ class TradingManager(OptionBacktester):
                     order.symbol,
                     order.strategy_type,
                     order.short_description(),
+                    order.min_expiration,
                     order.contracts,
                     order.entry_time,
                     order.entry_net_premium,
@@ -200,6 +208,7 @@ class TradingManager(OptionBacktester):
                     order.highest_return,
                     order.calculate_total_commission(),
                     order.DIT,
+                    calculate_dte(order.min_expiration, order.current_time),
                 ]
             )
 
