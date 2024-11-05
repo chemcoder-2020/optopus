@@ -43,7 +43,7 @@ class OptionBacktester:
         self.available_to_trade = config.initial_capital
         self.active_trades: List[OptionStrategy] = []
         self.closed_trades: List[OptionStrategy] = []
-        self.last_update_time: Optional[datetime] = None
+        self.last_update_time: Optional[datetime, pd.Timestamp] = None
         self.trades_entered_today = 0
         self.trades_entered_this_week = 0
         self.performance_data = []
@@ -155,7 +155,7 @@ class OptionBacktester:
             ),
             (
                 "Entry condition met",
-                self.config.entry_condition.should_enter(),
+                self.config.entry_condition.should_enter(self.last_update_time),
             ),
         ]
 

@@ -2,6 +2,7 @@ import pandas as pd
 import os
 from ..trades.option_manager import OptionBacktester
 from ..trades.option_spread import OptionStrategy
+from ..trades.entry_conditions import DefaultEntryCondition
 import numpy as np
 from loguru import logger
 from datetime import datetime
@@ -16,7 +17,6 @@ class BacktestVerticalSpread:
     def __init__(
         self,
         config,
-        entry_signal_file,
         data_folder,
         start_date,
         end_date,
@@ -26,7 +26,6 @@ class BacktestVerticalSpread:
         debug=False,
     ):
         self.config = config
-        self.entry_signal_file = entry_signal_file
         self.data_folder = data_folder
         self.start_date = start_date
         self.end_date = end_date
@@ -38,7 +37,12 @@ class BacktestVerticalSpread:
         self.symbol = self.strategy_params["symbol"]
 
     def run_backtest(
-        self, start_date=None, end_date=None, skip_fridays=False, plot_performance=True, backtester=None,
+        self,
+        start_date=None,
+        end_date=None,
+        skip_fridays=False,
+        plot_performance=True,
+        backtester=None,
     ):
 
         if backtester is None:
@@ -65,16 +69,6 @@ class BacktestVerticalSpread:
             self.trading_start_time, self.trading_end_time
         )
         time_range = time_range[trading_times]
-
-        # Load entry signals
-        entry_data = self.entry_signal_file
-        inp = pd.read_csv(entry_data)
-        inp["date"] = pd.DatetimeIndex(inp["date"])
-        inp["isEntry"] = False
-        inp.loc[inp.query(self.strategy_params["condition"]).index, "isEntry"] = True
-        inp["isEntry"] = inp["isEntry"].astype(bool)
-        inp.set_index("date", inplace=True)
-        inp = inp[["isEntry"]]
 
         prev_active_positions = None
         prev_capital = None
@@ -110,30 +104,22 @@ class BacktestVerticalSpread:
                 if time.weekday() == 4:
                     continue
 
-            try:
-                entry_signal = inp.loc[time, "isEntry"]
-            except Exception as e:
-                if self.debug:
-                    logger.error(f"Error getting entry signal: {e} at {time}")
-                continue
-
             # Create spread
             try:
-                if entry_signal:
-                    new_spread = OptionStrategy.create_vertical_spread(
-                        symbol=self.symbol,
-                        option_type=self.strategy_params["option_type"],
-                        long_strike=self.strategy_params["long_delta"],
-                        short_strike=self.strategy_params["short_delta"],
-                        expiration=self.strategy_params["dte"],
-                        contracts=self.strategy_params["contracts"],
-                        entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
-                        option_chain_df=option_chain_df,
-                        profit_target=self.strategy_params["profit_target"],
-                        stop_loss=self.strategy_params["stop_loss"],
-                        commission=self.strategy_params["commission"],
-                        exit_scheme=self.strategy_params["exit_scheme"],
-                    )
+                new_spread = OptionStrategy.create_vertical_spread(
+                    symbol=self.symbol,
+                    option_type=self.strategy_params["option_type"],
+                    long_strike=self.strategy_params["long_delta"],
+                    short_strike=self.strategy_params["short_delta"],
+                    expiration=self.strategy_params["dte"],
+                    contracts=self.strategy_params["contracts"],
+                    entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
+                    option_chain_df=option_chain_df,
+                    profit_target=self.strategy_params["profit_target"],
+                    stop_loss=self.strategy_params["stop_loss"],
+                    commission=self.strategy_params["commission"],
+                    exit_scheme=self.strategy_params["exit_scheme"],
+                )
             except Exception as e:
                 if self.debug:
                     logger.error(f"Error creating new spread: {e} at {time}")
@@ -239,7 +225,11 @@ class BacktestVerticalSpread:
 
             # Modify run_backtest to accept start_date and end_date parameters
             self.run_backtest(
-                start_date, end_date, skip_fridays=False, plot_performance=False, backtester=backtester
+                start_date,
+                end_date,
+                skip_fridays=False,
+                plot_performance=False,
+                backtester=backtester,
             )
 
             # Calculate and return performance metrics

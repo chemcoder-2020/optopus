@@ -10,11 +10,11 @@ from .brokers.schwab.schwab_trade import SchwabTrade
 from .trades.option_leg import OptionLeg
 from .trades.option_manager import OptionBacktester
 from .trades.option_spread import OptionStrategy
-from .trades.portfolio_manager import PortfolioManager
-from .trades.trade_manager import TradeManager
+# from .trades.portfolio_manager import PortfolioManager
+# from .trades.trade_manager import TradeManager
 from .trades.exit_conditions import ExitConditionChecker
-from .backtest.vertical_spread import VerticalSpread
-from .backtest.bidirectional_vertical_spread import BidirectionalVerticalSpread
+from .backtest.vertical_spread import BacktestVerticalSpread
+from .backtest.bidirectional_vertical_spread import BacktestBidirectionalVerticalSpread
 
 __all__ = [
     "OptionBroker",
@@ -26,9 +26,9 @@ __all__ = [
     "OptionLeg",
     "OptionBacktester",
     "OptionStrategy",
-    "PortfolioManager",
-    "TradeManager",
+    # "PortfolioManager",
+    # "TradeManager",
     "ExitConditionChecker",
-    "VerticalSpread",
-    "BidirectionalVerticalSpread",
+    "BacktestVerticalSpread",
+    "BacktestBidirectionalVerticalSpread",
 ]
