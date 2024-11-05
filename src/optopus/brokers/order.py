@@ -113,6 +113,10 @@ class Order(abc.ABC, OptionStrategy):
     def min_expiration(self):
         return min((leg.expiration for leg in self.legs), default=None)
 
+    @property
+    def max_expiration(self):
+        return max((leg.expiration for leg in self.legs), default=None)
+
     def __repr__(self):
         if self.strategy_type == 'Vertical Spread':
             long_leg = next((leg for leg in self.legs if leg.position_side == 'BUY'), None)
@@ -190,6 +194,7 @@ class Order(abc.ABC, OptionStrategy):
                 f"Order(\n"
                 f"  Order ID: {self.order_id},\n"
                 f"  Order Status: {self.order_status},\n"
-                f"  Min Expiration: {self.min_expiration}\n"
+                f"  Min Expiration: {self.min_expiration},\n"
+                f"  Max Expiration: {self.max_expiration}\n"
                 f")"
             )
