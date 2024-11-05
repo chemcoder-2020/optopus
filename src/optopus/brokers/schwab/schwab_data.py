@@ -440,7 +440,6 @@ class SchwabData(Schwab):
     def _process_option_chain(cls, opt_chain):
         calls = opt_chain["callExpDateMap"]
         puts = opt_chain["putExpDateMap"]
-        chain = []
         info = [
             "bid",
             "ask",
@@ -452,14 +451,6 @@ class SchwabData(Schwab):
             "daysToExpiration",
             "inTheMoney",
         ]
-        chain_calls = pd.concat(
-            [pd.DataFrame(v[k2][0])[info] for k, v in calls.items() for k2 in v],
-            ignore_index=True,
-        )
-        chain_puts = pd.concat(
-            [pd.DataFrame(v[k2][0])[info] for k, v in puts.items() for k2 in v],
-            ignore_index=True,
-        )
         rename = {
             "bid": "BID",
             "ask": "ASK",
@@ -471,6 +462,24 @@ class SchwabData(Schwab):
             "daysToExpiration": "DTE",
             "inTheMoney": "ITM",
         }
+
+        # Collect all call and put data in lists
+        call_data = []
+        put_data = []
+
+        for k, v in calls.items():
+            for k2 in v:
+                call_data.append(v[k2][0])
+
+        for k, v in puts.items():
+            for k2 in v:
+                put_data.append(v[k2][0])
+
+        # Convert lists to DataFrames
+        chain_calls = pd.DataFrame(call_data)[info]
+        chain_puts = pd.DataFrame(put_data)[info]
+
+        # Rename columns
         chain_calls.rename(columns=rename, inplace=True)
         chain_puts.rename(columns=rename, inplace=True)
 
@@ -484,6 +493,7 @@ class SchwabData(Schwab):
         )
         chain_puts["LAST"] = chain_puts["LAST"].combine_first(chain_puts["MARK"])
 
+        # Merge calls and puts
         chain = pd.merge(
             chain_calls,
             chain_puts,
@@ -491,6 +501,8 @@ class SchwabData(Schwab):
             on=["STRIKE", "EXPIRE_DATE", "DTE"],
             suffixes=("_C", "_P"),
         )
+
+        # Rename suffixed columns
         suffixed_cols = [
             col for col in chain.columns if col[-2:] == "_C" or col[-2:] == "_P"
         ]
@@ -498,6 +510,8 @@ class SchwabData(Schwab):
             col.split("_")[-1] + "_" + col.split("_")[0] for col in suffixed_cols
         ]
         chain.rename(columns=dict(zip(suffixed_cols, prefixed_cols)), inplace=True)
+
+        # Add additional columns
         chain["intDTE"] = chain["DTE"].astype(int)
         chain["UNDERLYING_LAST"] = opt_chain["underlyingPrice"]
         chain["INTEREST_RATE"] = opt_chain["interestRate"]
@@ -510,6 +524,7 @@ class SchwabData(Schwab):
             .dt.tz_localize(None)
         )
 
+        # Calculate DTE
         dte_diff = (chain["EXPIRE_DATE"] - now).dt
         chain["DTE"] = (
             dte_diff.days
@@ -562,4 +577,5 @@ class SchwabData(Schwab):
             "UNDERLYING_LAST",
         ]:
             chain[col] = chain[col].astype("float64")
+
         return chain
