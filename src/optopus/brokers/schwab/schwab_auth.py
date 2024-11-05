@@ -26,14 +26,25 @@ class SchwabAuth:
         self.refresh_token = None
         self.token_data = None
 
-        if token_file and os.path.exists(token_file):
-            with open(token_file, "r") as f:
+        self.load_token()
+
+    def load_token(self):
+        """
+        Load the access token from the token file.
+
+        Returns:
+            str: The access token.
+        """
+        if self.token_file and os.path.exists(self.token_file):
+            with open(self.token_file, "r") as f:
                 token_data = json.load(f)
                 self.access_token = token_data.get("access_token")
                 self.refresh_token = token_data.get("refresh_token")
                 self.token_data = token_data
-
-            logger.info(f"Loaded token data from {token_file}")
+                logger.info(f"Loaded token data from {self.token_file}")
+                return self.token_data
+        else:
+            raise FileNotFoundError(f"Token file {self.token_file} not found.")
 
     def get_authorization_url(self):
         return f"https://api.schwabapi.com/v1/oauth/authorize?client_id={self.client_id}&redirect_uri={self.redirect_uri}"
@@ -88,6 +99,7 @@ class SchwabAuth:
         return token_data
 
     def refresh_access_token(self):
+        self.load_token()  # try loading existing token file first
         url = "https://api.schwabapi.com/v1/oauth/token"
         headers = {
             "Authorization": f"Basic {base64.b64encode(f'{self.client_id}:{self.client_secret}'.encode()).decode()}",
