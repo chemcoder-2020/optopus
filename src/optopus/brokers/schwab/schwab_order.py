@@ -227,14 +227,20 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
                 if current_price >= self.entry_net_premium:
                     logger.info(
-                        "Exit scheme doesn't have stoploss, only profit target. Current exit price exceeds entry price. Will not profit, so no exit. A false price has been detected. Exiting..."
+                        "Exit scheme doesn't have stoploss, only profit target. Current exit price exceeds entry price. Will not profit, so no exit. A false price has been detected. If status is CLOSED, will reopen strategy. Exiting..."
                     )
+                    if self.status == "CLOSED":
+                        self._reopen_strategy()  # reopen strategy
+                        logger.info("Strategy was incorrectly closed. Now re-opened.")
                     return False
             elif self.strategy_type in ["Naked Put", "Naked Call"]:
                 if current_price <= self.entry_net_premium:
                     logger.info(
-                        "Exit scheme doesn't have stoploss, only profit target. Current exit price less than entry price. Will not profit, so no exit. A false price has been detected. Exiting..."
+                        "Exit scheme doesn't have stoploss, only profit target. Current exit price less than entry price. Will not profit, so no exit. A false price has been detected. If status is CLOSED, will reopen strategy. Exiting..."
                     )
+                    if self.status == "CLOSED":
+                        self._reopen_strategy()  # reopen strategy
+                        logger.info("Strategy was incorrectly closed. Now re-opened.")
                     return False
 
         max_attempts = int(abs(target_price - current_price) // price_step) + int(
