@@ -280,12 +280,16 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 logger.warning(f"Exit attempt {attempt + 1} was not submitted.")
         logger.error("All attempts to place exit order failed.")
         return False
+    
+    def get_strategy_quote(self):
+        symbols = [leg.schwab_symbol for leg in self.legs]
+        new_option_chain_df = self.get_quote(f"{','.join(symbols)}")
+        return new_option_chain_df
 
     def update_order(self, new_option_chain_df=None):
         if new_option_chain_df is None:
             # Fetch quotes
-            symbols = [leg.schwab_symbol for leg in self.legs]
-            new_option_chain_df = self.get_quote(f"{','.join(symbols)}")
+            new_option_chain_df = self.get_strategy_quote()
 
         self.current_time = new_option_chain_df["QUOTE_READTIME"].iloc[0]
 
