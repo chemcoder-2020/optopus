@@ -331,6 +331,11 @@ class OptionBacktester:
             average_dit = closed_trades_df["dit"].mean()
         except KeyError:
             average_dit = np.nan
+        
+        try:
+            average_dit_spread = closed_trades_df["dit"].std()
+        except KeyError:
+            average_dit_spread = np.nan
 
         max_drawdown_dollars, max_drawdown_percentage = self._calculate_max_drawdown(df)
 
@@ -347,6 +352,7 @@ class OptionBacktester:
             "max_drawdown_dollars": max_drawdown_dollars,
             "max_drawdown_percentage": max_drawdown_percentage,
             "average_dit": average_dit,
+            "average_dit_spread": average_dit_spread
         }
 
         try:

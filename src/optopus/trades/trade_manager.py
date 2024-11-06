@@ -138,11 +138,11 @@ class TradingManager(OptionBacktester):
                     order.current_ask,
                     order.net_premium,
                     order.total_pl(),
-                    order.return_percentage(),
-                    order.highest_return,
+                    round(order.return_percentage(), 1),
+                    round(order.highest_return, 1),
                     order.calculate_total_commission(),
                     order.DIT,
-                    calculate_dte(order.min_expiration, order.current_time),
+                    round(calculate_dte(order.min_expiration, order.current_time)),
                 ]
             )
 
@@ -204,11 +204,11 @@ class TradingManager(OptionBacktester):
                     order.current_ask,
                     order.net_premium,
                     order.total_pl(),
-                    order.return_percentage(),
-                    order.highest_return,
+                    round(order.return_percentage(), 1),
+                    round(order.highest_return, 1),
                     order.calculate_total_commission(),
                     order.DIT,
-                    calculate_dte(order.min_expiration, order.current_time),
+                    round(calculate_dte(order.min_expiration, order.current_time)),
                 ]
             )
 
