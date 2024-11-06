@@ -89,7 +89,7 @@ class SchwabAuth:
             "redirect_uri": self.redirect_uri,
         }
 
-        response = requests.post(token_url, headers=headers, data=data)
+        response = httpx.post(token_url, headers=headers, data=data)
         response.raise_for_status()
 
         token_data = response.json()
