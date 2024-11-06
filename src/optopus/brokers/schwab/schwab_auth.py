@@ -1,4 +1,4 @@
-import requests
+import httpx
 import base64
 from urllib.parse import urlparse, parse_qs
 import json
@@ -106,7 +106,7 @@ class SchwabAuth:
             "Content-Type": "application/x-www-form-urlencoded",
         }
         data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
-        response = requests.post(url, headers=headers, data=data)
+        response = httpx.post(url, headers=headers, data=data)
         response.raise_for_status()
         tokens = response.json()
         self.access_token = tokens["access_token"]
