@@ -55,18 +55,32 @@ class Schwab:
             dict: The response data.
         """
         # self.refresh_token()
-        if not self.auth.access_token:
-            raise Exception("Not authenticated. Call authenticate() first.")
+        try:
+            if not self.auth.access_token:
+                raise Exception("Not authenticated. Call authenticate() first.")
 
-        if headers is None:
-            headers = {}
-        headers["Authorization"] = f"Bearer {self.auth.access_token}"
-        headers["Accept"] = "application/json"
+            if headers is None:
+                headers = {}
+            headers["Authorization"] = f"Bearer {self.auth.access_token}"
+            headers["Accept"] = "application/json"
 
-        response = requests.request(
-            method, url, headers=headers, params=params, json=data
-        )
-        response.raise_for_status()
+            response = requests.request(
+                method, url, headers=headers, params=params, json=data
+            )
+            response.raise_for_status()
+        except Exception as e:
+            logger.exception(f"Request failed: {e}. Trying to refresh token.")
+            self.refresh_token()
+            if headers is None:
+                headers = {}
+            headers["Authorization"] = f"Bearer {self.auth.access_token}"
+            headers["Accept"] = "application/json"
+
+            response = requests.request(
+                method, url, headers=headers, params=params, json=data
+            )
+            response.raise_for_status()
+
         return response
 
     def _get(self, url, params=None):
