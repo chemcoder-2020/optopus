@@ -542,6 +542,9 @@ class OptionBacktester:
         updated = False
         for key, value in kwargs.items():
             if hasattr(self.config, key):
+                # Update attribute
+                if key in ['initial_capital', 'allocation', 'position_size']:
+                    value = float(value)
                 setattr(self.config, key, value)
                 # Update related attributes that depend on config
                 if key == 'initial_capital' or key == 'allocation':

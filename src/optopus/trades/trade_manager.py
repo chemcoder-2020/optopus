@@ -285,6 +285,7 @@ class TradingManager(OptionBacktester):
 
         if order_to_override:
             self.active_orders.pop(i)
+            self.available_to_trade += order_to_override.get_required_capital()
             return True
 
         for i, order in enumerate(self.closed_orders):
@@ -294,6 +295,7 @@ class TradingManager(OptionBacktester):
 
         if order_to_override:
             self.closed_orders.pop(i)
+            self.available_to_trade += order_to_override.get_required_capital()
             return True
 
         self.active_trades = self.active_orders
