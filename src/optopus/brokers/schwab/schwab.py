@@ -1,5 +1,5 @@
 from loguru import logger
-import requests
+import httpx
 import json
 from .schwab_auth import SchwabAuth
 import os
@@ -64,7 +64,7 @@ class Schwab:
             headers["Authorization"] = f"Bearer {self.auth.access_token}"
             headers["Accept"] = "application/json"
 
-            response = requests.request(
+            response = httpx.request(
                 method, url, headers=headers, params=params, json=data
             )
             response.raise_for_status()
@@ -76,7 +76,7 @@ class Schwab:
             headers["Authorization"] = f"Bearer {self.auth.access_token}"
             headers["Accept"] = "application/json"
 
-            response = requests.request(
+            response = httpx.request(
                 method, url, headers=headers, params=params, json=data
             )
             response.raise_for_status()
