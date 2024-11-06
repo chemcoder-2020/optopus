@@ -263,6 +263,7 @@ class TradingManager(OptionBacktester):
             self.active_orders = [
                 order for order in self.active_orders if order.status != "CLOSED"
             ]
+            self.available_to_trade += order_to_close.get_required_capital()
             return True
         else:
             logger.warning(f"Order with ID {order_id} not found.")

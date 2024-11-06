@@ -99,19 +99,34 @@ class SchwabAuth:
         return token_data
 
     def refresh_access_token(self):
-        self.load_token()  # try loading existing token file first
-        url = "https://api.schwabapi.com/v1/oauth/token"
-        headers = {
-            "Authorization": f"Basic {base64.b64encode(f'{self.client_id}:{self.client_secret}'.encode()).decode()}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-        data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
-        response = httpx.post(url, headers=headers, data=data)
-        response.raise_for_status()
-        tokens = response.json()
-        self.access_token = tokens["access_token"]
-        self.refresh_token = tokens["refresh_token"]
-        self.token_data = tokens
+        # self.load_token()  # try loading existing token file first
+        try:
+            url = "https://api.schwabapi.com/v1/oauth/token"
+            headers = {
+                "Authorization": f"Basic {base64.b64encode(f'{self.client_id}:{self.client_secret}'.encode()).decode()}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }
+            data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
+            response = httpx.post(url, headers=headers, data=data)
+            response.raise_for_status()
+            tokens = response.json()
+            self.access_token = tokens["access_token"]
+            self.refresh_token = tokens["refresh_token"]
+            self.token_data = tokens
+        except Exception as e:
+            self.load_token()  # try loading existing token file first
+            url = "https://api.schwabapi.com/v1/oauth/token"
+            headers = {
+                "Authorization": f"Basic {base64.b64encode(f'{self.client_id}:{self.client_secret}'.encode()).decode()}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }
+            data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
+            response = httpx.post(url, headers=headers, data=data)
+            response.raise_for_status()
+            tokens = response.json()
+            self.access_token = tokens["access_token"]
+            self.refresh_token = tokens["refresh_token"]
+            self.token_data = tokens
         return tokens
 
     def save_token(self, path="token.json"):
