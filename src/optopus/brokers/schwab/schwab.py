@@ -54,7 +54,7 @@ class Schwab:
         Returns:
             dict: The response data.
         """
-        self.refresh_token()
+        # self.refresh_token()
         if not self.auth.access_token:
             raise Exception("Not authenticated. Call authenticate() first.")
 
