@@ -16,8 +16,8 @@ class TradingManager(OptionBacktester):
 
     def __init__(self, config: Config, name: str = "TradingManager"):
         super().__init__(config)
-        self.active_orders: List[Order] = []
-        self.closed_orders: List[Order] = []
+        self.active_orders: List[Order] = self.active_trades
+        self.closed_orders: List[Order] = self.closed_trades
         self.option_broker = OptionBroker(config)
         self.__dict__.update(config.__dict__)
         self.automation_on = True
@@ -32,10 +32,10 @@ class TradingManager(OptionBacktester):
         ):
             if self.add_spread(order):
                 if order.submit_entry():
-                    self.active_orders.append(order)
+                    # self.active_orders.append(order)
                     return True
                 else:
-                    self.active_trades.pop()  # if not submitted, remove from active trades
+                    self.active_trades.pop()  # if not submitted, remove from active trades (which would remove from active orders because they're identical)
                     self.available_to_trade += (
                         order.get_required_capital()
                     )  # recover available capital
