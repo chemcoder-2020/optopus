@@ -236,6 +236,15 @@ class CompositeExitCondition(ExitConditionChecker):
         else:
             raise ValueError("Logical operation must be 'AND' or 'OR'")
 
+    def __setattr__(self, key, value):
+        """
+        Override the __setattr__ method to update attributes in the conditions list.
+        """
+        super().__setattr__(key, value)
+        for condition in self.conditions:
+            if hasattr(condition, key):
+                setattr(condition, key, value)
+
 
 class DefaultExitCondition(ExitConditionChecker):
     """
