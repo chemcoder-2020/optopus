@@ -75,9 +75,8 @@ class TradingManager(OptionBacktester):
             orders_to_close = [order for order in orders_to_close if order]
             if orders_to_close:
                 self.closed_orders.extend(orders_to_close)
-                self.active_orders = [
-                    order for order in self.active_orders if order.status != "CLOSED"
-                ]
+                for order in orders_to_close:
+                    self.active_orders = self.active_orders.remove(order)
 
             self._update_trade_counts()
 
@@ -317,8 +316,8 @@ class TradingManager(OptionBacktester):
             self.available_to_trade += order_to_override.get_required_capital()
             return True
 
-        self.active_trades = self.active_orders
-        self.closed_trades = self.closed_orders  # sync active and closed trades
+        # self.active_trades = self.active_orders
+        # self.closed_trades = self.closed_orders  # sync active and closed trades
 
         logger.warning(f"Order with ID {order_id} not found.")
         return False

@@ -287,3 +287,13 @@ class DefaultExitCondition(ExitConditionChecker):
             bool: True if the default exit condition is met, False otherwise.
         """
         return self.composite_condition.should_exit(strategy, current_time, option_chain_df)
+    
+    def update(self, **kwargs):
+        """
+        Update the attributes of the default exit condition.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        super().update(**kwargs)
+        self.composite_condition.update(**kwargs)

@@ -61,9 +61,8 @@ class OptionBacktester:
 
             # Move closed trades
             if trades_to_close:
-                self.active_trades = [
-                    t for t in self.active_trades if t.status != "CLOSED"
-                ]
+                for trade in trades_to_close:
+                    self.active_trades.remove(trade)
                 self.closed_trades.extend(trades_to_close)
                 pl_change = sum(trade.total_pl() for trade in trades_to_close)
                 recovered_capital = sum(
