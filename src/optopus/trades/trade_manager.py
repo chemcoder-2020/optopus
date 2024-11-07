@@ -34,6 +34,16 @@ class TradingManager(OptionBacktester):
                 if order.submit_entry():
                     self.active_orders.append(order)
                     return True
+                else:
+                    self.active_trades.pop()  # if not submitted, remove from active trades
+                    self.available_to_trade += (
+                        order.get_required_capital()
+                    )  # recover available capital
+                    self._update_trade_counts()
+                    logger.info(
+                        f"Entry failed. Removed from active trades and recovered capital."
+                    )
+                    return False
         return False
 
     def _process_order(self, order, option_chain_df=None):
@@ -133,7 +143,12 @@ class TradingManager(OptionBacktester):
                     ),
                     order.order_status,
                     order.status,
-                    order.profit_target,
+                    (
+                        order.exit_scheme.profit_target
+                        if hasattr(order, "exit_scheme")
+                        and hasattr(order.exit_scheme, "profit_target")
+                        else order.profit_target
+                    ),
                     order.current_bid,
                     order.current_ask,
                     order.net_premium,
@@ -199,7 +214,12 @@ class TradingManager(OptionBacktester):
                     ),
                     order.order_status,
                     order.status,
-                    order.profit_target,
+                    (
+                        order.exit_scheme.profit_target
+                        if hasattr(order, "exit_scheme")
+                        and hasattr(order.exit_scheme, "profit_target")
+                        else order.profit_target
+                    ),
                     order.current_bid,
                     order.current_ask,
                     order.net_premium,
