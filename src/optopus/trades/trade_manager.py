@@ -280,9 +280,7 @@ class TradingManager(OptionBacktester):
         if order_to_close:
             order_to_close.close_order()
             self.closed_orders.append(order_to_close)
-            self.active_orders = [
-                order for order in self.active_orders if order.status != "CLOSED"
-            ]
+            self.active_orders.remove(order_to_close)
             self.available_to_trade += order_to_close.get_required_capital()
             return True
         else:
