@@ -15,6 +15,17 @@ class ExitConditionChecker(ABC):
     def __repr__(self):
         return f"{self.__class__.__name__}()"
 
+    def update(self, **kwargs):
+        """
+        Update the attributes of the exit condition checker.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
     @abstractmethod
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
