@@ -382,8 +382,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
     def close_order(self):
         # Fetch quotes
-        symbols = [leg.schwab_symbol for leg in self.legs]
-        new_option_chain_df = self.get_quote(f"{','.join(symbols)}")
+        new_option_chain_df = self.get_strategy_quote()
 
         self.current_time = new_option_chain_df["QUOTE_READTIME"].iloc[0]
 
