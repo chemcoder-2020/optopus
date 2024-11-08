@@ -76,11 +76,11 @@ class OptionStrategy:
         self.profit_target = profit_target
         self.stop_loss = stop_loss
         self.trailing_stop = trailing_stop
-        self.highest_return = 0
-        self.entry_net_premium = 0
-        self.net_premium = 0
-        self.current_bid = 0
-        self.current_ask = 0
+        self.highest_return = None
+        self.entry_net_premium = None
+        self.net_premium = None
+        self.current_bid = None
+        self.current_ask = None
         self.won = None  # Initialize won to None for open trades
         self.DIT = 0  # Initialize Days in Trade to 0
         self._contracts = contracts
@@ -1206,7 +1206,7 @@ class OptionStrategy:
         if net_premium <= 0:
             return (
                 self.net_premium
-            ) if self.net_premium != 0 else np.nan  # Do not allow negative net premium. This is a safety net.
+            ) if self.net_premium else np.nan  # Do not allow negative net premium. This is a safety net.
         return net_premium
 
     def calculate_bid_ask(self):
