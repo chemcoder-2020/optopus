@@ -76,7 +76,7 @@ class OptionStrategy:
         self.profit_target = profit_target
         self.stop_loss = stop_loss
         self.trailing_stop = trailing_stop
-        self.highest_return = None
+        self.highest_return = 0
         self.entry_net_premium = None
         self.net_premium = None
         self.current_bid = None
@@ -323,13 +323,13 @@ class OptionStrategy:
                 (self.entry_net_premium - self.calculate_net_premium())
                 * 100
                 * self.contracts
-            )
+            ) - self.calculate_total_commission()
         elif hasattr(self, "strategy_side") and self.strategy_side == "DEBIT":
             return (
                 (self.calculate_net_premium() - self.entry_net_premium)
                 * 100
                 * self.contracts
-            )
+            ) - self.calculate_total_commission()
         else:
             raise ValueError(f"Unsupported strategy side: {self.strategy_side}")
 
@@ -574,9 +574,13 @@ class OptionStrategy:
             expiration=expiration_date,
         )
 
-        if long_strike_value > short_strike_value:
+        if (long_strike_value > short_strike_value and option_type == "PUT") or (
+            long_strike_value < short_strike_value and option_type == "CALL"
+        ):
             strategy.strategy_side = "DEBIT"
-        elif long_strike_value < short_strike_value:
+        elif (long_strike_value < short_strike_value and option_type == "PUT") or (
+            long_strike_value > short_strike_value and option_type == "CALL"
+        ):
             strategy.strategy_side = "CREDIT"
         else:
             raise ValueError("Long and short strike values cannot be equal.")
