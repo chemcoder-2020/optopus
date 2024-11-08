@@ -115,10 +115,10 @@ class BacktestVerticalSpread:
                     contracts=self.strategy_params["contracts"],
                     entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
                     option_chain_df=option_chain_df,
-                    profit_target=self.strategy_params["profit_target"],
-                    stop_loss=self.strategy_params["stop_loss"],
-                    commission=self.strategy_params["commission"],
-                    exit_scheme=self.strategy_params["exit_scheme"],
+                    profit_target=self.strategy_params["profit_target"] if "profit_target" in self.strategy_params else None,
+                    stop_loss=self.strategy_params["stop_loss"] if "stop_loss" in self.strategy_params else None,
+                    commission=self.strategy_params["commission"] if "commission" in self.strategy_params else 0,
+                    exit_scheme=self.strategy_params["exit_scheme"] if "exit_scheme" in self.strategy_params else None,
                 )
             except Exception as e:
                 if self.debug:
