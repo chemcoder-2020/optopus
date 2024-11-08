@@ -1219,17 +1219,17 @@ class OptionStrategy:
         strategy_bid = 0
         strategy_ask = 0
 
-        for leg in self.legs:
+        for leg, ratio in zip(self.legs, self.leg_ratios):
             if leg.position_side == "BUY":
                 if leg.current_ask is not None:
-                    strategy_ask += leg.current_ask
+                    strategy_ask += leg.current_ask * ratio
                 if leg.current_bid is not None:
-                    strategy_bid += leg.current_bid
+                    strategy_bid += leg.current_bid * ratio
             elif leg.position_side == "SELL":
                 if leg.current_bid is not None:
-                    strategy_ask -= leg.current_bid
+                    strategy_ask -= leg.current_bid * ratio
                 if leg.current_ask is not None:
-                    strategy_bid -= leg.current_ask
+                    strategy_bid -= leg.current_ask * ratio
 
         strategy_bid = abs(strategy_bid)
         strategy_ask = abs(strategy_ask)
