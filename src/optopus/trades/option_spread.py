@@ -318,13 +318,13 @@ class OptionStrategy:
     def total_pl(self):
         """Calculate the total profit/loss of the strategy."""
         # return sum(leg.calculate_pl() for leg in self.legs)
-        if hasattr(self, strategy_side) and self.strategy_side == "CREDIT":
+        if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
             return (
                 (self.entry_net_premium - self.calculate_net_premium())
                 * 100
                 * self.contracts
             )
-        elif hasattr(self, strategy_side) and self.strategy_side == "DEBIT":
+        elif hasattr(self, "strategy_side") and self.strategy_side == "DEBIT":
             return (
                 (self.calculate_net_premium() - self.entry_net_premium)
                 * 100
@@ -1206,7 +1206,7 @@ class OptionStrategy:
         if net_premium <= 0:
             return (
                 self.net_premium
-            )  # Do not allow negative net premium. This is a safety net.
+            ) if self.net_premium != 0 else np.nan  # Do not allow negative net premium. This is a safety net.
         return net_premium
 
     def calculate_bid_ask(self):
