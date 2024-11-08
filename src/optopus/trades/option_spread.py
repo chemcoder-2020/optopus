@@ -51,7 +51,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         contracts: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = None
+        exit_scheme: ExitConditionChecker = None,
     ):
         """
         Initialize an OptionStrategy object.
@@ -67,6 +67,7 @@ class OptionStrategy:
         """
         self.symbol = symbol
         self.strategy_type = strategy_type
+        self.strategy_side = None
         self.legs = []
         self.entry_time = None
         self.exit_time = None
@@ -145,13 +146,13 @@ class OptionStrategy:
         leg.contracts = self._contracts * ratio
 
         # Adjust premium based on position side
-        premium_adjustment = leg.entry_price * ratio
-        if leg.position_side == "SELL":
-            self.entry_net_premium += premium_adjustment
-        else:  # BUY
-            self.entry_net_premium -= premium_adjustment
+        # premium_adjustment = leg.entry_price * ratio
+        # if leg.position_side == "SELL":
+        #     self.entry_net_premium += premium_adjustment
+        # else:  # BUY
+        #     self.entry_net_premium -= premium_adjustment
 
-        self.net_premium = self.entry_net_premium
+        # self.net_premium = self.entry_net_premium
 
     def update(self, current_time: str, option_chain_df: pd.DataFrame):
         """
@@ -282,7 +283,7 @@ class OptionStrategy:
         self.exit_underlying_last = self.legs[0].underlying_last
         self.exit_dit = self.DIT
         self.exit_dte = (pd.to_datetime(self.legs[0].expiration) - self.exit_time).days
-    
+
     def _reopen_strategy(self):
         self.status = "OPEN"
         self.won = None
@@ -316,8 +317,21 @@ class OptionStrategy:
 
     def total_pl(self):
         """Calculate the total profit/loss of the strategy."""
-        # return sum(leg.pl for leg in self.legs)
-        return sum(leg.calculate_pl() for leg in self.legs)
+        # return sum(leg.calculate_pl() for leg in self.legs)
+        if hasattr(self, strategy_side) and self.strategy_side == "CREDIT":
+            return (
+                (self.entry_net_premium - self.calculate_net_premium())
+                * 100
+                * self.contracts
+            )
+        elif hasattr(self, strategy_side) and self.strategy_side == "DEBIT":
+            return (
+                (self.calculate_net_premium() - self.entry_net_premium)
+                * 100
+                * self.contracts
+            )
+        else:
+            raise ValueError(f"Unsupported strategy side: {self.strategy_side}")
 
     def return_percentage(self):
         """Calculate the return percentage of the strategy."""
@@ -560,6 +574,13 @@ class OptionStrategy:
             expiration=expiration_date,
         )
 
+        if long_strike_value > short_strike_value:
+            strategy.strategy_side = "DEBIT"
+        elif long_strike_value < short_strike_value:
+            strategy.strategy_side = "CREDIT"
+        else:
+            raise ValueError("Long and short strike values cannot be equal.")
+
         long_leg = OptionLeg(
             symbol,
             option_type,
@@ -585,6 +606,10 @@ class OptionStrategy:
 
         strategy.add_leg(long_leg, leg_ratio)
         strategy.add_leg(short_leg, leg_ratio)
+
+        strategy.entry_net_premium = strategy.net_premium = (
+            strategy.calculate_net_premium()
+        )
 
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
@@ -681,6 +706,19 @@ class OptionStrategy:
             expiration=expiration_date,
         )
 
+        if (
+            put_long_strike_value > put_short_strike_value
+            and call_short_strike_value > call_long_strike_value
+        ):
+            strategy.strategy_side = "DEBIT"
+        elif (
+            put_long_strike_value < put_short_strike_value
+            and call_short_strike_value < call_long_strike_value
+        ):
+            strategy.strategy_side = "CREDIT"
+        else:
+            raise ValueError("Invalid Iron Condor strike values.")
+
         put_long_leg = OptionLeg(
             symbol,
             "PUT",
@@ -730,6 +768,10 @@ class OptionStrategy:
         strategy.add_leg(put_short_leg, leg_ratio)
         strategy.add_leg(call_short_leg, leg_ratio)
         strategy.add_leg(call_long_leg, leg_ratio)
+
+        strategy.entry_net_premium = strategy.net_premium = (
+            strategy.calculate_net_premium()
+        )
 
         if strategy.entry_net_premium > 4 / 5 * (
             abs(call_short_strike_value - call_long_strike_value)
@@ -821,8 +863,14 @@ class OptionStrategy:
             commission=commission,
         )
 
+        strategy.strategy_side = "DEBIT"
+
         strategy.add_leg(call_leg, leg_ratio)
         strategy.add_leg(put_leg, leg_ratio)
+
+        strategy.entry_net_premium = strategy.net_premium = (
+            strategy.calculate_net_premium()
+        )
 
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
@@ -938,9 +986,15 @@ class OptionStrategy:
             commission=commission,
         )
 
+        strategy.strategy_side = "CREDIT"
+
         strategy.add_leg(lower_leg, 1)
         strategy.add_leg(middle_leg, 2)
         strategy.add_leg(upper_leg, 1)
+
+        strategy.entry_net_premium = strategy.net_premium = (
+            strategy.calculate_net_premium()
+        )
 
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
@@ -1011,7 +1065,12 @@ class OptionStrategy:
             commission=commission,
         )
 
+        strategy.strategy_side = "DEBIT"
+
         strategy.add_leg(call_leg)
+        strategy.entry_net_premium = strategy.net_premium = (
+            strategy.calculate_net_premium()
+        )
 
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
@@ -1081,7 +1140,12 @@ class OptionStrategy:
             commission=commission,
         )
 
+        strategy.strategy_side = "DEBIT"
+
         strategy.add_leg(put_leg)
+        strategy.entry_net_premium = strategy.net_premium = (
+            strategy.calculate_net_premium()
+        )
 
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
@@ -1139,6 +1203,10 @@ class OptionStrategy:
         """
         bid, ask = self.calculate_bid_ask()
         net_premium = (bid + ask) / 2
+        if net_premium <= 0:
+            return (
+                self.net_premium
+            )  # Do not allow negative net premium. This is a safety net.
         return net_premium
 
     def calculate_bid_ask(self):
@@ -1178,7 +1246,9 @@ class OptionStrategy:
         if hasattr(self, attr_name):
             setattr(self, attr_name, attr_value)
         else:
-            raise AttributeError(f"'OptionStrategy' object has no attribute '{attr_name}'")
+            raise AttributeError(
+                f"'OptionStrategy' object has no attribute '{attr_name}'"
+            )
 
     def __repr__(self):
         legs_repr = "\n    ".join(repr(leg) for leg in self.legs)

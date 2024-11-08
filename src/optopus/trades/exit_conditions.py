@@ -59,6 +59,16 @@ class ProfitTargetCondition(ExitConditionChecker):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(profit_target={self.profit_target})"
+    
+    def update(self, **kwargs):
+        """
+        Update the attributes of the profit target condition.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        profit_target = float(kwargs.get("profit_target", self.profit_target))
+        self.profit_target = profit_target
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -95,6 +105,16 @@ class StopLossCondition(ExitConditionChecker):
     def __repr__(self):
         return f"{self.__class__.__name__}(stop_loss={self.stop_loss})"
 
+    def update(self, **kwargs):
+        """
+        Update the attributes of the stop loss condition.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
+        self.stop_loss = stop_loss
+
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
         Check if the stop loss is met.
@@ -129,6 +149,16 @@ class TimeBasedCondition(ExitConditionChecker):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(exit_time_before_expiration={self.exit_time_before_expiration})"
+    
+    def update(self, **kwargs):
+        """
+        Update the attributes of the time based condition.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        exit_time_before_expiration = pd.Timedelta(kwargs.get("exit_time_before_expiration", self.exit_time_before_expiration))
+        self.exit_time_before_expiration = exit_time_before_expiration
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -168,6 +198,18 @@ class TrailingStopCondition(ExitConditionChecker):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(trigger={self.trigger}, stop_loss={self.stop_loss})"
+    
+    def update(self, **kwargs):
+        """
+        Update the attributes of the trailing stop condition.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        trigger = float(kwargs.get("trigger", self.trigger))
+        stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
+        self.trigger = trigger
+        self.stop_loss = stop_loss
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
@@ -236,6 +278,17 @@ class CompositeExitCondition(ExitConditionChecker):
         else:
             raise ValueError("Logical operation must be 'AND' or 'OR'")
 
+    def update(self, **kwargs):
+        """
+        Update the attributes of the composite exit condition.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        for condition in self.conditions:
+            condition.update(**kwargs)
+            self.__dict__.update(condition.__dict__)
+
     def __setattr__(self, key, value):
         """
         Override the __setattr__ method to update attributes in the conditions list.
@@ -295,5 +348,6 @@ class DefaultExitCondition(ExitConditionChecker):
         Args:
             **kwargs: Keyword arguments for the attributes to update.
         """
-        super().update(**kwargs)
+
         self.composite_condition.update(**kwargs)
+        self.__dict__.update(self.composite_condition.__dict__)

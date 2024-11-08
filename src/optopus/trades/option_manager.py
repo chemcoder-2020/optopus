@@ -290,7 +290,7 @@ class OptionBacktester:
                 "closed_pl": pl,
                 "cumulative_pl": cumulative_pl,
                 "return_percentage": trade.return_percentage(),
-                "return_over_risk": trade.return_over_risk(),
+                "return_over_risk": pl / trade.get_required_capital(),
                 "dit": trade.DIT,
                 "won": trade.won,
             }
@@ -346,6 +346,7 @@ class OptionBacktester:
             "avg_monthly_pl_nonzero": None,
             "win_rate": None,
             "risk_of_ruin": None,
+            "return_over_risk": None,
             "probability_of_positive_monthly_pl": None,
             "probability_of_positive_monthly_closed_pl": None,
             "max_drawdown_dollars": max_drawdown_dollars,
@@ -394,6 +395,11 @@ class OptionBacktester:
             metrics["probability_of_positive_monthly_closed_pl"] = self._calculate_probability_of_positive_monthly_closed_pl(df)
         except Exception as e:
             logger.error(f"Error calculating Probability of Positive Monthly Closed P/L: {str(e)}")
+        
+        try:
+            metrics["return_over_risk"] = closed_trades_df["return_over_risk"].mean()
+        except KeyError:
+            logger.error("Error calculating Return Over Risk.")
 
         return metrics
 
@@ -573,6 +579,7 @@ class OptionBacktester:
             print(f"CAGR: {metrics['cagr']:.2%}")
             print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
             print(f"Average Monthly P/L (Non-Zero Months): ${metrics['avg_monthly_pl_nonzero']:.2f}")
+            print(f"Average Return over Risk: {metrics["return_over_risk"]:.2%}")
             print(
                 f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}"
             )
