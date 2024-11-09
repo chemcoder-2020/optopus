@@ -131,6 +131,8 @@ class SchwabAuth:
 
     def save_token(self, path="token.json"):
         if self.token_data:
+            if self.token_file:
+                path = self.token_file
             with open(path, "w") as f:
                 json.dump(self.token_data, f)
 
