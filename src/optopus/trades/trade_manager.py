@@ -252,6 +252,19 @@ class TradingManager(OptionBacktester):
         self.option_broker.data.auth = self.option_broker.auth
         self.option_broker.trading.auth = self.option_broker.auth
 
+    def authenticate(self):
+        """Refresh the authentication for all active and closed orders."""
+
+        self.option_broker.auth.authenticate()
+
+        for order in self.active_orders:
+            order.auth = self.option_broker.auth
+        for order in self.closed_orders:
+            order.auth = self.option_broker.auth
+
+        self.option_broker.data.auth = self.option_broker.auth
+        self.option_broker.trading.auth = self.option_broker.auth
+
     def cancel_order(self, order_id: str) -> bool:
         """Cancel an order by its ID."""
         order_to_cancel = None
