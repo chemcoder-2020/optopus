@@ -273,25 +273,25 @@ class BacktestVerticalSpread:
                 logger.info(f"  Min: {stats['min']:.4f}")
                 logger.info(f"  Max: {stats['max']:.4f}")
 
-        # Plot and save closed_pl vs timedelta for each split
+        # Plot and save closed_pl vs timedelta for all splits on one chart
+        import matplotlib.ticker as ticker
+
+        plt.figure(figsize=(10, 6))
+        alphas = np.linspace(0.1, 1.0, n_splits)  # Create alphas for each split
+
         for i, result in enumerate(results):
             performance_data = result["performance_data"]
             df = pd.DataFrame(performance_data, columns=["time", "closed_pl"])
             df["time"] = pd.to_datetime(df["time"])
             df["timedelta"] = df["time"] - df["time"].iloc[0]
 
-            import matplotlib.ticker as ticker
-
-            plt.figure(figsize=(10, 6))
             plt.plot(
                 df["timedelta"].dt.total_seconds(),
                 df["closed_pl"],
-                marker="o",
                 linestyle="-",
+                alpha=alphas[i],
+                label=f"Split {i + 1}"
             )
-            plt.title(f"Closed P&L vs Time for Split {i + 1}")
-            plt.xlabel("Time (timedelta)")
-            plt.ylabel("Closed P&L")
 
         def timeTicks(x, pos):
             d = pd.Timedelta(seconds=x)
@@ -300,9 +300,12 @@ class BacktestVerticalSpread:
         formatter = ticker.FuncFormatter(timeTicks)
         plt.gca().xaxis.set_major_formatter(formatter)
         plt.grid(True)
-
+        plt.title("Closed P&L vs Time for All Splits")
+        plt.xlabel("Time (timedelta)")
+        plt.ylabel("Closed P&L")
+        plt.legend()
         plt.tight_layout()
-        plt.savefig("closed_pl_vs_time_split.png")
+        plt.savefig("closed_pl_vs_time_all_splits.png")
         plt.close()
 
         return aggregated_results
