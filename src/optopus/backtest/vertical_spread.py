@@ -267,6 +267,25 @@ class BacktestVerticalSpread:
             logger.info(f"  Min: {stats['min']:.4f}")
             logger.info(f"  Max: {stats['max']:.4f}")
 
+        # Plot and save closed_pl vs timedelta for each split
+        for i, result in enumerate(results):
+            performance_data = result["performance_data"]
+            df = pd.DataFrame(performance_data, columns=["time", "closed_pl"])
+            df["time"] = pd.to_datetime(df["time"])
+            df["timedelta"] = df["time"] - df["time"].iloc[0]
+
+            plt.figure(figsize=(10, 6))
+            plt.plot(df["timedelta"], df["closed_pl"], marker='o', linestyle='-')
+            plt.title(f"Closed P&L vs Time for Split {i+1}")
+            plt.xlabel("Time (timedelta)")
+            plt.ylabel("Closed P&L")
+            plt.grid(True)
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+            plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
+            plt.tight_layout()
+            plt.savefig(f"closed_pl_vs_time_split_{i+1}.png")
+            plt.close()
+
         return aggregated_results
 
 
