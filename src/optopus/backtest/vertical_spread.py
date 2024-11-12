@@ -277,7 +277,7 @@ class BacktestVerticalSpread:
         import matplotlib.ticker as ticker
 
         plt.figure(figsize=(10, 6))
-        alpha = 0.5  # Set a single alpha value for all splits
+        alpha = 0.2  # Set a single alpha value for all splits
 
         for i, result in enumerate(results):
             performance_data = result["performance_data"]
@@ -289,6 +289,7 @@ class BacktestVerticalSpread:
                 df["timedelta"].dt.total_seconds(),
                 df["closed_pl"],
                 linestyle="-",
+                ms=0,
                 alpha=alpha,
                 label=f"Split {i + 1}"
             )
@@ -303,7 +304,6 @@ class BacktestVerticalSpread:
         plt.title("Closed P&L vs Time for All Splits")
         plt.xlabel("Time (timedelta)")
         plt.ylabel("Closed P&L")
-        plt.legend()
         plt.tight_layout()
         plt.savefig("closed_pl_vs_time_all_splits.png")
         plt.close()
