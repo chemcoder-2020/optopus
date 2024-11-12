@@ -2,7 +2,6 @@ import pandas as pd
 import os
 from ..trades.option_manager import OptionBacktester
 from ..trades.option_spread import OptionStrategy
-from ..trades.entry_conditions import DefaultEntryCondition
 import numpy as np
 from loguru import logger
 from datetime import datetime
@@ -11,6 +10,7 @@ import contextlib
 import joblib
 from tqdm import tqdm
 from joblib import Parallel, delayed
+import matplotlib.pyplot as plt
 
 
 class BacktestVerticalSpread:
@@ -235,7 +235,9 @@ class BacktestVerticalSpread:
             # Calculate and return performance metrics
             metrics = backtester.calculate_performance_metrics()
             profitable = backtester.get_closed_pl() > 0
+            perf_data = backtester.performance_data
             metrics.update({"profitable": profitable})
+            metrics.update({"performance_data": perf_data})
             return metrics
 
         with tqdm_joblib(
