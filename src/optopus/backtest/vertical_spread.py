@@ -11,6 +11,7 @@ import joblib
 from tqdm import tqdm
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 
 class BacktestVerticalSpread:
@@ -57,6 +58,7 @@ class BacktestVerticalSpread:
             start_date = start_date.strftime("%Y-%m-%d")
         if isinstance(end_date, (pd.Timestamp, datetime)):
             end_date = end_date.strftime("%Y-%m-%d")
+
         # Generate time range for trading hours
         time_range = pd.date_range(
             start=f"{start_date} {self.trading_start_time}",
@@ -82,14 +84,13 @@ class BacktestVerticalSpread:
             if year != prev_year:
                 logger.info(f"Processing year: {year}")
                 prev_year = year
+
             filename = f"{self.symbol}_{time.strftime('%Y-%m-%d %H-%M')}.parquet"
             file_path = os.path.join(self.data_folder, filename)
 
             if not os.path.exists(file_path):
                 if self.debug:
-                    logger.warning(
-                        f"No data available for {time}. Skipping this update."
-                    )
+                    logger.warning(f"No data available for {time}. Skipping this update.")
                 continue
 
             option_chain_df = pd.read_parquet(file_path)
@@ -100,9 +101,8 @@ class BacktestVerticalSpread:
                     logger.warning(f"Data is empty for {time}. Skipping this update.")
                 continue
 
-            if skip_fridays:
-                if time.weekday() == 4:
-                    continue
+            if skip_fridays and time.weekday() == 4:
+                continue
 
             # Create spread
             try:
@@ -115,10 +115,10 @@ class BacktestVerticalSpread:
                     contracts=self.strategy_params["contracts"],
                     entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
                     option_chain_df=option_chain_df,
-                    profit_target=self.strategy_params["profit_target"] if "profit_target" in self.strategy_params else None,
-                    stop_loss=self.strategy_params["stop_loss"] if "stop_loss" in self.strategy_params else None,
-                    commission=self.strategy_params["commission"] if "commission" in self.strategy_params else 0,
-                    exit_scheme=self.strategy_params["exit_scheme"] if "exit_scheme" in self.strategy_params else None,
+                    profit_target=self.strategy_params.get("profit_target"),
+                    stop_loss=self.strategy_params.get("stop_loss"),
+                    commission=self.strategy_params.get("commission", 0),
+                    exit_scheme=self.strategy_params.get("exit_scheme"),
                 )
             except Exception as e:
                 if self.debug:
@@ -278,14 +278,14 @@ class BacktestVerticalSpread:
 
             plt.figure(figsize=(10, 6))
             plt.plot(df["timedelta"], df["closed_pl"], marker='o', linestyle='-')
-            plt.title(f"Closed P&L vs Time for Split {i+1}")
+            plt.title(f"Closed P&L vs Time for Split {i + 1}")
             plt.xlabel("Time (timedelta)")
             plt.ylabel("Closed P&L")
             plt.grid(True)
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
             plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
             plt.tight_layout()
-            plt.savefig(f"closed_pl_vs_time_split_{i+1}.png")
+            plt.savefig(f"closed_pl_vs_time_split_{i + 1}.png")
             plt.close()
 
         return aggregated_results
