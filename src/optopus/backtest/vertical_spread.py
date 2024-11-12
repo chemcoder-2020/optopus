@@ -293,7 +293,7 @@ class BacktestVerticalSpread:
             plt.ylabel("Closed P&L")
             plt.grid(True)
             plt.gca().xaxis.set_major_formatter(formatter)
-            # plt.tight_layout()
+            plt.tight_layout()
             plt.savefig(f"closed_pl_vs_time_split_{i + 1}.png")
             plt.close()
 
