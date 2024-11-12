@@ -90,7 +90,9 @@ class BacktestVerticalSpread:
 
             if not os.path.exists(file_path):
                 if self.debug:
-                    logger.warning(f"No data available for {time}. Skipping this update.")
+                    logger.warning(
+                        f"No data available for {time}. Skipping this update."
+                    )
                 continue
 
             option_chain_df = pd.read_parquet(file_path)
@@ -280,22 +282,28 @@ class BacktestVerticalSpread:
 
             import matplotlib.ticker as ticker
 
-            def timeTicks(x, pos):
-                d = pd.Timedelta(seconds=x)
-                return str(d)
-
-            formatter = ticker.FuncFormatter(timeTicks)
-
             plt.figure(figsize=(10, 6))
-            plt.plot(df["timedelta"].dt.total_seconds(), df["closed_pl"], marker='o', linestyle='-')
+            plt.plot(
+                df["timedelta"].dt.total_seconds(),
+                df["closed_pl"],
+                marker="o",
+                linestyle="-",
+            )
             plt.title(f"Closed P&L vs Time for Split {i + 1}")
             plt.xlabel("Time (timedelta)")
             plt.ylabel("Closed P&L")
-            plt.grid(True)
-            plt.gca().xaxis.set_major_formatter(formatter)
-            plt.tight_layout()
-            plt.savefig(f"closed_pl_vs_time_split_{i + 1}.png")
-            plt.close()
+
+        def timeTicks(x, pos):
+            d = pd.Timedelta(seconds=x)
+            return str(d)
+
+        formatter = ticker.FuncFormatter(timeTicks)
+        plt.gca().xaxis.set_major_formatter(formatter)
+        plt.grid(True)
+
+        plt.tight_layout()
+        plt.savefig("closed_pl_vs_time_split.png")
+        plt.close()
 
         return aggregated_results
 
