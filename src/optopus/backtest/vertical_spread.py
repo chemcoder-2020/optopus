@@ -250,14 +250,15 @@ class BacktestVerticalSpread:
         # Aggregate results
         aggregated_results = {}
         for metric in results[0].keys():
-            values = [result[metric] for result in results]
-            aggregated_results[metric] = {
-                "mean": np.nanmean(values),
-                "median": np.nanmedian(values),
-                "std": np.nanstd(values),
-                "min": np.nanmin(values),
-                "max": np.nanmax(values),
-            }
+            if metric != "performance_data":
+                values = [result[metric] for result in results]
+                aggregated_results[metric] = {
+                    "mean": np.nanmean(values),
+                    "median": np.nanmedian(values),
+                    "std": np.nanstd(values),
+                    "min": np.nanmin(values),
+                    "max": np.nanmax(values),
+                }
 
         logger.info("\nCross-Validation Results:")
         logger.info("==========================")
@@ -285,7 +286,7 @@ class BacktestVerticalSpread:
             plt.grid(True)
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
             plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
-            plt.tight_layout()
+            # plt.tight_layout()
             plt.savefig(f"closed_pl_vs_time_split_{i + 1}.png")
             plt.close()
 
