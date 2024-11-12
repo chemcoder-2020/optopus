@@ -302,7 +302,7 @@ class BacktestVerticalSpread:
         plt.gca().xaxis.set_major_formatter(formatter)
         plt.grid(True)
         plt.title("Closed P&L vs Time for All Splits")
-        plt.xlabel("Time (timedelta)")
+        plt.xlabel("Time (timedelta)", rotation=45)
         plt.ylabel("Closed P&L")
         plt.tight_layout()
         plt.savefig("closed_pl_vs_time_all_splits.png")
