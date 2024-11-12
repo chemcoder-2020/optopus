@@ -277,7 +277,7 @@ class BacktestVerticalSpread:
         import matplotlib.ticker as ticker
 
         plt.figure(figsize=(10, 6))
-        alpha = 0.2  # Set a single alpha value for all splits
+        alpha = 0.5  # Set a single alpha value for all splits
 
         for i, result in enumerate(results):
             performance_data = result["performance_data"]
