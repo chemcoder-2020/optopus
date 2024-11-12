@@ -281,7 +281,7 @@ class BacktestVerticalSpread:
             import matplotlib.ticker as ticker
 
             def timeTicks(x, pos):
-                d = datetime.timedelta(seconds=x)
+                d = pd.Timedelta(seconds=x)
                 return str(d)
 
             formatter = ticker.FuncFormatter(timeTicks)
