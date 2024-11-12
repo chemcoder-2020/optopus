@@ -262,12 +262,13 @@ class BacktestVerticalSpread:
         logger.info("\nCross-Validation Results:")
         logger.info("==========================")
         for metric, stats in aggregated_results.items():
-            logger.info(f"\n{metric}:")
-            logger.info(f"  Mean: {stats['mean']:.4f}")
-            logger.info(f"  Median: {stats['median']:.4f}")
-            logger.info(f"  Std Dev: {stats['std']:.4f}")
-            logger.info(f"  Min: {stats['min']:.4f}")
-            logger.info(f"  Max: {stats['max']:.4f}")
+            if metric != "performance_data":
+                logger.info(f"\n{metric}:")
+                logger.info(f"  Mean: {stats['mean']:.4f}")
+                logger.info(f"  Median: {stats['median']:.4f}")
+                logger.info(f"  Std Dev: {stats['std']:.4f}")
+                logger.info(f"  Min: {stats['min']:.4f}")
+                logger.info(f"  Max: {stats['max']:.4f}")
 
         # Plot and save closed_pl vs timedelta for each split
         for i, result in enumerate(results):
