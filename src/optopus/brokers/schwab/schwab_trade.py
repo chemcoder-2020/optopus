@@ -384,6 +384,76 @@ class SchwabTrade(Schwab):
         }
         return payload
 
+    @classmethod
+    def generate_straddle_json(
+        cls,
+        symbol,
+        expiration,
+        strike_price,
+        quantity,
+        price,
+        duration,
+        is_entry=True,
+    ):
+        """
+        Generate JSON for a straddle trade.
+
+        Args:
+            symbol (str): The underlying symbol.
+            expiration (str): The expiration date in YYMMDD format.
+            strike_price (float): The strike price of the call and put options.
+            quantity (int): The number of contracts.
+            price (float): The price for the spread.
+            duration (str): The duration of the order (e.g., 'DAY', 'GOOD_TILL_CANCEL').
+
+        Returns:
+            dict: The JSON payload for the trade.
+        """
+        if isinstance(expiration, pd.Timestamp):
+            expiration = expiration.strftime("%y%m%d")
+        elif isinstance(expiration, str):
+            if len(expiration) != 6:
+                expiration = pd.Timestamp(expiration).strftime("%y%m%d")
+
+        call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(strike_price * 1000)).zfill(8)}"
+        put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(strike_price * 1000)).zfill(8)}"
+
+        if is_entry:
+            order_type = "NET_DEBIT"
+            call_instruction = "BUY_TO_OPEN"
+            put_instruction = "BUY_TO_OPEN"
+        else:
+            order_type = "NET_CREDIT"
+            call_instruction = "SELL_TO_CLOSE"
+            put_instruction = "SELL_TO_CLOSE"
+
+        payload = {
+            "orderType": order_type,
+            "session": "NORMAL",
+            "price": f"{price:.2f}",
+            "duration": duration,
+            "orderStrategyType": "SINGLE",
+            "orderLegCollection": [
+                {
+                    "instruction": call_instruction,
+                    "quantity": quantity,
+                    "instrument": {
+                        "symbol": call_option_symbol,
+                        "assetType": "OPTION",
+                    },
+                },
+                {
+                    "instruction": put_instruction,
+                    "quantity": quantity,
+                    "instrument": {
+                        "symbol": put_option_symbol,
+                        "assetType": "OPTION",
+                    },
+                },
+            ],
+        }
+        return payload
+
     def place_order(self, account_number_hash_value, payload):
         url = f"{self.trading_base_url}/accounts/{account_number_hash_value}/orders"
         response = self._post(url, data=payload)
