@@ -416,59 +416,6 @@ class SchwabTrade(Schwab):
             )
             return False
 
-    def place_single_option_order(
-        self,
-        symbol,
-        expiration,
-        option_type,
-        strike_price,
-        instruction,
-        quantity,
-        order_type,
-        price,
-        duration,
-    ):
-        payload = self.generate_single_option_json(
-            symbol,
-            expiration,
-            option_type,
-            strike_price,
-            instruction,
-            quantity,
-            order_type,
-            price,
-            duration,
-        )
-        return self.place_order(payload)
-
-    def place_vertical_spread_order(
-        self,
-        symbol,
-        expiration,
-        long_option_type,
-        long_strike_price,
-        short_option_type,
-        short_strike_price,
-        quantity,
-        order_type,
-        price,
-        duration,
-    ):
-
-        payload = self.generate_vertical_spread_json(
-            symbol,
-            expiration,
-            long_option_type,
-            long_strike_price,
-            short_option_type,
-            short_strike_price,
-            quantity,
-            order_type,
-            price,
-            duration,
-        )
-        return self.place_order(payload)
-
     @classmethod
     def generate_iron_condor_json(
         cls,
@@ -566,31 +513,6 @@ class SchwabTrade(Schwab):
             ],
         }
         return payload
-
-    def place_iron_condor_order(
-        self,
-        symbol,
-        expiration,
-        long_call_strike_price,
-        short_call_strike_price,
-        short_put_strike_price,
-        long_put_strike_price,
-        quantity,
-        price,
-        duration,
-    ):
-        payload = self.generate_iron_condor_json(
-            symbol,
-            expiration,
-            long_call_strike_price,
-            short_call_strike_price,
-            short_put_strike_price,
-            long_put_strike_price,
-            quantity,
-            price,
-            duration,
-        )
-        return self.place_order(payload)
 
 
 def main():
