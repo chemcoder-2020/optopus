@@ -26,9 +26,6 @@ class TradingManager(OptionBacktester):
         self.automation_on = True
         self.management_on = True
         self.name = name
-        self.automation_on = True
-        self.management_on = True
-        self.name = name
 
     def add_order(self, order: Order) -> bool:
         """Add an order to the list of active orders."""
