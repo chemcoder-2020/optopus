@@ -469,8 +469,9 @@ class SchwabTrade(Schwab):
         )
         return self.place_order(payload)
 
+    @classmethod
     def generate_iron_condor_json(
-        self,
+        cls,
         symbol,
         expiration,
         long_call_strike_price,
