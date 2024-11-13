@@ -460,9 +460,8 @@ class SchwabTrade(Schwab):
         symbol,
         expiration,
         long_call_strike_price,
-        short_call_strike_price,
+        strike_price,
         long_put_strike_price,
-        short_put_strike_price,
         quantity,
         price,
         duration,
@@ -475,9 +474,8 @@ class SchwabTrade(Schwab):
             symbol (str): The underlying symbol.
             expiration (str): The expiration date in YYMMDD format.
             long_call_strike_price (float): The strike price of the long call options.
-            short_call_strike_price (float): The strike price of the short call options.
+            strike_price (float): The strike price of the short call and short put options.
             long_put_strike_price (float): The strike price of the long put options.
-            short_put_strike_price (float): The strike price of the short put options.
             quantity (int): The number of contracts.
             price (float): The price for the spread.
             duration (str): The duration of the order (e.g., 'DAY', 'GOOD_TILL_CANCEL').
@@ -492,9 +490,9 @@ class SchwabTrade(Schwab):
                 expiration = pd.Timestamp(expiration).strftime("%y%m%d")
 
         long_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(long_call_strike_price * 1000)).zfill(8)}"
-        short_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(short_call_strike_price * 1000)).zfill(8)}"
+        short_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(strike_price * 1000)).zfill(8)}"
         long_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(long_put_strike_price * 1000)).zfill(8)}"
-        short_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(short_put_strike_price * 1000)).zfill(8)}"
+        short_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(strike_price * 1000)).zfill(8)}"
 
         if is_entry:
             order_type = "NET_CREDIT"
