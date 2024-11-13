@@ -28,6 +28,7 @@ class Config:
     redirect_uri: str = None
     token_file: str = None
     entry_condition: EntryConditionChecker = DefaultEntryCondition()
+    trade_type: str = None
 
     def get(self, key, default=None):
         """Get an attribute with a default value if it does not exist."""
