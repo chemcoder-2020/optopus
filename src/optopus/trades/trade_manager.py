@@ -14,16 +14,18 @@ from concurrent.futures import ThreadPoolExecutor
 
 class TradingManager(OptionBacktester):
 
-    def __init__(self, config: Config, trade_type: str, name: str = "TradingManager"):
+    def __init__(self, config: Config, name: str = "TradingManager"):
         super().__init__(config)
         self.active_orders: List[Order] = self.active_trades
         self.closed_orders: List[Order] = self.closed_trades
         self.option_broker = OptionBroker(config)
         self.__dict__.update(config.__dict__)
-        if hasattr(config, "trade_type"):
-            self.trade_type = config.trade_type
-        else:
-            self.trade_type = trade_type
+        if not hasattr(config, "trade_type"):
+            raise ValueError("Config must contain a trade_type attribute.")
+        self.trade_type = config.trade_type
+        self.automation_on = True
+        self.management_on = True
+        self.name = name
         self.automation_on = True
         self.management_on = True
         self.name = name
