@@ -337,3 +337,32 @@ class TradingManager(OptionBacktester):
 
         logger.warning(f"Order with ID {order_id} not found.")
         return False
+
+    def next(self, STRATEGY_PARAMS: dict) -> None:
+        """Update orders and check for new entries."""
+        if self.management_on:
+            self.update_orders()
+
+        if self.automation_on:
+            option_chain_df = self.option_broker.data.get_option_chain(
+                self.config.ticker,
+                strike_count=20 if STRATEGY_PARAMS["short_delta"] == "ATM" else 160,
+            )
+            bar = option_chain_df["QUOTE_READTIME"].iloc[0]
+            vertical_spread = OptionStrategy.create_vertical_spread(
+                symbol=self.config.ticker,
+                option_type=STRATEGY_PARAMS["option_type"],
+                long_strike=STRATEGY_PARAMS["long_delta"],
+                short_strike=STRATEGY_PARAMS["short_delta"],
+                expiration=STRATEGY_PARAMS["dte"],
+                contracts=STRATEGY_PARAMS["contracts"],
+                commission=STRATEGY_PARAMS["commission"],
+                entry_time=bar,
+                option_chain_df=option_chain_df,
+                exit_scheme=STRATEGY_PARAMS["exit_scheme"],
+            )
+            order = self.option_broker.create_order(vertical_spread)
+            if self.add_order(order):
+                logger.info(f"{bar}: Added order: {order}")
+            else:
+                logger.info(f"{bar}: Order not added {order}")
