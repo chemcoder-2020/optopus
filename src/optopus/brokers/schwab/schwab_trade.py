@@ -524,7 +524,7 @@ class SchwabTrade(Schwab):
                 },
                 {
                     "instruction": short_call_instruction,
-                    "quantity": 2 * quantity,
+                    "quantity": quantity,
                     "instrument": {
                         "symbol": short_call_option_symbol,
                         "assetType": "OPTION",
@@ -540,7 +540,7 @@ class SchwabTrade(Schwab):
                 },
                 {
                     "instruction": short_put_instruction,
-                    "quantity": 2 * quantity,
+                    "quantity": quantity,
                     "instrument": {
                         "symbol": short_put_option_symbol,
                         "assetType": "OPTION",
