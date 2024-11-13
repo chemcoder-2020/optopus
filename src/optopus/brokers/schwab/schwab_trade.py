@@ -286,6 +286,104 @@ class SchwabTrade(Schwab):
         }
         return payload
 
+    @classmethod
+    def generate_iron_condor_json(
+        cls,
+        symbol,
+        expiration,
+        long_call_strike_price,
+        short_call_strike_price,
+        short_put_strike_price,
+        long_put_strike_price,
+        quantity,
+        price,
+        duration,
+        is_entry=True,
+    ):
+        """
+        Generate JSON for an iron condor trade.
+
+        Args:
+            symbol (str): The underlying symbol.
+            expiration (str): The expiration date in YYMMDD format.
+            long_call_strike_price (float): The strike price of the long call option.
+            short_call_strike_price (float): The strike price of the short call option.
+            short_put_strike_price (float): The strike price of the short put option.
+            long_put_strike_price (float): The strike price of the long put option.
+            quantity (int): The number of contracts.
+            price (float): The price for the spread.
+            duration (str): The duration of the order (e.g., 'DAY', 'GOOD_TILL_CANCEL').
+
+        Returns:
+            dict: The JSON payload for the trade.
+        """
+        if isinstance(expiration, pd.Timestamp):
+            expiration = expiration.strftime("%y%m%d")
+        elif isinstance(expiration, str):
+            if len(expiration) != 6:
+                expiration = pd.Timestamp(expiration).strftime("%y%m%d")
+
+        long_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(long_call_strike_price * 1000)).zfill(8)}"
+        short_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(short_call_strike_price * 1000)).zfill(8)}"
+        short_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(short_put_strike_price * 1000)).zfill(8)}"
+        long_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(long_put_strike_price * 1000)).zfill(8)}"
+
+        if is_entry:
+            order_type = "NET_CREDIT"
+            long_call_instruction = "BUY_TO_OPEN"
+            short_call_instruction = "SELL_TO_OPEN"
+            short_put_instruction = "SELL_TO_OPEN"
+            long_put_instruction = "BUY_TO_OPEN"
+        else:
+            order_type = "NET_DEBIT"
+            long_call_instruction = "SELL_TO_CLOSE"
+            short_call_instruction = "BUY_TO_CLOSE"
+            short_put_instruction = "BUY_TO_CLOSE"
+            long_put_instruction = "SELL_TO_CLOSE"
+
+        payload = {
+            "orderType": order_type,
+            "session": "NORMAL",
+            "price": f"{price:.2f}",
+            "duration": duration,
+            "orderStrategyType": "SINGLE",
+            "orderLegCollection": [
+                {
+                    "instruction": long_call_instruction,
+                    "quantity": quantity,
+                    "instrument": {
+                        "symbol": long_call_option_symbol,
+                        "assetType": "OPTION",
+                    },
+                },
+                {
+                    "instruction": short_call_instruction,
+                    "quantity": quantity,
+                    "instrument": {
+                        "symbol": short_call_option_symbol,
+                        "assetType": "OPTION",
+                    },
+                },
+                {
+                    "instruction": short_put_instruction,
+                    "quantity": quantity,
+                    "instrument": {
+                        "symbol": short_put_option_symbol,
+                        "assetType": "OPTION",
+                    },
+                },
+                {
+                    "instruction": long_put_instruction,
+                    "quantity": quantity,
+                    "instrument": {
+                        "symbol": long_put_option_symbol,
+                        "assetType": "OPTION",
+                    },
+                },
+            ],
+        }
+        return payload
+
     def place_order(self, account_number_hash_value, payload):
         url = f"{self.trading_base_url}/accounts/{account_number_hash_value}/orders"
         response = self._post(url, data=payload)
@@ -415,104 +513,6 @@ class SchwabTrade(Schwab):
                 f"Correlation ID: {correl_id}"
             )
             return False
-
-    @classmethod
-    def generate_iron_condor_json(
-        cls,
-        symbol,
-        expiration,
-        long_call_strike_price,
-        short_call_strike_price,
-        short_put_strike_price,
-        long_put_strike_price,
-        quantity,
-        price,
-        duration,
-        is_entry=True,
-    ):
-        """
-        Generate JSON for an iron condor trade.
-
-        Args:
-            symbol (str): The underlying symbol.
-            expiration (str): The expiration date in YYMMDD format.
-            long_call_strike_price (float): The strike price of the long call option.
-            short_call_strike_price (float): The strike price of the short call option.
-            short_put_strike_price (float): The strike price of the short put option.
-            long_put_strike_price (float): The strike price of the long put option.
-            quantity (int): The number of contracts.
-            price (float): The price for the spread.
-            duration (str): The duration of the order (e.g., 'DAY', 'GOOD_TILL_CANCEL').
-
-        Returns:
-            dict: The JSON payload for the trade.
-        """
-        if isinstance(expiration, pd.Timestamp):
-            expiration = expiration.strftime("%y%m%d")
-        elif isinstance(expiration, str):
-            if len(expiration) != 6:
-                expiration = pd.Timestamp(expiration).strftime("%y%m%d")
-
-        long_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(long_call_strike_price * 1000)).zfill(8)}"
-        short_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(short_call_strike_price * 1000)).zfill(8)}"
-        short_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(short_put_strike_price * 1000)).zfill(8)}"
-        long_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(long_put_strike_price * 1000)).zfill(8)}"
-
-        if is_entry:
-            order_type = "NET_CREDIT"
-            long_call_instruction = "BUY_TO_OPEN"
-            short_call_instruction = "SELL_TO_OPEN"
-            short_put_instruction = "SELL_TO_OPEN"
-            long_put_instruction = "BUY_TO_OPEN"
-        else:
-            order_type = "NET_DEBIT"
-            long_call_instruction = "SELL_TO_CLOSE"
-            short_call_instruction = "BUY_TO_CLOSE"
-            short_put_instruction = "BUY_TO_CLOSE"
-            long_put_instruction = "SELL_TO_CLOSE"
-
-        payload = {
-            "orderType": order_type,
-            "session": "NORMAL",
-            "price": f"{price:.2f}",
-            "duration": duration,
-            "orderStrategyType": "SINGLE",
-            "orderLegCollection": [
-                {
-                    "instruction": long_call_instruction,
-                    "quantity": quantity,
-                    "instrument": {
-                        "symbol": long_call_option_symbol,
-                        "assetType": "OPTION",
-                    },
-                },
-                {
-                    "instruction": short_call_instruction,
-                    "quantity": quantity,
-                    "instrument": {
-                        "symbol": short_call_option_symbol,
-                        "assetType": "OPTION",
-                    },
-                },
-                {
-                    "instruction": short_put_instruction,
-                    "quantity": quantity,
-                    "instrument": {
-                        "symbol": short_put_option_symbol,
-                        "assetType": "OPTION",
-                    },
-                },
-                {
-                    "instruction": long_put_instruction,
-                    "quantity": quantity,
-                    "instrument": {
-                        "symbol": long_put_option_symbol,
-                        "assetType": "OPTION",
-                    },
-                },
-            ],
-        }
-        return payload
 
 
 def main():
