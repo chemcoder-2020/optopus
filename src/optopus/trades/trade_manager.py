@@ -341,6 +341,19 @@ class TradingManager(OptionBacktester):
 
     def next(self, STRATEGY_PARAMS: dict) -> None:
         """Update orders and check for new entries."""
+        required_keys = {
+            "option_type",
+            "long_delta",
+            "short_delta",
+            "dte",
+            "contracts",
+            "commission",
+            "exit_scheme",
+        }
+        if not required_keys.issubset(STRATEGY_PARAMS):
+            logger.error(f"Missing keys in STRATEGY_PARAMS: {required_keys - STRATEGY_PARAMS}")
+            return
+
         if self.management_on:
             self.update_orders()
 
