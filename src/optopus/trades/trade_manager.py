@@ -341,17 +341,26 @@ class TradingManager(OptionBacktester):
 
     def next(self, STRATEGY_PARAMS: dict) -> None:
         """Update orders and check for new entries."""
-        required_keys = {
-            "option_type",
-            "long_delta",
-            "short_delta",
-            "dte",
-            "contracts",
-            "commission",
-            "exit_scheme",
+        trade_type_required_keys = {
+            "Vertical Spread": {
+                "option_type",
+                "long_delta",
+                "short_delta",
+                "dte",
+                "contracts",
+                "commission",
+                "exit_scheme",
+            },
+            # Add other trade types and their required keys here
         }
+
+        if self.trade_type not in trade_type_required_keys:
+            logger.error(f"Unsupported trade type: {self.trade_type}")
+            return
+
+        required_keys = trade_type_required_keys[self.trade_type]
         if not required_keys.issubset(STRATEGY_PARAMS):
-            logger.error(f"Missing keys in STRATEGY_PARAMS: {required_keys - STRATEGY_PARAMS}")
+            logger.error(f"Missing keys in STRATEGY_PARAMS for {self.trade_type}: {required_keys - STRATEGY_PARAMS}")
             return
 
         if self.management_on:
