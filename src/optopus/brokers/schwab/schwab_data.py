@@ -431,9 +431,16 @@ class SchwabData(Schwab):
         }
         # Remove None values from params
         params = {k: v for k, v in params.items() if v is not None}
-        response = self._get(url, params=params)
-        response.raise_for_status()
-        price_history_json = response.json()
+        try:
+            response = self._get(url, params=params)
+            response.raise_for_status()
+            price_history_json = response.json()
+        except Exception as e:
+            logger.error(f"Error fetching price history: {e}")
+            self.refresh_token()
+            response = self._get(url, params=params)
+            response.raise_for_status()
+            price_history_json = response.json()
         return self.process_price_history(price_history_json, frequency_type)
 
     @classmethod
