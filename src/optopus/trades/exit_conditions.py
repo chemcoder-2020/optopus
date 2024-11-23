@@ -241,16 +241,16 @@ class CompositeExitCondition(ExitConditionChecker):
         attributes (dict): A dictionary containing the attributes of each condition.
     """
 
-    def __init__(self, conditions: List[ExitConditionChecker], logical_operation: str = 'AND'):
+    def __init__(self, conditions: List[ExitConditionChecker], logical_operations: List[str] = ['AND']):
         """
         Initialize the CompositeExitCondition.
 
         Args:
             conditions (List[ExitConditionChecker]): List of exit conditions to combine.
-            logical_operation (str): The logical operation to combine the conditions ('AND' or 'OR').
+            logical_operations (List[str]): List of logical operations to combine the conditions ('AND' or 'OR').
         """
         self.conditions = conditions
-        self.logical_operation = logical_operation
+        self.logical_operations = logical_operations
         for condition in conditions:
             self.__dict__.update(condition.__dict__)
 
@@ -269,14 +269,21 @@ class CompositeExitCondition(ExitConditionChecker):
         Returns:
             bool: True if the composite exit condition is met, False otherwise.
         """
-        results = [condition.should_exit(strategy, current_time, option_chain_df) for condition in self.conditions]
+        if len(self.conditions) != len(self.logical_operations) + 1:
+            raise ValueError("The number of logical operations must be one less than the number of conditions.")
 
-        if self.logical_operation == 'AND':
-            return all(results)
-        elif self.logical_operation == 'OR':
-            return any(results)
-        else:
-            raise ValueError("Logical operation must be 'AND' or 'OR'")
+        results = [condition.should_exit(strategy, current_time, option_chain_df) for condition in self.conditions]
+        combined_result = results[0]
+
+        for i, operation in enumerate(self.logical_operations):
+            if operation == 'AND':
+                combined_result = combined_result and results[i + 1]
+            elif operation == 'OR':
+                combined_result = combined_result or results[i + 1]
+            else:
+                raise ValueError("Logical operation must be 'AND' or 'OR'")
+
+        return combined_result
 
     def update(self, **kwargs):
         """
