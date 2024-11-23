@@ -327,7 +327,7 @@ class DefaultExitCondition(ExitConditionChecker):
         time_based_condition = TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration)
         self.composite_condition = CompositeExitCondition(
             conditions=[profit_target_condition, time_based_condition],
-            logical_operation='OR'
+            logical_operations=['OR']
         )
         self.__dict__.update(self.composite_condition.__dict__)
 
