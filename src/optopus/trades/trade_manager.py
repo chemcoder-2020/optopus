@@ -11,6 +11,7 @@ from typing import List
 import dill
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor
+import matplotlib.pyplot as plt
 
 
 class TradingManager(OptionBacktester):
@@ -83,6 +84,61 @@ class TradingManager(OptionBacktester):
                     self.active_orders = self.active_orders.remove(order)
 
             self._update_trade_counts()
+
+            current_time = self.active_orders[-1].current_time
+            self.last_update_time = current_time
+
+            # Record performance data after update
+            if isinstance(self.last_update_time, pd.Timestamp):
+                self._record_performance_data(current_time)
+
+    def _record_performance_data(self, current_time):
+        total_pl = self.get_total_pl()
+        closed_pl = self.get_closed_pl()
+        self.performance_data.append(
+            {
+                "time": current_time,
+                "total_pl": total_pl,
+                "closed_pl": closed_pl,
+            }
+        )
+    
+    def plot_performance(self):
+        """Generate performance visualizations."""
+        if not self.performance_data:
+            logger.warning("No performance data available for plotting.")
+            return
+
+        df = pd.DataFrame(self.performance_data)
+        df.set_index("time", inplace=True)
+
+        # Calculate drawdown
+        df["peak"] = df["total_pl"].cummax()
+        df["drawdown"] = df["peak"] - df["total_pl"]
+
+        # Create subplots
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 20), sharex=True)
+
+        # Plot Total P/L
+        ax1.plot(df.index, df["total_pl"], label="Total P/L")
+        ax1.set_title("Total P/L")
+        ax1.set_ylabel("P/L ($)")
+        ax1.legend()
+
+        # Plot Closed P/L
+        ax2.plot(df.index, df["closed_pl"], label="Closed P/L")
+        ax2.set_title("Closed P/L")
+        ax2.set_ylabel("P/L ($)")
+        ax2.legend()
+
+        # Plot Drawdown
+        ax3.fill_between(df.index, df["drawdown"], label="Drawdown")
+        ax3.set_title("Drawdown")
+        ax3.set_ylabel("Drawdown ($)")
+        ax3.legend()
+
+        plt.tight_layout()
+        plt.show()
 
     def get_active_orders(self) -> List[Order]:
         return self.active_orders
@@ -360,7 +416,9 @@ class TradingManager(OptionBacktester):
 
         required_keys = trade_type_required_keys[self.trade_type]
         if not required_keys.issubset(STRATEGY_PARAMS):
-            logger.error(f"Missing keys in STRATEGY_PARAMS for {self.trade_type}: {required_keys - STRATEGY_PARAMS}")
+            logger.error(
+                f"Missing keys in STRATEGY_PARAMS for {self.trade_type}: {required_keys - STRATEGY_PARAMS}"
+            )
             return
 
         if self.management_on:

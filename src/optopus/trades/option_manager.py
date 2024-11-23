@@ -10,7 +10,6 @@ from scipy.stats import gaussian_kde
 import os
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
 
-
 @dataclass
 class Config:
     initial_capital: float
@@ -155,7 +154,7 @@ class OptionBacktester:
             ),
             (
                 "Entry condition met",
-                self.config.entry_condition.should_enter(self.last_update_time),
+                self.config.entry_condition.should_enter(new_spread, self.last_update_time),
             ),
         ]
 

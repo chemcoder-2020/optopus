@@ -619,7 +619,7 @@ class OptionStrategy:
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
-        if strategy.entry_net_premium > 4 / 5 * abs(
+        if strategy.entry_net_premium > abs(
             short_strike_value - long_strike_value
         ):
             raise ValueError(
@@ -777,7 +777,7 @@ class OptionStrategy:
             strategy.calculate_net_premium()
         )
 
-        if strategy.entry_net_premium > 4 / 5 * (
+        if strategy.entry_net_premium > (
             abs(call_short_strike_value - call_long_strike_value)
             + abs(put_short_strike_value - put_long_strike_value)
         ):

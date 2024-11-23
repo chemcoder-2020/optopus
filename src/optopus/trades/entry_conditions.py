@@ -12,12 +12,12 @@ class EntryConditionChecker(ABC):
             Check if the entry conditions are met for the option strategy.
     """
     @abstractmethod
-    def should_enter(self, time: Union[datetime, str, pd.Timestamp]) -> bool:
+    def should_enter(self, strategy, time: Union[datetime, str, pd.Timestamp]) -> bool:
         pass
 
 class DefaultEntryCondition(EntryConditionChecker):
     """
     Default entry condition that always returns True.
     """
-    def should_enter(self, time: Union[datetime, str, pd.Timestamp]) -> bool:
+    def should_enter(self, strategy, time: Union[datetime, str, pd.Timestamp]) -> bool:
         return True
