@@ -68,6 +68,7 @@ class TradingManager(OptionBacktester):
             and self.active_orders[0].market_isOpen()
             and (hasattr(self, "management_on") == False or self.management_on)
         ):
+            current_time = self.active_orders[-1].current_time
 
             with ThreadPoolExecutor() as executor:
                 orders_to_close = list(
@@ -81,11 +82,10 @@ class TradingManager(OptionBacktester):
             if orders_to_close:
                 self.closed_orders.extend(orders_to_close)
                 for order in orders_to_close:
-                    self.active_orders = self.active_orders.remove(order)
+                    self.active_orders.remove(order)
 
             self._update_trade_counts()
-
-            current_time = self.active_orders[-1].current_time
+            
             self.last_update_time = current_time
 
             # Record performance data after update

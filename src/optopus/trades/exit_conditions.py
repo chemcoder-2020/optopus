@@ -255,7 +255,7 @@ class CompositeExitCondition(ExitConditionChecker):
             self.__dict__.update(condition.__dict__)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(conditions={self.conditions}, logical_operation='{self.logical_operation}')"
+        return f"{self.__class__.__name__}(conditions={self.conditions}, logical_operations='{self.logical_operations}')"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
         """
