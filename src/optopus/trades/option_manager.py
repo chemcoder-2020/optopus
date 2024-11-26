@@ -179,7 +179,7 @@ class OptionBacktester:
     def _check_conflict(self, new_spread: OptionStrategy) -> bool:
         return any(
             existing_spread.conflicts_with(new_spread)
-            for existing_spread in self.active_trades + self.closed_trades
+            for existing_spread in self.active_trades
         )
 
     def _check_ror(self, spread: OptionStrategy) -> bool:
