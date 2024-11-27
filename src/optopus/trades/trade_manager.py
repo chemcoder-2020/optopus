@@ -95,11 +95,13 @@ class TradingManager(OptionBacktester):
     def _record_performance_data(self, current_time):
         total_pl = self.get_total_pl()
         closed_pl = self.get_closed_pl()
+        active_positions = len(self.active_trades)
         self.performance_data.append(
             {
                 "time": current_time,
                 "total_pl": total_pl,
                 "closed_pl": closed_pl,
+                "active_positions": active_positions
             }
         )
     
