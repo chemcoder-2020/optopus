@@ -235,7 +235,7 @@ class OptionBacktester:
         df["drawdown"] = df["peak"] - df["total_pl"]
 
         # Create subplots
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 20), sharex=True)
+        fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(12, 24), sharex=True)
 
         # Plot Total P/L
         ax1.plot(df.index, df["total_pl"], label="Total P/L")
@@ -261,6 +261,13 @@ class OptionBacktester:
         ax4.set_ylabel("Price ($)")
         ax4.set_xlabel("Date")
         ax4.legend()
+
+        # Plot Active Positions
+        ax5.plot(df.index, df["active_positions"], label="Active Positions")
+        ax5.set_title("Active Positions")
+        ax5.set_ylabel("Positions")
+        ax5.set_xlabel("Date")
+        ax5.legend()
 
         plt.tight_layout()
         plt.show()
