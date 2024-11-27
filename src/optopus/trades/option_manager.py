@@ -204,6 +204,7 @@ class OptionBacktester:
     ) -> None:
         total_pl = self.get_total_pl()
         closed_pl = self.get_closed_pl()
+        active_positions = len(self.active_trades)
         underlying_last = (
             option_chain_df["UNDERLYING_LAST"].iloc[0]
             if "UNDERLYING_LAST" in option_chain_df.columns
@@ -216,6 +217,7 @@ class OptionBacktester:
                 "total_pl": total_pl,
                 "closed_pl": closed_pl,
                 "underlying_last": underlying_last,
+                "active_positions": active_positions
             }
         )
 
