@@ -22,7 +22,7 @@ class EntryConditionChecker(ABC):
 class CapitalRequirementCondition(EntryConditionChecker):
     """Checks if there is sufficient capital for the trade."""
     def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
-        max_capital = min(manager.allocation * manager.config.position_size, manager.capital)
+        max_capital = min(manager.allocation * manager.config.position_size, manager.available_to_trade)
         original_contracts = strategy.contracts
         strategy.contracts = min(
             original_contracts,
