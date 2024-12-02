@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
-from typing import Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING, List
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -19,24 +19,9 @@ class EntryConditionChecker(ABC):
     def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
         pass
 
-class DefaultEntryCondition(EntryConditionChecker):
-    """
-    Default entry condition that checks position limits, capital requirements,
-    and conflicts with existing positions.
-    """
+class CapitalRequirementCondition(EntryConditionChecker):
+    """Checks if there is sufficient capital for the trade."""
     def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
-        """
-        Check if entry conditions are met.
-        
-        Args:
-            strategy: The option strategy to check
-            manager: The option manager instance
-            time: Current time
-            
-        Returns:
-            bool: True if all entry conditions are met
-        """
-        # Check capital requirements
         max_capital = min(manager.allocation * manager.config.position_size, manager.capital)
         original_contracts = strategy.contracts
         strategy.contracts = min(
@@ -45,32 +30,60 @@ class DefaultEntryCondition(EntryConditionChecker):
         )
 
         if strategy.contracts == 0:
-            logger.warning(f"Strategy requires more capital than allowed by position size")
+            logger.warning("Strategy requires more capital than allowed by position size")
             return False
 
         if strategy.contracts != original_contracts:
             logger.info(f"Adjusted contracts from {original_contracts} to {strategy.contracts} to fit position size")
 
-        # Check all entry conditions
+        return (strategy.get_required_capital() <= max_capital and 
+                strategy.get_required_capital() <= manager.available_to_trade)
+
+class PositionLimitCondition(EntryConditionChecker):
+    """Checks if position limits are respected."""
+    def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
         conditions = [
-            ("No conflict", not any(existing.conflicts_with(strategy) for existing in manager.active_trades)),
-            ("Meets ROR threshold", 
-             manager.config.ror_threshold is None or strategy.return_over_risk() >= manager.config.ror_threshold),
-            ("Within max positions", len(manager.active_trades) < manager.config.max_positions),
-            ("Within max positions per day",
-             manager.config.max_positions_per_day is None or 
-             manager.trades_entered_today < manager.config.max_positions_per_day),
-            ("Within max positions per week",
-             manager.config.max_positions_per_week is None or 
-             manager.trades_entered_this_week < manager.config.max_positions_per_week),
-            ("Within max capital", strategy.get_required_capital() <= max_capital),
-            ("Sufficient capital", strategy.get_required_capital() <= manager.available_to_trade)
+            len(manager.active_trades) < manager.config.max_positions,
+            manager.config.max_positions_per_day is None or 
+            manager.trades_entered_today < manager.config.max_positions_per_day,
+            manager.config.max_positions_per_week is None or 
+            manager.trades_entered_this_week < manager.config.max_positions_per_week
         ]
+        return all(conditions)
 
-        for condition_name, condition_result in conditions:
-            if not condition_result:
-                logger.info(f"Entry condition not met: {condition_name}")
+class RORThresholdCondition(EntryConditionChecker):
+    """Checks if return over risk meets the threshold."""
+    def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
+        return (manager.config.ror_threshold is None or 
+                strategy.return_over_risk() >= manager.config.ror_threshold)
+
+class ConflictCondition(EntryConditionChecker):
+    """Checks for conflicts with existing positions."""
+    def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
+        return not any(existing.conflicts_with(strategy) for existing in manager.active_trades)
+
+class CompositeEntryCondition(EntryConditionChecker):
+    """Combines multiple entry conditions."""
+    def __init__(self, conditions: List[EntryConditionChecker]):
+        self.conditions = conditions
+
+    def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
+        for condition in self.conditions:
+            if not condition.should_enter(strategy, manager, time):
                 return False
-            logger.debug(f"Entry condition met: {condition_name}")
-
         return True
+
+class DefaultEntryCondition(EntryConditionChecker):
+    """
+    Default entry condition that combines all standard checks.
+    """
+    def __init__(self):
+        self.composite = CompositeEntryCondition([
+            CapitalRequirementCondition(),
+            PositionLimitCondition(),
+            RORThresholdCondition(),
+            ConflictCondition()
+        ])
+
+    def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
+        return self.composite.should_enter(strategy, manager, time)
