@@ -91,7 +91,17 @@ class RORThresholdCondition(EntryConditionChecker):
 class ConflictCondition(EntryConditionChecker):
     """Checks for conflicts with existing positions."""
     def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
-        return not any(existing.conflicts_with(strategy) for existing in manager.active_trades)
+        for existing_spread in manager.active_trades:
+            if existing_spread.conflicts_with(strategy):
+                logger.warning(f"Position conflict detected with existing {existing_spread.strategy_type} trade")
+                return False
+        
+        if manager.active_trades:
+            logger.info(f"No conflicts found with {len(manager.active_trades)} existing trades")
+        else:
+            logger.info("No existing trades to check for conflicts")
+            
+        return True
 
 class CompositeEntryCondition(EntryConditionChecker):
     """Combines multiple entry conditions."""
