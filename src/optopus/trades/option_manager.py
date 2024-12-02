@@ -108,65 +108,12 @@ class OptionBacktester:
         if self.capital <= 0:
             logger.warning("Cannot add spread: no capital left.")
             return False
-        max_capital = min(self.allocation * self.config.position_size, self.capital)
-        original_contracts = new_spread.contracts
-        new_spread.contracts = min(
-            original_contracts,
-            int(max_capital // new_spread.get_required_capital_per_contract()),
+            
+        return self.config.entry_condition.should_enter(
+            new_spread, 
+            self,
+            self.last_update_time
         )
-
-        if new_spread.contracts == 0:
-            logger.warning(
-                f"Spread requires more capital than allowed by position size. Skipping spread: {new_spread}"
-            )
-            return False
-
-        if new_spread.contracts != original_contracts:
-            logger.info(
-                f"Adjusted spread contracts from {original_contracts} to {new_spread.contracts} to fit position size."
-            )
-            pass
-
-        conditions = [
-            ("No conflict", not self._check_conflict(new_spread)),
-            (
-                "Meets ROR threshold",
-                self.config.ror_threshold is None or self._check_ror(new_spread),
-            ),
-            (
-                "Within max positions",
-                len(self.active_trades) < self.config.max_positions,
-            ),
-            (
-                "Within max positions per day",
-                self.config.max_positions_per_day is None
-                or self.trades_entered_today < self.config.max_positions_per_day,
-            ),
-            (
-                "Within max positions per week",
-                self.config.max_positions_per_week is None
-                or self.trades_entered_this_week < self.config.max_positions_per_week,
-            ),
-            ("Within max capital", new_spread.get_required_capital() <= max_capital),
-            (
-                "Sufficient capital",
-                new_spread.get_required_capital() <= self.available_to_trade,
-            ),
-            (
-                "Entry condition met",
-                self.config.entry_condition.should_enter(new_spread, self.last_update_time),
-            ),
-        ]
-
-        for condition_name, condition_result in conditions:
-            if not condition_result:
-                logger.info(
-                    f"Cannot add spread: {condition_name} condition not met"
-                )
-            else:
-                logger.debug(f"Spread meets condition: {condition_name}")
-
-        return all(condition for _, condition in conditions)
 
     def _update_trade_counts(self) -> None:
         self.trades_entered_today = sum(
