@@ -245,6 +245,7 @@ class OptionBacktester:
                 "exit_underlying_last": trade.exit_underlying_last,
                 "entry_net_premium": trade.entry_net_premium,
                 "exit_net_premium": trade.exit_net_premium,
+                "entry_delta": trade.entry_delta,
                 "closed_pl": pl,
                 "cumulative_pl": cumulative_pl,
                 "return_percentage": trade.return_percentage(),
