@@ -9,6 +9,7 @@ import cProfile
 import pstats
 from pstats import SortKey
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
+from .option_chain_converter import OptionChainConverter
 
 
 class OptionStrategy:
@@ -375,141 +376,15 @@ class OptionStrategy:
         reference_strike=None,
         expiration=None,  # Add expiration as a parameter
     ):
-        """
-        Get the strike price based on the provided selector.
-
-        Args:
-            symbol (str): The underlying asset symbol.
-            option_chain_df (pd.DataFrame): The option chain data.
-            strike_selector: The strike selection criteria.
-            option_type (str): The option type ('CALL' or 'PUT').
-            reference_strike (float, optional): A reference strike price for relative selection.
-            expiration (str, optional): The expiration date for delta-based strike selection.
-
-        Returns:
-            float: The selected strike price.
-
-        Raises:
-            ValueError: If the strike selector is invalid.
-        """
-        if isinstance(strike_selector, (int, float)):
-            return strike_selector
-        elif strike_selector == "ATM":
-            if option_type == "CALL":
-                otm_calls = option_chain_df["STRIKE"].ge(
-                    option_chain_df["UNDERLYING_LAST"]
-                )
-                option_data = option_chain_df[otm_calls].copy()
-                option_data.sort_values(by="STRIKE", ascending=True, inplace=True)
-            else:
-                otm_puts = option_chain_df["STRIKE"].le(
-                    option_chain_df["UNDERLYING_LAST"]
-                )
-                option_data = option_chain_df[otm_puts].copy()
-                option_data.sort_values(by="STRIKE", ascending=False, inplace=True)
-
-            strike = (
-                option_data["STRIKE"].iloc[0]
-                if int(option_data["STRIKE"].iloc[0])
-                == float(option_data["STRIKE"].iloc[0])
-                else option_data["STRIKE"].iloc[1]
-            )
-
-            return strike
-        elif isinstance(strike_selector, str):
-            if strike_selector.startswith(("+", "-")):
-                strike_value = float(strike_selector)
-                if abs(strike_value) < 1:
-                    # Assume it's delta selection
-                    if expiration is None:
-                        raise ValueError(
-                            "Expiration is required for delta-based strike selection"
-                        )
-
-                    target_dte = (
-                        pd.to_datetime(expiration).tz_localize(None)
-                        - pd.to_datetime(
-                            option_chain_df["QUOTE_READTIME"].iloc[0]
-                        ).tz_localize(None)
-                    ).days
-
-                    return OptionLeg.from_delta_and_dte(
-                        symbol=symbol,
-                        option_type=option_type,
-                        target_delta=strike_value,
-                        target_dte=target_dte,
-                        contracts=1,
-                        entry_time=option_chain_df["QUOTE_READTIME"].iloc[0],
-                        option_chain_df=option_chain_df,
-                        position_side="BUY",  # Doesn't matter for strike selection
-                    ).strike
-                else:
-                    # Relative strike selection
-                    if reference_strike is None:
-                        raise ValueError(
-                            "Reference strike is required for relative strike selection"
-                        )
-                    # if option_type == "CALL":
-                    #     return reference_strike + strike_value if int(reference_strike + strike_value) == float(reference_strike + strike_value) else reference_strike + round(strike_value)
-                    # else:
-                    return reference_strike + strike_value
-        else:
-            raise ValueError(f"Invalid strike selector: {strike_selector}")
+        return OptionChainConverter.get_strike(
+            symbol, option_chain_df, strike_selector, option_type, reference_strike, expiration
+        )
 
     @staticmethod
     def _get_expiration(
         option_chain_df: pd.DataFrame, expiration_input, entry_time: str
     ):
-        """
-        Get the expiration date based on the provided input.
-
-        Args:
-            option_chain_df (pd.DataFrame): The option chain data.
-            expiration_input (str or int): The expiration date or target DTE.
-            entry_time (str): The entry time for the strategy.
-
-        Returns:
-            str: The selected expiration date.
-
-        Raises:
-            ValueError: If no suitable expiration is found.
-        """
-        entry_date = pd.to_datetime(entry_time).tz_localize(None)
-
-        if isinstance(expiration_input, str):
-            target_date = pd.to_datetime(expiration_input).tz_localize(None)
-            # option_chain_df["DTE"] = (
-            #     pd.to_datetime(option_chain_df["EXPIRE_DATE"]) - entry_date
-            # ).dt.days
-            valid_expirations = option_chain_df[
-                option_chain_df["EXPIRE_DATE"] == target_date
-            ]
-            # valid_expirations = option_chain_df.xs(target_date, level='EXPIRE_DATE')
-
-            if valid_expirations.empty:
-                raise ValueError(f"No expiration found for date {expiration_input}")
-
-            return target_date.strftime("%Y-%m-%d")
-
-        elif isinstance(expiration_input, (int, float)):
-            target_dte = float(expiration_input)
-            # option_chain_df["DTE"] = (
-            #     pd.to_datetime(option_chain_df["EXPIRE_DATE"]) - entry_date
-            # ).dt.days
-            valid_expirations = option_chain_df[option_chain_df["DTE"] >= target_dte]
-
-            if valid_expirations.empty:
-                raise ValueError(f"No expiration found with DTE >= {target_dte}")
-
-            closest_expiration = valid_expirations.loc[
-                valid_expirations["DTE"].idxmin(), "EXPIRE_DATE"
-            ]
-            return pd.to_datetime(closest_expiration).strftime("%Y-%m-%d")
-
-        else:
-            raise ValueError(
-                "Invalid expiration input. Must be a date string or a number (DTE)."
-            )
+        return OptionChainConverter.get_expiration(option_chain_df, expiration_input, entry_time)
 
     @classmethod
     def create_vertical_spread(
