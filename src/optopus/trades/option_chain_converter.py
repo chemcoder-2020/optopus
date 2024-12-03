@@ -1,6 +1,7 @@
 import pandas as pd
 from pandas import Timestamp, Timedelta
 import datetime
+from loguru import logger
 
 class OptionChainConverter:
     """
@@ -119,6 +120,8 @@ class OptionChainConverter:
         Returns:
             float: The selected strike price.
         """
+        logger.debug(f"Starting _get_strike_from_delta with target_delta={target_delta}, target_dte={target_dte}")
+
         option_chain_df["DTE"] = (
             pd.to_datetime(option_chain_df["EXPIRE_DATE"]).dt.tz_localize(None)
             - pd.to_datetime(
@@ -126,18 +129,28 @@ class OptionChainConverter:
             ).tz_localize(None)
         ).dt.days
 
+        logger.debug(f"Calculated DTEs: {option_chain_df['DTE'].tolist()}")
+
         valid_expirations = option_chain_df[option_chain_df["DTE"] == target_dte]
 
         if valid_expirations.empty:
+            logger.error(f"No expiration found with DTE {target_dte}")
             raise ValueError(f"No expiration found with DTE {target_dte}")
+
+        logger.debug(f"Valid expirations: {valid_expirations}")
 
         valid_options = valid_expirations[valid_expirations["OPTION_TYPE"] == option_type]
 
         if valid_options.empty:
+            logger.error(f"No {option_type} options found for DTE {target_dte}")
             raise ValueError(f"No {option_type} options found for DTE {target_dte}")
+
+        logger.debug(f"Valid options: {valid_options}")
 
         valid_options["ABS_DELTA"] = abs(valid_options["DELTA"] - target_delta)
         closest_option = valid_options.loc[valid_options["ABS_DELTA"].idxmin()]
+
+        logger.debug(f"Closest option: {closest_option}")
 
         return closest_option["STRIKE"]
 
