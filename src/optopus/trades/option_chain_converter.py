@@ -73,22 +73,20 @@ class OptionChainConverter:
         if by not in ['delta', 'strike']:
             raise ValueError("by must be either 'delta' or 'strike'")
 
-        # Filter by expiration and option type
+        # Filter by expiration
         expiration_data = self.option_chain_df[
-            (self.option_chain_df['EXPIRE_DATE'] == expiration) & 
-            (self.option_chain_df['OPTION_TYPE'] == option_type)
+            self.option_chain_df['EXPIRE_DATE'] == expiration
         ]
 
         if expiration_data.empty:
-            raise ValueError(f"No data found for {option_type} options at {expiration}")
+            raise ValueError(f"No data found for expiration {expiration}")
 
         if by == 'delta':
-            # For puts, delta is negative, so we need to handle the sign
-            if option_type == 'PUT':
-                target = -abs(target)
+            delta_col = 'P_DELTA' if option_type == 'PUT' else 'C_DELTA'
+            target = -abs(target) if option_type == 'PUT' else target
             # Find strike with closest delta
             closest_strike = expiration_data.iloc[
-                (expiration_data['DELTA'] - target).abs().idxmin()
+                (expiration_data[delta_col] - target).abs().idxmin()
             ]['STRIKE']
         else:  # by strike
             closest_strike = min(expiration_data['STRIKE'], key=lambda x: abs(x - target))
