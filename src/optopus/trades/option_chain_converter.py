@@ -41,9 +41,13 @@ class OptionChainConverter:
         Raises:
             ValueError: If the strike selector is invalid.
         """
+        logger.debug(f"Starting get_strike with symbol={symbol}, strike_selector={strike_selector}, option_type={option_type}, reference_strike={reference_strike}, expiration={expiration}")
+
         if isinstance(strike_selector, (int, float)):
+            logger.debug(f"Returning strike selector as is: {strike_selector}")
             return strike_selector
         elif strike_selector == "ATM":
+            logger.debug("Selecting ATM strike")
             if option_type == "CALL":
                 otm_calls = option_chain_df["STRIKE"].ge(
                     option_chain_df["UNDERLYING_LAST"]
@@ -64,6 +68,7 @@ class OptionChainConverter:
                 else option_data["STRIKE"].iloc[1]
             )
 
+            logger.debug(f"Selected ATM strike: {strike}")
             return strike
         elif isinstance(strike_selector, str):
             if strike_selector.startswith(("+", "-")):
@@ -82,6 +87,7 @@ class OptionChainConverter:
                         ).tz_localize(None)
                     ).days
 
+                    logger.debug(f"Selecting strike based on delta with target_delta={strike_value}, target_dte={target_dte}")
                     return OptionChainConverter._get_strike_from_delta(
                         symbol=symbol,
                         option_type=option_type,
@@ -95,8 +101,11 @@ class OptionChainConverter:
                         raise ValueError(
                             "Reference strike is required for relative strike selection"
                         )
-                    return reference_strike + strike_value
+                    strike = reference_strike + strike_value
+                    logger.debug(f"Selected relative strike: {strike}")
+                    return strike
         else:
+            logger.error(f"Invalid strike selector: {strike_selector}")
             raise ValueError(f"Invalid strike selector: {strike_selector}")
 
     @staticmethod
@@ -172,6 +181,8 @@ class OptionChainConverter:
         Raises:
             ValueError: If no suitable expiration is found.
         """
+        logger.debug(f"Starting get_expiration with expiration_input={expiration_input}, entry_time={entry_time}")
+
         entry_date = pd.to_datetime(entry_time).tz_localize(None)
 
         if isinstance(expiration_input, str):
@@ -181,8 +192,10 @@ class OptionChainConverter:
             ]
 
             if valid_expirations.empty:
+                logger.error(f"No expiration found for date {expiration_input}")
                 raise ValueError(f"No expiration found for date {expiration_input}")
 
+            logger.debug(f"Selected expiration date: {target_date.strftime('%Y-%m-%d')}")
             return target_date.strftime("%Y-%m-%d")
 
         elif isinstance(expiration_input, (int, float)):
@@ -192,14 +205,18 @@ class OptionChainConverter:
             ]
 
             if valid_expirations.empty:
+                logger.error(f"No expiration found with DTE >= {target_dte}")
                 raise ValueError(f"No expiration found with DTE >= {target_dte}")
 
             closest_expiration = valid_expirations.loc[
                 valid_expirations["DTE"].idxmin(), "EXPIRE_DATE"
             ]
-            return pd.to_datetime(closest_expiration).strftime("%Y-%m-%d")
+            selected_expiration = pd.to_datetime(closest_expiration).strftime("%Y-%m-%d")
+            logger.debug(f"Selected expiration date: {selected_expiration}")
+            return selected_expiration
 
         else:
+            logger.error(f"Invalid expiration input: {expiration_input}")
             raise ValueError(
                 "Invalid expiration input. Must be a date string or a number (DTE)."
             )
