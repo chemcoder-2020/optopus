@@ -801,6 +801,7 @@ class OptionStrategy:
         Returns:
             OptionStrategy: A butterfly strategy object.
         """
+        converter = OptionChainConverter(option_chain_df)
 
         strategy = cls(
             symbol,
@@ -813,28 +814,17 @@ class OptionStrategy:
             exit_scheme,
         )
 
-        expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
+        expiration_date = converter.get_closest_expiration(expiration)
 
-        lower_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            lower_strike,
-            option_type,
-            expiration=expiration_date,
+        # Get strikes using the converter
+        lower_strike_value = converter.get_desired_strike(
+            expiration_date, option_type, lower_strike, by='delta' if isinstance(lower_strike, float) else 'strike'
         )
-        middle_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            middle_strike,
-            option_type,
-            expiration=expiration_date,
+        middle_strike_value = converter.get_desired_strike(
+            expiration_date, option_type, middle_strike, by='delta' if isinstance(middle_strike, float) else 'strike'
         )
-        upper_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            upper_strike,
-            option_type,
-            expiration=expiration_date,
+        upper_strike_value = converter.get_desired_strike(
+            expiration_date, option_type, upper_strike, by='delta' if isinstance(upper_strike, float) else 'strike'
         )
 
         lower_leg = OptionLeg(
