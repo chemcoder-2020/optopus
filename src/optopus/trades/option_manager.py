@@ -95,6 +95,8 @@ class OptionBacktester:
                 return False
 
             required_capital = new_spread.get_required_capital()
+            # Calculate and store entry delta
+            new_spread.entry_delta = new_spread.current_delta()
             self.active_trades.append(new_spread)
             self.available_to_trade -= required_capital
             self._update_trade_counts()
