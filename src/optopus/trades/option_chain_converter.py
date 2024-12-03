@@ -120,8 +120,10 @@ class OptionChainConverter:
             float: The selected strike price.
         """
         option_chain_df["DTE"] = (
-            pd.to_datetime(option_chain_df["EXPIRE_DATE"])
-            - pd.to_datetime(option_chain_df["QUOTE_READTIME"].iloc[0])
+            pd.to_datetime(option_chain_df["EXPIRE_DATE"]).dt.tz_localize(None)
+            - pd.to_datetime(
+                option_chain_df["QUOTE_READTIME"].iloc[0]
+            ).dt.tz_localize(None)
         ).dt.days
 
         valid_expirations = option_chain_df[option_chain_df["DTE"] == target_dte]
@@ -162,7 +164,7 @@ class OptionChainConverter:
         if isinstance(expiration_input, str):
             target_date = pd.to_datetime(expiration_input).tz_localize(None)
             valid_expirations = option_chain_df[
-                option_chain_df["EXPIRE_DATE"] == target_date
+                pd.to_datetime(option_chain_df["EXPIRE_DATE"]).dt.tz_localize(None) == target_date
             ]
 
             if valid_expirations.empty:
@@ -172,7 +174,9 @@ class OptionChainConverter:
 
         elif isinstance(expiration_input, (int, float)):
             target_dte = float(expiration_input)
-            valid_expirations = option_chain_df[option_chain_df["DTE"] >= target_dte]
+            valid_expirations = option_chain_df[
+                pd.to_datetime(option_chain_df["EXPIRE_DATE"]).dt.tz_localize(None) - entry_date >= Timedelta(days=target_dte)
+            ]
 
             if valid_expirations.empty:
                 raise ValueError(f"No expiration found with DTE >= {target_dte}")
