@@ -410,8 +410,8 @@ class OptionStrategy:
         Args:
             symbol (str): The underlying asset symbol.
             option_type (str): The option type ('CALL' or 'PUT').
-            long_strike: The long leg strike price or selector.
-            short_strike: The short leg strike price or selector.
+            long_strike: The strike price, delta, or ATM offset (e.g., "+2", 0.3, or "ATM") for long leg.
+            short_strike: The strike price, delta, or ATM offset for short leg.
             expiration (str or int): The option expiration date or target DTE.
             contracts (int): The number of contracts.
             entry_time (str): The entry time for the strategy.
@@ -425,6 +425,7 @@ class OptionStrategy:
         Returns:
             OptionStrategy: A vertical spread strategy object.
         """
+        converter = OptionChainConverter(option_chain_df)
 
         strategy = cls(
             symbol,
@@ -437,23 +438,31 @@ class OptionStrategy:
             exit_scheme,
         )
 
-        expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
+        expiration_date = converter.get_closest_expiration(expiration)
 
-        short_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            short_strike,
-            option_type,
-            expiration=expiration_date,
-        )
-        long_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            long_strike,
-            option_type,
-            reference_strike=short_strike_value,
-            expiration=expiration_date,
-        )
+        # Get strike prices using the converter
+        if isinstance(short_strike, (int, float)) and abs(short_strike) < 1:
+            # Delta-based selection
+            short_strike_value = converter.get_desired_strike(expiration_date, option_type, short_strike, by='delta')
+        elif isinstance(short_strike, str) and short_strike.upper() == "ATM":
+            # ATM strike
+            short_strike_value = converter.get_atm_strike(expiration_date)
+        elif isinstance(short_strike, str) and short_strike[0] in ["+", "-"]:
+            # ATM relative strike
+            short_strike_value = converter.get_desired_strike(expiration_date, option_type, float(short_strike), by='atm')
+        else:
+            # Direct strike price
+            short_strike_value = converter.get_desired_strike(expiration_date, option_type, float(short_strike), by='strike')
+
+        # Similar logic for long strike
+        if isinstance(long_strike, (int, float)) and abs(long_strike) < 1:
+            long_strike_value = converter.get_desired_strike(expiration_date, option_type, long_strike, by='delta')
+        elif isinstance(long_strike, str) and long_strike.upper() == "ATM":
+            long_strike_value = converter.get_atm_strike(expiration_date)
+        elif isinstance(long_strike, str) and long_strike[0] in ["+", "-"]:
+            long_strike_value = converter.get_desired_strike(expiration_date, option_type, float(long_strike), by='atm')
+        else:
+            long_strike_value = converter.get_desired_strike(expiration_date, option_type, float(long_strike), by='strike')
 
         if (long_strike_value > short_strike_value and option_type == "PUT") or (
             long_strike_value < short_strike_value and option_type == "CALL"
