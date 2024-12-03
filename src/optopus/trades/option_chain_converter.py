@@ -84,14 +84,18 @@ class OptionChainConverter:
         return atm_strike
 
     def get_strike_relative_to_atm(self, expiration: int | pd.Timestamp | str | datetime, 
-                                 offset: float) -> float:
+                                 offset: float, by: str = 'dollar') -> float:
         """
         Get a strike price relative to the ATM strike.
         
         :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
-        :param offset: Offset from ATM strike in dollars (can be positive or negative).
+        :param offset: Offset from ATM strike (in dollars or percentage based on 'by' parameter).
+        :param by: Method to calculate offset ('dollar' or 'percent', defaults to 'dollar').
         :return: The strike price offset from ATM.
+        :raises ValueError: If invalid offset method is provided.
         """
+        if by not in ['dollar', 'percent']:
+            raise ValueError("by must be either 'dollar' or 'percent'")
         atm_strike = self.get_atm_strike(expiration)
         
         # Get the closest expiration date
@@ -102,8 +106,11 @@ class OptionChainConverter:
             self.option_chain_df['EXPIRE_DATE'].eq(closest_expiration)
         ].reset_index(drop=True)
         
-        # Find the closest strike to ATM + offset
-        target_strike = atm_strike + offset
+        # Calculate target strike based on offset method
+        if by == 'dollar':
+            target_strike = atm_strike + offset
+        else:  # by == 'percent'
+            target_strike = atm_strike * (1 + offset/100)
         relative_strike = min(expiration_data['STRIKE'].unique(), 
                             key=lambda x: abs(x - target_strike))
         
@@ -124,8 +131,8 @@ class OptionChainConverter:
         if option_type not in ['CALL', 'PUT']:
             raise ValueError("option_type must be either 'CALL' or 'PUT'")
         
-        if by not in ['delta', 'strike', 'atm']:
-            raise ValueError("by must be either 'delta', 'strike', or 'atm'")
+        if by not in ['delta', 'strike', 'atm', 'atm_percent']:
+            raise ValueError("by must be either 'delta', 'strike', 'atm', or 'atm_percent'")
 
         # Get the closest expiration date
         closest_expiration = self.get_closest_expiration(expiration)
@@ -147,8 +154,10 @@ class OptionChainConverter:
             ]['STRIKE']
         elif by == 'strike':
             closest_strike = min(expiration_data['STRIKE'], key=lambda x: abs(x - target))
-        else:  # by == 'atm'
-            closest_strike = self.get_strike_relative_to_atm(expiration, target)
+        elif by == 'atm':
+            closest_strike = self.get_strike_relative_to_atm(expiration, target, by='dollar')
+        else:  # by == 'atm_percent'
+            closest_strike = self.get_strike_relative_to_atm(expiration, target, by='percent')
 
         return closest_strike
 
@@ -233,3 +242,10 @@ if __name__ == "__main__":
     atm_minus_1_put = converter.get_desired_strike(expiry_as_dte, 'PUT', -1, by='atm')
     print(f"ATM+1 CALL strike: {atm_plus_1_call}")
     print(f"ATM-1 PUT strike: {atm_minus_1_put}")
+
+    # Demonstrating percentage-based ATM relative strikes
+    print("\nDemonstrating percentage-based ATM relative strikes:")
+    atm_plus_1pct = converter.get_desired_strike(expiry_as_dte, 'CALL', 1, by='atm_percent')
+    atm_minus_1pct = converter.get_desired_strike(expiry_as_dte, 'PUT', -1, by='atm_percent')
+    print(f"ATM+1% strike: {atm_plus_1pct}")
+    print(f"ATM-1% strike: {atm_minus_1pct}")
