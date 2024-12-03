@@ -61,7 +61,7 @@ class OptionChainConverter:
         :return: Closest strike price available at the specified expiration.
         """
         expiration_data = self.option_chain_df[self.option_chain_df['EXPIRE_DATE'] == expiration]
-        closest_strike = min(expiration_data['strike'], key=lambda x: abs(x - strike))
+        closest_strike = min(expiration_data['STRIKE'], key=lambda x: abs(x - strike))
         return closest_strike
 
 if __name__ == "__main__":
