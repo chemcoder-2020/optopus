@@ -186,7 +186,6 @@ class TradingManager(OptionBacktester):
             "DIT",
             "DTE",
             "Entry Delta",
-            "Entry Delta",
         ]
         data = []
 
@@ -259,6 +258,7 @@ class TradingManager(OptionBacktester):
             "Total Commission",
             "DIT",
             "DTE",
+            "Entry Delta",
         ]
         data = []
 
