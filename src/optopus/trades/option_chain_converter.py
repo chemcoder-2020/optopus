@@ -86,6 +86,9 @@ class OptionChainConverter:
                             option_chain_df["QUOTE_READTIME"].iloc[0]
                         ).tz_localize(None)
                     ).days
+                    print(expiration)
+                    print(pd.to_datetime(expiration).tz_localize(None))
+                    print(option_chain_df["QUOTE_READTIME"].iloc[0])
 
                     logger.debug(f"Selecting strike based on delta with target_delta={strike_value}, target_dte={target_dte}")
                     return OptionChainConverter._get_strike_from_delta(
