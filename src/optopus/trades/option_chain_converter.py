@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import pytz
 
 class OptionChainConverter:
     def __init__(self, option_chain_df: pd.DataFrame):
@@ -10,6 +11,18 @@ class OptionChainConverter:
         :param option_chain_df: DataFrame containing the option chain data.
         """
         self.option_chain_df = option_chain_df
+        self.option_chain_df['QUOTE_READTIME'] = self._convert_to_eastern_tz_naive(self.option_chain_df['QUOTE_READTIME'])
+        self.option_chain_df['EXPIRE_DATE'] = self._convert_to_eastern_tz_naive(self.option_chain_df['EXPIRE_DATE'])
+
+    def _convert_to_eastern_tz_naive(self, dt_series: pd.Series) -> pd.Series:
+        """
+        Convert a series of datetime objects to Eastern time and make them tz-naive.
+
+        :param dt_series: Series of datetime objects.
+        :return: Series of tz-naive datetime objects in Eastern time.
+        """
+        eastern = pytz.timezone('US/Eastern')
+        return dt_series.dt.tz_localize('UTC').dt.tz_convert(eastern).dt.tz_localize(None)
 
     def get_closest_expiration(self, target_date: int | pd.Timestamp | str | datetime) -> pd.Timestamp:
         """
@@ -18,14 +31,14 @@ class OptionChainConverter:
         :param target_date: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
         :return: Closest expiration date as pd.Timestamp.
         """
-        t0 = pd.to_datetime(self.option_chain_df['QUOTE_READTIME'].iloc[0])
+        t0 = self.option_chain_df['QUOTE_READTIME'].iloc[0]
 
         if isinstance(target_date, int):
             target_date = t0 + timedelta(days=target_date)
         elif isinstance(target_date, str):
-            target_date = pd.to_datetime(target_date)
+            target_date = pd.to_datetime(target_date, utc=True).astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
         elif isinstance(target_date, datetime):
-            target_date = pd.to_datetime(target_date)
+            target_date = target_date.astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
 
         expirations = self.option_chain_df['EXPIRE_DATE'].unique()
         closest_expiration = min(expirations, key=lambda x: abs(x - target_date))
