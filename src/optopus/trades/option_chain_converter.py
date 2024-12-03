@@ -123,7 +123,7 @@ class OptionChainConverter:
             pd.to_datetime(option_chain_df["EXPIRE_DATE"]).dt.tz_localize(None)
             - pd.to_datetime(
                 option_chain_df["QUOTE_READTIME"].iloc[0]
-            ).dt.tz_localize(None)
+            ).tz_localize(None)
         ).dt.days
 
         valid_expirations = option_chain_df[option_chain_df["DTE"] == target_dte]
@@ -175,7 +175,7 @@ class OptionChainConverter:
         elif isinstance(expiration_input, (int, float)):
             target_dte = float(expiration_input)
             valid_expirations = option_chain_df[
-                pd.to_datetime(option_chain_df["EXPIRE_DATE"]).dt.tz_localize(None) - entry_date >= Timedelta(days=target_dte)
+                (pd.to_datetime(option_chain_df["EXPIRE_DATE"]).dt.tz_localize(None) - entry_date).dt.days >= target_dte
             ]
 
             if valid_expirations.empty:
