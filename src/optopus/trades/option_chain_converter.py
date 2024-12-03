@@ -186,3 +186,38 @@ class OptionChainConverter:
             raise ValueError(
                 "Invalid expiration input. Must be a date string or a number (DTE)."
             )
+
+if __name__ == "__main__":
+    # Load the test option chain DataFrame
+    test_option_chain_df = pd.read_parquet("data/SPY_2024-09-06 15-30.parquet")
+
+    # Define test parameters
+    symbol = "SPY"
+    strike_selector = "ATM"  # Change this to test different selectors
+    option_type = "CALL"  # Change this to test different option types
+    expiration_input = 30  # Change this to test different expiration inputs
+    entry_time = "2024-09-06 15:30:00"  # Change this to test different entry times
+
+    # Get the strike price
+    try:
+        strike = OptionChainConverter.get_strike(
+            symbol=symbol,
+            option_chain_df=test_option_chain_df,
+            strike_selector=strike_selector,
+            option_type=option_type,
+            expiration=expiration_input,
+        )
+        print(f"Selected Strike: {strike}")
+    except ValueError as e:
+        print(f"Error selecting strike: {e}")
+
+    # Get the expiration date
+    try:
+        expiration = OptionChainConverter.get_expiration(
+            option_chain_df=test_option_chain_df,
+            expiration_input=expiration_input,
+            entry_time=entry_time,
+        )
+        print(f"Selected Expiration: {expiration}")
+    except ValueError as e:
+        print(f"Error selecting expiration: {e}")
