@@ -56,11 +56,11 @@ class OptionChainConverter:
         closest_expiration = min(valid_expirations, key=lambda x: abs(x - target_date))
         return closest_expiration
 
-    def get_desired_strike(self, expiration: pd.Timestamp, option_type: str, target: float, by: str = 'delta') -> float:
+    def get_desired_strike(self, expiration: int | pd.Timestamp | str | datetime, option_type: str, target: float, by: str = 'delta') -> float:
         """
         Get the desired strike price at the specified expiration based on option type and target value.
 
-        :param expiration: Expiration date as pd.Timestamp.
+        :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
         :param option_type: Type of option ('CALL' or 'PUT').
         :param target: Target value (either delta or strike price).
         :param by: Method to find strike ('delta' or 'strike', defaults to 'delta').
@@ -73,9 +73,12 @@ class OptionChainConverter:
         if by not in ['delta', 'strike']:
             raise ValueError("by must be either 'delta' or 'strike'")
 
+        # Get the closest expiration date
+        closest_expiration = self.get_closest_expiration(expiration)
+        
         # Filter by expiration
         expiration_data = self.option_chain_df[
-            self.option_chain_df['EXPIRE_DATE'] == expiration
+            self.option_chain_df['EXPIRE_DATE'] == closest_expiration
         ]
 
         if expiration_data.empty:
