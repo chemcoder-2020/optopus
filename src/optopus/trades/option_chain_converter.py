@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     # Define test parameters
     symbol = "SPY"
-    strike_selector = "-0.4"  # Change this to test different selectors
+    strike_selector = "+0.4"  # Change this to test different selectors
     option_type = "CALL"  # Change this to test different option types
     expiration_input = 30  # Change this to test different expiration inputs
     entry_time = "2024-09-06 15:30:00"  # Change this to test different entry times
