@@ -121,17 +121,32 @@ if __name__ == "__main__":
     closest_expiration_datetime = converter.get_closest_expiration(target_date_datetime)
     print(f"Closest expiration (datetime): {closest_expiration_datetime}")
 
-    # Example usage of get_desired_strike
-    # By delta
-    target_delta = 0.30  # Desired delta
-    call_strike = converter.get_desired_strike(closest_expiration_int, 'CALL', target_delta, by='delta')
-    put_strike = converter.get_desired_strike(closest_expiration_int, 'PUT', target_delta, by='delta')
-    print(f"CALL strike at delta {target_delta}: {call_strike}")
-    print(f"PUT strike at delta {target_delta}: {put_strike}")
-
-    # By strike
-    desired_strike = 450.0  # Desired strike price
-    call_strike = converter.get_desired_strike(closest_expiration_int, 'CALL', desired_strike, by='strike')
-    put_strike = converter.get_desired_strike(closest_expiration_int, 'PUT', desired_strike, by='strike')
-    print(f"Closest CALL strike to {desired_strike}: {call_strike}")
-    print(f"Closest PUT strike to {desired_strike}: {put_strike}")
+    # Example usage of get_desired_strike with different expiration types
+    print("\nDemonstrating get_desired_strike with different expiration types:")
+    
+    # Using integer (DTE)
+    target_delta = 0.30
+    expiry_as_dte = 30  # 30 days from now
+    call_strike_dte = converter.get_desired_strike(expiry_as_dte, 'CALL', target_delta, by='delta')
+    print(f"Using DTE ({expiry_as_dte}): CALL strike at delta {target_delta}: {call_strike_dte}")
+    
+    # Using string date
+    expiry_as_str = "2024-10-10"  # Same date as DTE example
+    call_strike_str = converter.get_desired_strike(expiry_as_str, 'CALL', target_delta, by='delta')
+    print(f"Using string date ({expiry_as_str}): CALL strike at delta {target_delta}: {call_strike_str}")
+    
+    # Using pd.Timestamp
+    expiry_as_timestamp = pd.Timestamp("2024-10-10")  # Same date
+    call_strike_ts = converter.get_desired_strike(expiry_as_timestamp, 'CALL', target_delta, by='delta')
+    print(f"Using pd.Timestamp ({expiry_as_timestamp}): CALL strike at delta {target_delta}: {call_strike_ts}")
+    
+    # Using datetime
+    expiry_as_datetime = datetime(2024, 10, 10)  # Same date
+    call_strike_dt = converter.get_desired_strike(expiry_as_datetime, 'CALL', target_delta, by='delta')
+    print(f"Using datetime ({expiry_as_datetime}): CALL strike at delta {target_delta}: {call_strike_dt}")
+    
+    # Example using strike price instead of delta
+    print("\nDemonstrating get_desired_strike with strike price:")
+    desired_strike = 450.0
+    closest_strike = converter.get_desired_strike(expiry_as_dte, 'CALL', desired_strike, by='strike')
+    print(f"Closest strike to {desired_strike}: {closest_strike}")
