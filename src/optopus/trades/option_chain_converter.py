@@ -81,15 +81,15 @@ if __name__ == "__main__":
     closest_expiration_int = converter.get_closest_expiration(target_date_int)
     print(f"Closest expiration (int): {closest_expiration_int}")
 
-    target_date_str = "2024-10-01"  # Specific date
+    target_date_str = "2024-10-06"  # Specific date
     closest_expiration_str = converter.get_closest_expiration(target_date_str)
     print(f"Closest expiration (str): {closest_expiration_str}")
 
-    target_date_timestamp = pd.Timestamp("2024-10-15")  # Specific date as pd.Timestamp
+    target_date_timestamp = pd.Timestamp("2024-10-06")  # Specific date as pd.Timestamp
     closest_expiration_timestamp = converter.get_closest_expiration(target_date_timestamp)
     print(f"Closest expiration (pd.Timestamp): {closest_expiration_timestamp}")
 
-    target_date_datetime = datetime(2024, 11, 1)  # Specific date as datetime
+    target_date_datetime = datetime(2024, 10, 6)  # Specific date as datetime
     closest_expiration_datetime = converter.get_closest_expiration(target_date_datetime)
     print(f"Closest expiration (datetime): {closest_expiration_datetime}")
 
