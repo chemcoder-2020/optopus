@@ -18,8 +18,10 @@ class OptionChainConverter:
         :param target_date: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
         :return: Closest expiration date as pd.Timestamp.
         """
+        t0 = pd.to_datetime(self.option_chain_df['QUOTE_READTIME'].iloc[0])
+
         if isinstance(target_date, int):
-            target_date = datetime.now() + timedelta(days=target_date)
+            target_date = t0 + timedelta(days=target_date)
         elif isinstance(target_date, str):
             target_date = pd.to_datetime(target_date)
         elif isinstance(target_date, datetime):
@@ -50,7 +52,7 @@ if __name__ == "__main__":
     converter = OptionChainConverter(option_chain_df)
 
     # Example usage of get_closest_expiration
-    target_date_int = 30  # 30 days from now
+    target_date_int = 30  # 30 days from QUOTE_READTIME
     closest_expiration_int = converter.get_closest_expiration(target_date_int)
     print(f"Closest expiration (int): {closest_expiration_int}")
 
