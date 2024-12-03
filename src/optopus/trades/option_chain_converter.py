@@ -49,7 +49,11 @@ class OptionChainConverter:
                 target_date = target_date.astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
 
         expirations = self.option_chain_df['EXPIRE_DATE'].unique()
-        closest_expiration = min(expirations, key=lambda x: abs(x - target_date))
+        # Filter expirations to only include those that are at least target_date days from t0
+        valid_expirations = [exp for exp in expirations if exp >= target_date]
+        if not valid_expirations:
+            raise ValueError("No valid expiration dates found that meet the target date criteria.")
+        closest_expiration = min(valid_expirations, key=lambda x: abs(x - target_date))
         return closest_expiration
 
     def get_desired_strike(self, expiration: pd.Timestamp, strike: float) -> float:
