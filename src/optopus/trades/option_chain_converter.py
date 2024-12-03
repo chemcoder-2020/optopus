@@ -56,16 +56,43 @@ class OptionChainConverter:
         closest_expiration = min(valid_expirations, key=lambda x: abs(x - target_date))
         return closest_expiration
 
-    def get_desired_strike(self, expiration: pd.Timestamp, strike: float) -> float:
+    def get_desired_strike(self, expiration: pd.Timestamp, option_type: str, target: float, by: str = 'delta') -> float:
         """
-        Get the desired strike price at the specified expiration.
+        Get the desired strike price at the specified expiration based on option type and target value.
 
         :param expiration: Expiration date as pd.Timestamp.
-        :param strike: Desired strike price.
+        :param option_type: Type of option ('CALL' or 'PUT').
+        :param target: Target value (either delta or strike price).
+        :param by: Method to find strike ('delta' or 'strike', defaults to 'delta').
         :return: Closest strike price available at the specified expiration.
+        :raises ValueError: If invalid option_type or method is provided.
         """
-        expiration_data = self.option_chain_df[self.option_chain_df['EXPIRE_DATE'] == expiration]
-        closest_strike = min(expiration_data['STRIKE'], key=lambda x: abs(x - strike))
+        if option_type not in ['CALL', 'PUT']:
+            raise ValueError("option_type must be either 'CALL' or 'PUT'")
+        
+        if by not in ['delta', 'strike']:
+            raise ValueError("by must be either 'delta' or 'strike'")
+
+        # Filter by expiration and option type
+        expiration_data = self.option_chain_df[
+            (self.option_chain_df['EXPIRE_DATE'] == expiration) & 
+            (self.option_chain_df['OPTION_TYPE'] == option_type)
+        ]
+
+        if expiration_data.empty:
+            raise ValueError(f"No data found for {option_type} options at {expiration}")
+
+        if by == 'delta':
+            # For puts, delta is negative, so we need to handle the sign
+            if option_type == 'PUT':
+                target = -abs(target)
+            # Find strike with closest delta
+            closest_strike = expiration_data.iloc[
+                (expiration_data['DELTA'] - target).abs().idxmin()
+            ]['STRIKE']
+        else:  # by strike
+            closest_strike = min(expiration_data['STRIKE'], key=lambda x: abs(x - target))
+
         return closest_strike
 
 if __name__ == "__main__":
@@ -94,6 +121,16 @@ if __name__ == "__main__":
     print(f"Closest expiration (datetime): {closest_expiration_datetime}")
 
     # Example usage of get_desired_strike
+    # By delta
+    target_delta = 0.30  # Desired delta
+    call_strike = converter.get_desired_strike(closest_expiration_int, 'CALL', target_delta, by='delta')
+    put_strike = converter.get_desired_strike(closest_expiration_int, 'PUT', target_delta, by='delta')
+    print(f"CALL strike at delta {target_delta}: {call_strike}")
+    print(f"PUT strike at delta {target_delta}: {put_strike}")
+
+    # By strike
     desired_strike = 450.0  # Desired strike price
-    closest_strike = converter.get_desired_strike(closest_expiration_int, desired_strike)
-    print(f"Closest strike at {closest_expiration_int}: {closest_strike}")
+    call_strike = converter.get_desired_strike(closest_expiration_int, 'CALL', desired_strike, by='strike')
+    put_strike = converter.get_desired_strike(closest_expiration_int, 'PUT', desired_strike, by='strike')
+    print(f"Closest CALL strike to {desired_strike}: {call_strike}")
+    print(f"Closest PUT strike to {desired_strike}: {put_strike}")
