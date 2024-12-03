@@ -25,7 +25,7 @@ class OptionChainConverter:
         elif isinstance(target_date, datetime):
             target_date = pd.to_datetime(target_date)
 
-        expirations = self.option_chain_df['expiration'].unique()
+        expirations = self.option_chain_df['EXPIRE_DATE'].unique()
         closest_expiration = min(expirations, key=lambda x: abs(x - target_date))
         return closest_expiration
 
@@ -37,7 +37,7 @@ class OptionChainConverter:
         :param strike: Desired strike price.
         :return: Closest strike price available at the specified expiration.
         """
-        expiration_data = self.option_chain_df[self.option_chain_df['expiration'] == expiration]
+        expiration_data = self.option_chain_df[self.option_chain_df['EXPIRE_DATE'] == expiration]
         closest_strike = min(expiration_data['strike'], key=lambda x: abs(x - strike))
         return closest_strike
 
