@@ -782,9 +782,9 @@ class OptionStrategy:
         Args:
             symbol (str): The underlying asset symbol.
             option_type (str): The option type, either "CALL" or "PUT".
-            lower_strike: The lower strike price or selector.
-            middle_strike: The middle strike price or selector.
-            upper_strike: The upper strike price or selector.
+            lower_strike: The lower strike price, delta, or ATM offset (e.g., "-2", -0.3, or "ATM").
+            middle_strike: The middle strike price, delta, or ATM offset.
+            upper_strike: The upper strike price, delta, or ATM offset (e.g., "+2", 0.3, or "ATM").
             expiration (str or int): The option expiration date or target DTE.
             contracts (int): The number of contracts for the strategy (will be doubled for the middle leg).
             entry_time (str): The entry time for the strategy.
@@ -811,16 +811,36 @@ class OptionStrategy:
 
         expiration_date = converter.get_closest_expiration(expiration)
 
-        # Get strikes using the converter
-        lower_strike_value = converter.get_desired_strike(
-            expiration_date, option_type, lower_strike, by='delta' if isinstance(lower_strike, float) else 'strike'
-        )
-        middle_strike_value = converter.get_desired_strike(
-            expiration_date, option_type, middle_strike, by='delta' if isinstance(middle_strike, float) else 'strike'
-        )
-        upper_strike_value = converter.get_desired_strike(
-            expiration_date, option_type, upper_strike, by='delta' if isinstance(upper_strike, float) else 'strike'
-        )
+        # Determine strike selection method and get strikes
+        def get_strike_value(strike_input):
+            if isinstance(strike_input, (int, float)):
+                # Numeric input treated as delta if float < 1, otherwise as strike price
+                return converter.get_desired_strike(
+                    expiration_date, 
+                    option_type, 
+                    strike_input,
+                    by='delta' if abs(float(strike_input)) < 1 else 'strike'
+                )
+            elif isinstance(strike_input, str):
+                if strike_input.upper() == "ATM":
+                    return converter.get_atm_strike(expiration_date)
+                elif strike_input.startswith(("+", "-")):
+                    # ATM relative strike
+                    offset = float(strike_input)
+                    return converter.get_desired_strike(expiration_date, option_type, offset, by='atm')
+                else:
+                    # Try to convert to float for direct strike price
+                    try:
+                        strike_price = float(strike_input)
+                        return converter.get_desired_strike(expiration_date, option_type, strike_price, by='strike')
+                    except ValueError:
+                        raise ValueError(f"Invalid strike input: {strike_input}")
+            else:
+                raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
+
+        lower_strike_value = get_strike_value(lower_strike)
+        middle_strike_value = get_strike_value(middle_strike)
+        upper_strike_value = get_strike_value(upper_strike)
 
         lower_leg = OptionLeg(
             symbol,
@@ -892,7 +912,7 @@ class OptionStrategy:
 
         Args:
             symbol (str): The underlying asset symbol.
-            strike: The strike price or selector.
+            strike: The strike price, delta, or ATM offset (e.g., "+2", 0.3, or "ATM").
             expiration (str or int): The option expiration date or target DTE.
             contracts (int): The number of contracts.
             entry_time (str): The entry time for the strategy.
@@ -905,6 +925,7 @@ class OptionStrategy:
         Returns:
             OptionStrategy: A naked call strategy object.
         """
+        converter = OptionChainConverter(option_chain_df)
 
         strategy = cls(
             symbol,
@@ -917,11 +938,33 @@ class OptionStrategy:
             exit_scheme,
         )
 
-        expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
+        expiration_date = converter.get_closest_expiration(expiration)
 
-        strike_value = cls._get_strike(
-            symbol, option_chain_df, strike, "CALL", expiration=expiration_date
-        )
+        # Determine strike selection method
+        if isinstance(strike, (int, float)):
+            # Numeric input treated as delta if float < 1, otherwise as strike price
+            strike_value = converter.get_desired_strike(
+                expiration_date,
+                "CALL",
+                strike,
+                by='delta' if abs(float(strike)) < 1 else 'strike'
+            )
+        elif isinstance(strike, str):
+            if strike.upper() == "ATM":
+                strike_value = converter.get_atm_strike(expiration_date)
+            elif strike.startswith(("+", "-")):
+                # ATM relative strike
+                offset = float(strike)
+                strike_value = converter.get_desired_strike(expiration_date, "CALL", offset, by='atm')
+            else:
+                # Try to convert to float for direct strike price
+                try:
+                    strike_price = float(strike)
+                    strike_value = converter.get_desired_strike(expiration_date, "CALL", strike_price, by='strike')
+                except ValueError:
+                    raise ValueError(f"Invalid strike input: {strike}")
+        else:
+            raise ValueError(f"Unsupported strike input type: {type(strike)}")
 
         call_leg = OptionLeg(
             symbol,
@@ -967,7 +1010,7 @@ class OptionStrategy:
 
         Args:
             symbol (str): The underlying asset symbol.
-            strike: The strike price or selector.
+            strike: The strike price, delta, or ATM offset (e.g., "-2", -0.3, or "ATM").
             expiration (str or int): The option expiration date or target DTE.
             contracts (int): The number of contracts.
             entry_time (str): The entry time for the strategy.
@@ -980,6 +1023,7 @@ class OptionStrategy:
         Returns:
             OptionStrategy: A naked put strategy object.
         """
+        converter = OptionChainConverter(option_chain_df)
 
         strategy = cls(
             symbol,
@@ -992,11 +1036,33 @@ class OptionStrategy:
             exit_scheme,
         )
 
-        expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
+        expiration_date = converter.get_closest_expiration(expiration)
 
-        strike_value = cls._get_strike(
-            symbol, option_chain_df, strike, "PUT", expiration=expiration_date
-        )
+        # Determine strike selection method
+        if isinstance(strike, (int, float)):
+            # Numeric input treated as delta if float < 1, otherwise as strike price
+            strike_value = converter.get_desired_strike(
+                expiration_date,
+                "PUT",
+                strike,
+                by='delta' if abs(float(strike)) < 1 else 'strike'
+            )
+        elif isinstance(strike, str):
+            if strike.upper() == "ATM":
+                strike_value = converter.get_atm_strike(expiration_date)
+            elif strike.startswith(("+", "-")):
+                # ATM relative strike
+                offset = float(strike)
+                strike_value = converter.get_desired_strike(expiration_date, "PUT", offset, by='atm')
+            else:
+                # Try to convert to float for direct strike price
+                try:
+                    strike_price = float(strike)
+                    strike_value = converter.get_desired_strike(expiration_date, "PUT", strike_price, by='strike')
+                except ValueError:
+                    raise ValueError(f"Invalid strike input: {strike}")
+        else:
+            raise ValueError(f"Unsupported strike input type: {type(strike)}")
 
         put_leg = OptionLeg(
             symbol,
