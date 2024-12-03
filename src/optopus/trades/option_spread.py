@@ -341,8 +341,14 @@ class OptionStrategy:
         return (self.total_pl() / (premium * 100 * self.contracts)) * 100
 
     def current_delta(self):
-        """Calculate the current delta of the strategy."""
-        return sum(leg.current_delta * leg.contracts * 100 for leg in self.legs)
+        """
+        Calculate the current delta of the strategy.
+        Takes into account position side (BUY/SELL) and contract multiplier.
+        """
+        return sum(
+            leg.current_delta * leg.contracts * 100 * (1 if leg.position_side == "BUY" else -1)
+            for leg in self.legs
+        )
 
     def conflicts_with(self, other_spread):
         """
