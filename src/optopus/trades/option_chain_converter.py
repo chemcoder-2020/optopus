@@ -124,29 +124,44 @@ if __name__ == "__main__":
     # Example usage of get_desired_strike with different expiration types
     print("\nDemonstrating get_desired_strike with different expiration types:")
     
-    # Using integer (DTE)
     target_delta = 0.30
     expiry_as_dte = 30  # 30 days from now
+    
+    # Using integer (DTE)
     call_strike_dte = converter.get_desired_strike(expiry_as_dte, 'CALL', target_delta, by='delta')
-    print(f"Using DTE ({expiry_as_dte}): CALL strike at delta {target_delta}: {call_strike_dte}")
+    put_strike_dte = converter.get_desired_strike(expiry_as_dte, 'PUT', target_delta, by='delta')
+    print(f"Using DTE ({expiry_as_dte}):")
+    print(f"  CALL strike at delta {target_delta}: {call_strike_dte}")
+    print(f"  PUT strike at delta {target_delta}: {put_strike_dte}")
     
     # Using string date
     expiry_as_str = "2024-10-10"  # Same date as DTE example
     call_strike_str = converter.get_desired_strike(expiry_as_str, 'CALL', target_delta, by='delta')
-    print(f"Using string date ({expiry_as_str}): CALL strike at delta {target_delta}: {call_strike_str}")
+    put_strike_str = converter.get_desired_strike(expiry_as_str, 'PUT', target_delta, by='delta')
+    print(f"Using string date ({expiry_as_str}):")
+    print(f"  CALL strike at delta {target_delta}: {call_strike_str}")
+    print(f"  PUT strike at delta {target_delta}: {put_strike_str}")
     
     # Using pd.Timestamp
     expiry_as_timestamp = pd.Timestamp("2024-10-10")  # Same date
     call_strike_ts = converter.get_desired_strike(expiry_as_timestamp, 'CALL', target_delta, by='delta')
-    print(f"Using pd.Timestamp ({expiry_as_timestamp}): CALL strike at delta {target_delta}: {call_strike_ts}")
+    put_strike_ts = converter.get_desired_strike(expiry_as_timestamp, 'PUT', target_delta, by='delta')
+    print(f"Using pd.Timestamp ({expiry_as_timestamp}):")
+    print(f"  CALL strike at delta {target_delta}: {call_strike_ts}")
+    print(f"  PUT strike at delta {target_delta}: {put_strike_ts}")
     
     # Using datetime
     expiry_as_datetime = datetime(2024, 10, 10)  # Same date
     call_strike_dt = converter.get_desired_strike(expiry_as_datetime, 'CALL', target_delta, by='delta')
-    print(f"Using datetime ({expiry_as_datetime}): CALL strike at delta {target_delta}: {call_strike_dt}")
+    put_strike_dt = converter.get_desired_strike(expiry_as_datetime, 'PUT', target_delta, by='delta')
+    print(f"Using datetime ({expiry_as_datetime}):")
+    print(f"  CALL strike at delta {target_delta}: {call_strike_dt}")
+    print(f"  PUT strike at delta {target_delta}: {put_strike_dt}")
     
     # Example using strike price instead of delta
     print("\nDemonstrating get_desired_strike with strike price:")
     desired_strike = 450.0
-    closest_strike = converter.get_desired_strike(expiry_as_dte, 'CALL', desired_strike, by='strike')
-    print(f"Closest strike to {desired_strike}: {closest_strike}")
+    closest_call_strike = converter.get_desired_strike(expiry_as_dte, 'CALL', desired_strike, by='strike')
+    closest_put_strike = converter.get_desired_strike(expiry_as_dte, 'PUT', desired_strike, by='strike')
+    print(f"Closest CALL strike to {desired_strike}: {closest_call_strike}")
+    print(f"Closest PUT strike to {desired_strike}: {closest_put_strike}")
