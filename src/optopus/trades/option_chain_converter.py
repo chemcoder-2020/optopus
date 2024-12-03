@@ -56,22 +56,76 @@ class OptionChainConverter:
         closest_expiration = min(valid_expirations, key=lambda x: abs(x - target_date))
         return closest_expiration
 
-    def get_desired_strike(self, expiration: int | pd.Timestamp | str | datetime, option_type: str, target: float, by: str = 'delta') -> float:
+    def get_atm_strike(self, expiration: int | pd.Timestamp | str | datetime) -> float:
+        """
+        Get the At-The-Money (ATM) strike price for the given expiration.
+        
+        :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
+        :return: The ATM strike price.
+        """
+        # Get the closest expiration date
+        closest_expiration = self.get_closest_expiration(expiration)
+        
+        # Filter by expiration
+        expiration_data = self.option_chain_df[
+            self.option_chain_df['EXPIRE_DATE'].eq(closest_expiration)
+        ].reset_index(drop=True)
+        
+        if expiration_data.empty:
+            raise ValueError(f"No data found for expiration {expiration}")
+        
+        # Get the underlying price
+        underlying_price = expiration_data['UNDERLYING_LAST'].iloc[0]
+        
+        # Find the closest strike to the underlying price
+        atm_strike = min(expiration_data['STRIKE'].unique(), 
+                        key=lambda x: abs(x - underlying_price))
+        
+        return atm_strike
+
+    def get_strike_relative_to_atm(self, expiration: int | pd.Timestamp | str | datetime, 
+                                 offset: float) -> float:
+        """
+        Get a strike price relative to the ATM strike.
+        
+        :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
+        :param offset: Offset from ATM strike in dollars (can be positive or negative).
+        :return: The strike price offset from ATM.
+        """
+        atm_strike = self.get_atm_strike(expiration)
+        
+        # Get the closest expiration date
+        closest_expiration = self.get_closest_expiration(expiration)
+        
+        # Filter by expiration
+        expiration_data = self.option_chain_df[
+            self.option_chain_df['EXPIRE_DATE'].eq(closest_expiration)
+        ].reset_index(drop=True)
+        
+        # Find the closest strike to ATM + offset
+        target_strike = atm_strike + offset
+        relative_strike = min(expiration_data['STRIKE'].unique(), 
+                            key=lambda x: abs(x - target_strike))
+        
+        return relative_strike
+
+    def get_desired_strike(self, expiration: int | pd.Timestamp | str | datetime, 
+                          option_type: str, target: float, by: str = 'delta') -> float:
         """
         Get the desired strike price at the specified expiration based on option type and target value.
 
         :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
         :param option_type: Type of option ('CALL' or 'PUT').
-        :param target: Target value (either delta or strike price).
-        :param by: Method to find strike ('delta' or 'strike', defaults to 'delta').
+        :param target: Target value (delta, strike price, or offset from ATM).
+        :param by: Method to find strike ('delta', 'strike', or 'atm', defaults to 'delta').
         :return: Closest strike price available at the specified expiration.
         :raises ValueError: If invalid option_type or method is provided.
         """
         if option_type not in ['CALL', 'PUT']:
             raise ValueError("option_type must be either 'CALL' or 'PUT'")
         
-        if by not in ['delta', 'strike']:
-            raise ValueError("by must be either 'delta' or 'strike'")
+        if by not in ['delta', 'strike', 'atm']:
+            raise ValueError("by must be either 'delta', 'strike', or 'atm'")
 
         # Get the closest expiration date
         closest_expiration = self.get_closest_expiration(expiration)
@@ -91,8 +145,10 @@ class OptionChainConverter:
             closest_strike = expiration_data.loc[
                 (expiration_data[delta_col] - target).abs().idxmin()
             ]['STRIKE']
-        else:  # by strike
+        elif by == 'strike':
             closest_strike = min(expiration_data['STRIKE'], key=lambda x: abs(x - target))
+        else:  # by == 'atm'
+            closest_strike = self.get_strike_relative_to_atm(expiration, target)
 
         return closest_strike
 
@@ -165,3 +221,15 @@ if __name__ == "__main__":
     closest_put_strike = converter.get_desired_strike(expiry_as_dte, 'PUT', desired_strike, by='strike')
     print(f"Closest CALL strike to {desired_strike}: {closest_call_strike}")
     print(f"Closest PUT strike to {desired_strike}: {closest_put_strike}")
+
+    # Example using ATM and ATM relative strikes
+    print("\nDemonstrating ATM strike selection:")
+    atm_strike = converter.get_atm_strike(expiry_as_dte)
+    print(f"ATM strike: {atm_strike}")
+    
+    # ATM+1 and ATM-1 examples
+    print("\nDemonstrating ATM relative strikes:")
+    atm_plus_1_call = converter.get_desired_strike(expiry_as_dte, 'CALL', 1, by='atm')
+    atm_minus_1_put = converter.get_desired_strike(expiry_as_dte, 'PUT', -1, by='atm')
+    print(f"ATM+1 CALL strike: {atm_plus_1_call}")
+    print(f"ATM-1 PUT strike: {atm_minus_1_put}")
