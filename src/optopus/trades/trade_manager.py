@@ -182,9 +182,11 @@ class TradingManager(OptionBacktester):
             "Total P/L",
             "Return (%)",
             "Highest Return",
-            "Total Commission",
+            "Total Commission", 
             "DIT",
             "DTE",
+            "Entry Delta",
+            "Entry Delta",
         ]
         data = []
 
@@ -225,6 +227,7 @@ class TradingManager(OptionBacktester):
                     order.calculate_total_commission(),
                     order.DIT,
                     round(calculate_dte(order.min_expiration, order.current_time)),
+                    order.entry_delta if hasattr(order, 'entry_delta') else None,
                 ]
             )
 
@@ -296,6 +299,7 @@ class TradingManager(OptionBacktester):
                     order.calculate_total_commission(),
                     order.DIT,
                     round(calculate_dte(order.min_expiration, order.current_time)),
+                    order.entry_delta if hasattr(order, 'entry_delta') else None,
                 ]
             )
 
