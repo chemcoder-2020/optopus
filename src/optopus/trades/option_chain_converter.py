@@ -41,7 +41,12 @@ class OptionChainConverter:
         elif isinstance(target_date, str):
             target_date = pd.to_datetime(target_date, utc=True).astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
         elif isinstance(target_date, datetime):
-            target_date = target_date.astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
+            target_date = pd.Timestamp(target_date).tz_localize('UTC').astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
+        elif isinstance(target_date, pd.Timestamp):
+            if target_date.tz is None:
+                target_date = target_date.tz_localize('UTC').astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
+            else:
+                target_date = target_date.astimezone(pytz.timezone('US/Eastern')).replace(tzinfo=None)
 
         expirations = self.option_chain_df['EXPIRE_DATE'].unique()
         closest_expiration = min(expirations, key=lambda x: abs(x - target_date))
