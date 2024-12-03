@@ -550,6 +550,7 @@ class OptionStrategy:
         Returns:
             OptionStrategy: An iron condor strategy object.
         """
+        converter = OptionChainConverter(option_chain_df)
 
         strategy = cls(
             symbol,
@@ -562,33 +563,22 @@ class OptionStrategy:
             exit_scheme,
         )
 
-        expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
+        expiration_date = converter.get_closest_expiration(expiration)
 
-        put_short_strike_value = cls._get_strike(
-            symbol, option_chain_df, put_short_strike, "PUT", expiration=expiration_date
+        # Get put strikes
+        put_short_strike_value = converter.get_desired_strike(
+            expiration_date, "PUT", put_short_strike, by='delta' if isinstance(put_short_strike, float) else 'strike'
         )
-        put_long_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            put_long_strike,
-            "PUT",
-            reference_strike=put_short_strike_value,
-            expiration=expiration_date,
+        put_long_strike_value = converter.get_desired_strike(
+            expiration_date, "PUT", put_long_strike, by='delta' if isinstance(put_long_strike, float) else 'strike'
         )
-        call_short_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            call_short_strike,
-            "CALL",
-            expiration=expiration_date,
+
+        # Get call strikes  
+        call_short_strike_value = converter.get_desired_strike(
+            expiration_date, "CALL", call_short_strike, by='delta' if isinstance(call_short_strike, float) else 'strike'
         )
-        call_long_strike_value = cls._get_strike(
-            symbol,
-            option_chain_df,
-            call_long_strike,
-            "CALL",
-            reference_strike=call_short_strike_value,
-            expiration=expiration_date,
+        call_long_strike_value = converter.get_desired_strike(
+            expiration_date, "CALL", call_long_strike, by='delta' if isinstance(call_long_strike, float) else 'strike'
         )
 
         if (
@@ -707,6 +697,7 @@ class OptionStrategy:
         Returns:
             OptionStrategy: A straddle strategy object.
         """
+        converter = OptionChainConverter(option_chain_df)
 
         strategy = cls(
             symbol,
@@ -719,11 +710,15 @@ class OptionStrategy:
             exit_scheme,
         )
 
-        expiration_date = cls._get_expiration(option_chain_df, expiration, entry_time)
+        expiration_date = converter.get_closest_expiration(expiration)
 
-        strike_value = cls._get_strike(
-            symbol, option_chain_df, strike, "CALL", expiration=expiration_date
-        )
+        # If strike is "ATM", use the ATM strike, otherwise use the specified strike
+        if strike == "ATM":
+            strike_value = converter.get_atm_strike(expiration_date)
+        else:
+            strike_value = converter.get_desired_strike(
+                expiration_date, "CALL", strike, by='delta' if isinstance(strike, float) else 'strike'
+            )
 
         call_leg = OptionLeg(
             symbol,
