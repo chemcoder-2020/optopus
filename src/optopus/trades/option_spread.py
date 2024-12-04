@@ -397,33 +397,82 @@ class OptionStrategy:
         )
 
     @classmethod
-    def get_strike_value(cls, converter, strike_input, expiration_date, option_type):
+    def get_strike_value(cls, converter, strike_input, expiration_date, option_type, reference_strike=None):
         if isinstance(strike_input, (int, float)):
-            # Numeric input treated as delta if float < 1, otherwise as strike price
-            return converter.get_desired_strike(
-                expiration_date,
-                option_type,
-                strike_input,
-                by="delta" if abs(float(strike_input)) < 1 else "strike",
-            )
-        elif isinstance(strike_input, str):
-            if strike_input.upper() == "ATM":
-                return converter.get_atm_strike(expiration_date)
-            elif strike_input.startswith(("+", "-")):
-                # ATM relative strike
-                offset = float(strike_input)
+            if abs(strike_input) < 1:
+                # Numeric input treated as delta if float < 1
                 return converter.get_desired_strike(
-                    expiration_date, option_type, offset, by="atm"
+                    expiration_date,
+                    option_type,
+                    strike_input,
+                    by="delta"
                 )
             else:
-                # Try to convert to float for direct strike price
+                # Numeric input treated as a specific strike price
+                return converter.get_desired_strike(
+                    expiration_date,
+                    option_type,
+                    strike_input,
+                    by="strike"
+                )
+        elif isinstance(strike_input, str):
+            if strike_input.startswith(("+", "-")):
+                try:
+                    offset = float(strike_input[1:])
+                    if abs(offset) < 1:
+                        # ATM relative strike with delta
+                        return converter.get_desired_strike(
+                            expiration_date,
+                            option_type,
+                            offset,
+                            by="delta"
+                        )
+                    else:
+                        # ATM relative strike with offset
+                        return converter.get_desired_strike(
+                            expiration_date,
+                            option_type,
+                            offset,
+                            by="atm",
+                            reference_strike=reference_strike
+                        )
+                except ValueError:
+                    raise ValueError(f"Invalid strike input: {strike_input}")
+            else:
                 try:
                     strike_price = float(strike_input)
                     return converter.get_desired_strike(
-                        expiration_date, option_type, strike_price, by="strike"
+                        expiration_date,
+                        option_type,
+                        strike_price,
+                        by="strike"
                     )
                 except ValueError:
-                    raise ValueError(f"Invalid strike input: {strike_input}")
+                    if strike_input.upper() == "ATM":
+                        return converter.get_atm_strike(expiration_date)
+                    elif "ATM" in strike_input:
+                        try:
+                            offset = float(strike_input[3:].replace("%", ""))
+                            if "%" in strike_input:
+                                return converter.get_desired_strike(
+                                    expiration_date,
+                                    option_type,
+                                    offset,
+                                    by="atm_percent",
+                                    reference_strike=reference_strike
+                                )
+                            else:
+                                return converter.get_desired_strike(
+                                    expiration_date,
+                                    option_type,
+                                    offset,
+                                    by="atm",
+                                    reference_strike=reference_strike
+                                )
+                        except ValueError:
+                            raise ValueError(f"Invalid strike input: {strike_input}")
+                    else:
+                        raise ValueError(f"Invalid strike input: {strike_input}")
         else:
             raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
 
