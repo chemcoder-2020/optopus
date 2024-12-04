@@ -603,16 +603,11 @@ class OptionStrategy:
 
         put_short_strike_value = get_strike_value(put_short_strike, "PUT")
         call_short_strike_value = get_strike_value(call_short_strike, "CALL")
-        put_long_strike_value = converter.get_desired_strike(
-            expiration_date, "PUT", put_long_strike, by='delta' if isinstance(put_long_strike, float) else 'strike'
-        )
+        put_long_strike_value = get_strike_value(put_long_strike, "PUT")
 
         # Get call strikes
-        call_short_strike_value = converter.get_desired_strike(
-            expiration_date, "CALL", call_short_strike, by='delta' if isinstance(call_short_strike, float) else 'strike' if not isinstance(call_short_strike, str) or call_short_strike.upper() != "ATM" else 'atm'
-        call_long_strike_value = converter.get_desired_strike(
-            expiration_date, "CALL", call_long_strike, by='delta' if isinstance(call_long_strike, float) else 'strike'
-        )
+        call_short_strike_value = get_strike_value(call_short_strike, "CALL")
+        call_long_strike_value = get_strike_value(call_long_strike, "CALL")
 
         if (
             put_long_strike_value > put_short_strike_value
