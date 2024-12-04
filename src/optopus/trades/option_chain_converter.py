@@ -153,6 +153,7 @@ class OptionChainConverter:
                 (expiration_data[delta_col] - target).abs().idxmin()
             ]['STRIKE']
         elif by == 'strike':
+            target = float(target)
             closest_strike = min(expiration_data['STRIKE'], key=lambda x: abs(x - target))
         elif by == 'atm':
             closest_strike = self.get_strike_relative_to_atm(expiration, target, by='dollar')
