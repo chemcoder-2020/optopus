@@ -575,10 +575,33 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Get put strikes
-        # handle different types of put_short strike here by determining if it's a delta or a strike or ATM etc. just like in the create_vertical_spread method. AI!
-        put_short_strike_value = converter.get_desired_strike(
-            expiration_date, "PUT", put_short_strike, by='delta' if isinstance(put_short_strike, float) else 'strike'
-        )
+        def get_strike_value(strike_input, option_type):
+            if isinstance(strike_input, (int, float)):
+                # Numeric input treated as delta if float < 1, otherwise as strike price
+                return converter.get_desired_strike(
+                    expiration_date, 
+                    option_type, 
+                    strike_input,
+                    by='delta' if abs(float(strike_input)) < 1 else 'strike'
+                )
+            elif isinstance(strike_input, str):
+                if strike_input.upper() == "ATM":
+                    return converter.get_atm_strike(expiration_date)
+                elif strike_input.startswith(("+", "-")):
+                    # ATM relative strike
+                    offset = float(strike_input)
+                    return converter.get_desired_strike(expiration_date, option_type, offset, by='atm')
+                else:
+                    # Try to convert to float for direct strike price
+                    try:
+                        strike_price = float(strike_input)
+                        return converter.get_desired_strike(expiration_date, option_type, strike_price, by='strike')
+                    except ValueError:
+                        raise ValueError(f"Invalid strike input: {strike_input}")
+            else:
+                raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
+
+        put_short_strike_value = get_strike_value(put_short_strike, "PUT")
         put_long_strike_value = converter.get_desired_strike(
             expiration_date, "PUT", put_long_strike, by='delta' if isinstance(put_long_strike, float) else 'strike'
         )
