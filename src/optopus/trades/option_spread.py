@@ -575,6 +575,7 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Get put strikes
+        # handle different types of put_short strike here by determining if it's a delta or a strike or ATM etc. AI!
         put_short_strike_value = converter.get_desired_strike(
             expiration_date, "PUT", put_short_strike, by='delta' if isinstance(put_short_strike, float) else 'strike'
         )
