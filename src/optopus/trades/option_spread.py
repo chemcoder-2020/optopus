@@ -528,40 +528,13 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Get strike prices using the converter
-        if isinstance(short_strike, (int, float)) and abs(short_strike) < 1:
-            # Delta-based selection
-            short_strike_value = converter.get_desired_strike(
-                expiration_date, option_type, short_strike, by="delta"
-            )
-        elif isinstance(short_strike, str) and short_strike.upper() == "ATM":
-            # ATM strike
-            short_strike_value = converter.get_atm_strike(expiration_date)
-        elif isinstance(short_strike, str) and short_strike[0] in ["+", "-"]:
-            # ATM relative strike
-            short_strike_value = converter.get_desired_strike(
-                expiration_date, option_type, float(short_strike), by="atm"
-            )
-        else:
-            # Direct strike price
-            short_strike_value = converter.get_desired_strike(
-                expiration_date, option_type, float(short_strike), by="strike"
-            )
+        short_strike_value = cls.get_strike_value(
+            converter, short_strike, expiration_date, option_type
+        )
 
-        # Similar logic for long strike
-        if isinstance(long_strike, (int, float)) and abs(long_strike) < 1:
-            long_strike_value = converter.get_desired_strike(
-                expiration_date, option_type, long_strike, by="delta"
-            )
-        elif isinstance(long_strike, str) and long_strike.upper() == "ATM":
-            long_strike_value = converter.get_atm_strike(expiration_date)
-        elif isinstance(long_strike, str) and long_strike[0] in ["+", "-"]:
-            long_strike_value = converter.get_desired_strike(
-                expiration_date, option_type, float(long_strike), by="atm"
-            )
-        else:
-            long_strike_value = converter.get_desired_strike(
-                expiration_date, option_type, float(long_strike), by="strike"
-            )
+        long_strike_value = cls.get_strike_value(
+            converter, long_strike, expiration_date, option_type
+        )
 
         if (long_strike_value > short_strike_value and option_type == "PUT") or (
             long_strike_value < short_strike_value and option_type == "CALL"
