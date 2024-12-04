@@ -428,13 +428,11 @@ class OptionStrategy:
                             by="delta"
                         )
                     else:
-                        # ATM relative strike with offset
                         return converter.get_desired_strike(
                             expiration_date,
                             option_type,
-                            offset,
-                            by="atm",
-                            reference_strike=reference_strike
+                            reference_strike + offset,
+                            by="strike",
                         )
                 except ValueError:
                     raise ValueError(f"Invalid strike input: {strike_input}")
@@ -465,9 +463,8 @@ class OptionStrategy:
                                 return converter.get_desired_strike(
                                     expiration_date,
                                     option_type,
-                                    offset,
+                                    reference_strike + offset,
                                     by="atm",
-                                    reference_strike=reference_strike
                                 )
                         except ValueError:
                             raise ValueError(f"Invalid strike input: {strike_input}")
