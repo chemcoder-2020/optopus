@@ -347,7 +347,10 @@ class OptionStrategy:
         Takes into account position side (BUY/SELL) and contract multiplier.
         """
         return sum(
-            leg.current_delta * leg.contracts * 100 * (1 if leg.position_side == "BUY" else -1)
+            leg.current_delta
+            * leg.contracts
+            * 100
+            * (1 if leg.position_side == "BUY" else -1)
             for leg in self.legs
         )
 
@@ -377,14 +380,52 @@ class OptionStrategy:
         expiration=None,  # Add expiration as a parameter
     ):
         return OptionChainConverter.get_strike(
-            symbol, option_chain_df, strike_selector, option_type, reference_strike, expiration
+            symbol,
+            option_chain_df,
+            strike_selector,
+            option_type,
+            reference_strike,
+            expiration,
         )
 
     @staticmethod
     def _get_expiration(
         option_chain_df: pd.DataFrame, expiration_input, entry_time: str
     ):
-        return OptionChainConverter.get_expiration(option_chain_df, expiration_input, entry_time)
+        return OptionChainConverter.get_expiration(
+            option_chain_df, expiration_input, entry_time
+        )
+
+    @classmethod
+    def get_strike_value(cls, converter, strike_input, expiration_date, option_type):
+        if isinstance(strike_input, (int, float)):
+            # Numeric input treated as delta if float < 1, otherwise as strike price
+            return converter.get_desired_strike(
+                expiration_date,
+                option_type,
+                strike_input,
+                by="delta" if abs(float(strike_input)) < 1 else "strike",
+            )
+        elif isinstance(strike_input, str):
+            if strike_input.upper() == "ATM":
+                return converter.get_atm_strike(expiration_date)
+            elif strike_input.startswith(("+", "-")):
+                # ATM relative strike
+                offset = float(strike_input)
+                return converter.get_desired_strike(
+                    expiration_date, option_type, offset, by="atm"
+                )
+            else:
+                # Try to convert to float for direct strike price
+                try:
+                    strike_price = float(strike_input)
+                    return converter.get_desired_strike(
+                        expiration_date, option_type, strike_price, by="strike"
+                    )
+                except ValueError:
+                    raise ValueError(f"Invalid strike input: {strike_input}")
+        else:
+            raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
 
     @classmethod
     def create_vertical_spread(
@@ -443,26 +484,38 @@ class OptionStrategy:
         # Get strike prices using the converter
         if isinstance(short_strike, (int, float)) and abs(short_strike) < 1:
             # Delta-based selection
-            short_strike_value = converter.get_desired_strike(expiration_date, option_type, short_strike, by='delta')
+            short_strike_value = converter.get_desired_strike(
+                expiration_date, option_type, short_strike, by="delta"
+            )
         elif isinstance(short_strike, str) and short_strike.upper() == "ATM":
             # ATM strike
             short_strike_value = converter.get_atm_strike(expiration_date)
         elif isinstance(short_strike, str) and short_strike[0] in ["+", "-"]:
             # ATM relative strike
-            short_strike_value = converter.get_desired_strike(expiration_date, option_type, float(short_strike), by='atm')
+            short_strike_value = converter.get_desired_strike(
+                expiration_date, option_type, float(short_strike), by="atm"
+            )
         else:
             # Direct strike price
-            short_strike_value = converter.get_desired_strike(expiration_date, option_type, float(short_strike), by='strike')
+            short_strike_value = converter.get_desired_strike(
+                expiration_date, option_type, float(short_strike), by="strike"
+            )
 
         # Similar logic for long strike
         if isinstance(long_strike, (int, float)) and abs(long_strike) < 1:
-            long_strike_value = converter.get_desired_strike(expiration_date, option_type, long_strike, by='delta')
+            long_strike_value = converter.get_desired_strike(
+                expiration_date, option_type, long_strike, by="delta"
+            )
         elif isinstance(long_strike, str) and long_strike.upper() == "ATM":
             long_strike_value = converter.get_atm_strike(expiration_date)
         elif isinstance(long_strike, str) and long_strike[0] in ["+", "-"]:
-            long_strike_value = converter.get_desired_strike(expiration_date, option_type, float(long_strike), by='atm')
+            long_strike_value = converter.get_desired_strike(
+                expiration_date, option_type, float(long_strike), by="atm"
+            )
         else:
-            long_strike_value = converter.get_desired_strike(expiration_date, option_type, float(long_strike), by='strike')
+            long_strike_value = converter.get_desired_strike(
+                expiration_date, option_type, float(long_strike), by="strike"
+            )
 
         if (long_strike_value > short_strike_value and option_type == "PUT") or (
             long_strike_value < short_strike_value and option_type == "CALL"
@@ -509,9 +562,7 @@ class OptionStrategy:
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
-        if strategy.entry_net_premium > abs(
-            short_strike_value - long_strike_value
-        ):
+        if strategy.entry_net_premium > abs(short_strike_value - long_strike_value):
             raise ValueError(
                 "Entry net premium cannot be greater than the spread width."
             )
@@ -574,38 +625,12 @@ class OptionStrategy:
 
         expiration_date = converter.get_closest_expiration(expiration)
 
-        def get_strike_value(strike_input, option_type):
-            if isinstance(strike_input, (int, float)):
-                # Numeric input treated as delta if float < 1, otherwise as strike price
-                return converter.get_desired_strike(
-                    expiration_date,
-                    option_type,
-                    strike_input,
-                    by='delta' if abs(float(strike_input)) < 1 else 'strike'
-                )
-            elif isinstance(strike_input, str):
-                if strike_input.upper() == "ATM":
-                    return converter.get_atm_strike(expiration_date)
-                elif strike_input.startswith(("+", "-")):
-                    # ATM relative strike
-                    offset = float(strike_input)
-                    return converter.get_desired_strike(expiration_date, option_type, offset, by='atm')
-                else:
-                    # Try to convert to float for direct strike price
-                    try:
-                        strike_price = float(strike_input)
-                        return converter.get_desired_strike(expiration_date, option_type, strike_price, by='strike')
-                    except ValueError:
-                        raise ValueError(f"Invalid strike input: {strike_input}")
-            else:
-                raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
-
-        put_short_strike_value = get_strike_value(put_short_strike, "PUT")
-        put_long_strike_value = get_strike_value(put_long_strike, "PUT")
+        put_short_strike_value = strategy.get_strike_value(put_short_strike, "PUT")
+        put_long_strike_value = strategy.get_strike_value(put_long_strike, "PUT")
 
         # Get call strikes
-        call_short_strike_value = get_strike_value(call_short_strike, "CALL")
-        call_long_strike_value = get_strike_value(call_long_strike, "CALL")
+        call_short_strike_value = strategy.get_strike_value(call_short_strike, "CALL")
+        call_long_strike_value = strategy.get_strike_value(call_long_strike, "CALL")
 
         if (
             put_long_strike_value > put_short_strike_value
@@ -743,7 +768,10 @@ class OptionStrategy:
             strike_value = converter.get_atm_strike(expiration_date)
         else:
             strike_value = converter.get_desired_strike(
-                expiration_date, "CALL", strike, by='delta' if isinstance(strike, float) else 'strike'
+                expiration_date,
+                "CALL",
+                strike,
+                by="delta" if isinstance(strike, float) else "strike",
             )
 
         call_leg = OptionLeg(
@@ -838,35 +866,10 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Determine strike selection method and get strikes
-        def get_strike_value(strike_input):
-            if isinstance(strike_input, (int, float)):
-                # Numeric input treated as delta if float < 1, otherwise as strike price
-                return converter.get_desired_strike(
-                    expiration_date, 
-                    option_type, 
-                    strike_input,
-                    by='delta' if abs(float(strike_input)) < 1 else 'strike'
-                )
-            elif isinstance(strike_input, str):
-                if strike_input.upper() == "ATM":
-                    return converter.get_atm_strike(expiration_date)
-                elif strike_input.startswith(("+", "-")):
-                    # ATM relative strike
-                    offset = float(strike_input)
-                    return converter.get_desired_strike(expiration_date, option_type, offset, by='atm')
-                else:
-                    # Try to convert to float for direct strike price
-                    try:
-                        strike_price = float(strike_input)
-                        return converter.get_desired_strike(expiration_date, option_type, strike_price, by='strike')
-                    except ValueError:
-                        raise ValueError(f"Invalid strike input: {strike_input}")
-            else:
-                raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
 
-        lower_strike_value = get_strike_value(lower_strike)
-        middle_strike_value = get_strike_value(middle_strike)
-        upper_strike_value = get_strike_value(upper_strike)
+        lower_strike_value = strategy.get_strike_value(lower_strike)
+        middle_strike_value = strategy.get_strike_value(middle_strike)
+        upper_strike_value = strategy.get_strike_value(upper_strike)
 
         lower_leg = OptionLeg(
             symbol,
@@ -973,7 +976,7 @@ class OptionStrategy:
                 expiration_date,
                 "CALL",
                 strike,
-                by='delta' if abs(float(strike)) < 1 else 'strike'
+                by="delta" if abs(float(strike)) < 1 else "strike",
             )
         elif isinstance(strike, str):
             if strike.upper() == "ATM":
@@ -981,12 +984,16 @@ class OptionStrategy:
             elif strike.startswith(("+", "-")):
                 # ATM relative strike
                 offset = float(strike)
-                strike_value = converter.get_desired_strike(expiration_date, "CALL", offset, by='atm')
+                strike_value = converter.get_desired_strike(
+                    expiration_date, "CALL", offset, by="atm"
+                )
             else:
                 # Try to convert to float for direct strike price
                 try:
                     strike_price = float(strike)
-                    strike_value = converter.get_desired_strike(expiration_date, "CALL", strike_price, by='strike')
+                    strike_value = converter.get_desired_strike(
+                        expiration_date, "CALL", strike_price, by="strike"
+                    )
                 except ValueError:
                     raise ValueError(f"Invalid strike input: {strike}")
         else:
@@ -1071,7 +1078,7 @@ class OptionStrategy:
                 expiration_date,
                 "PUT",
                 strike,
-                by='delta' if abs(float(strike)) < 1 else 'strike'
+                by="delta" if abs(float(strike)) < 1 else "strike",
             )
         elif isinstance(strike, str):
             if strike.upper() == "ATM":
@@ -1079,12 +1086,16 @@ class OptionStrategy:
             elif strike.startswith(("+", "-")):
                 # ATM relative strike
                 offset = float(strike)
-                strike_value = converter.get_desired_strike(expiration_date, "PUT", offset, by='atm')
+                strike_value = converter.get_desired_strike(
+                    expiration_date, "PUT", offset, by="atm"
+                )
             else:
                 # Try to convert to float for direct strike price
                 try:
                     strike_price = float(strike)
-                    strike_value = converter.get_desired_strike(expiration_date, "PUT", strike_price, by='strike')
+                    strike_value = converter.get_desired_strike(
+                        expiration_date, "PUT", strike_price, by="strike"
+                    )
                 except ValueError:
                     raise ValueError(f"Invalid strike input: {strike}")
         else:
@@ -1167,8 +1178,8 @@ class OptionStrategy:
         net_premium = (bid + ask) / 2
         if net_premium <= 0:
             return (
-                self.net_premium
-            ) if self.net_premium else np.nan  # Do not allow negative net premium. This is a safety net.
+                (self.net_premium) if self.net_premium else np.nan
+            )  # Do not allow negative net premium. This is a safety net.
         return net_premium
 
     def calculate_bid_ask(self):
