@@ -602,6 +602,7 @@ class OptionStrategy:
                 raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
 
         put_short_strike_value = get_strike_value(put_short_strike, "PUT")
+        call_short_strike_value = get_strike_value(call_short_strike, "CALL")
         put_long_strike_value = converter.get_desired_strike(
             expiration_date, "PUT", put_long_strike, by='delta' if isinstance(put_long_strike, float) else 'strike'
         )
