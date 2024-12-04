@@ -574,7 +574,6 @@ class OptionStrategy:
 
         expiration_date = converter.get_closest_expiration(expiration)
 
-        # strike_input can be a float or a str. If it's a float, it's either a delta (abs(strike_input) < 1), or a specific strike price that we want to find the closest strike to. If it's a str, the procedure: 1. Check if +/- sign is at position 0. If so, check if the rest is a number and convert to float; if this is smaller than 1, then it's a delta; otherwise, it's an offset. In the case of an offset, we need a relative strike to offset against, this would be an optional argument. 2. If no sign is at position 0, check if the whole string is a number and convert to float. If this is a float, it's a strike price. Then check if the string is "ATM". If so, return the atm strike. If the string is ATM+/-number, return the relative strike to the ATM. If the string is ATM+-number%, return the relative strike to the ATM with the specified percentage. 3. If the input is neither a float nor a str, raise an error. AI!
         def get_strike_value(strike_input, option_type):
             if isinstance(strike_input, (int, float)):
                 # Numeric input treated as delta if float < 1, otherwise as strike price
