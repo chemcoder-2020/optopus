@@ -575,7 +575,7 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Get put strikes
-        # handle different types of put_short strike here by determining if it's a delta or a strike or ATM etc.
+        # handle different types of put_short strike here by determining if it's a delta or a strike or ATM etc. just like in the create_vertical_spread method. AI!
         put_short_strike_value = converter.get_desired_strike(
             expiration_date, "PUT", put_short_strike, by='delta' if isinstance(put_short_strike, float) else 'strike'
         )
@@ -583,10 +583,9 @@ class OptionStrategy:
             expiration_date, "PUT", put_long_strike, by='delta' if isinstance(put_long_strike, float) else 'strike'
         )
 
-        # Get call strikes  
+        # Get call strikes
         call_short_strike_value = converter.get_desired_strike(
-            expiration_date, "CALL", call_short_strike, by='delta' if isinstance(call_short_strike, float) else 'strike'
-        )
+            expiration_date, "CALL", call_short_strike, by='delta' if isinstance(call_short_strike, float) else 'strike' if not isinstance(call_short_strike, str) or call_short_strike.upper() != "ATM" else 'atm'
         call_long_strike_value = converter.get_desired_strike(
             expiration_date, "CALL", call_long_strike, by='delta' if isinstance(call_long_strike, float) else 'strike'
         )
