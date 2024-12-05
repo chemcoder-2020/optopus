@@ -876,7 +876,7 @@ class OptionStrategy:
         Returns:
             OptionStrategy: A butterfly strategy object.
         """
-        return cls.create_iron_condor(
+        strategy = cls.create_iron_condor(
             symbol=symbol,
             put_long_strike=lower_strike,
             put_short_strike=middle_strike,
@@ -892,6 +892,8 @@ class OptionStrategy:
             commission=commission,
             exit_scheme=exit_scheme,
         )
+        strategy.strategy_type = "Butterfly"
+        return strategy
 
     @classmethod
     def create_naked_call(
