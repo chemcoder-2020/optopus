@@ -4,6 +4,7 @@ from .option_leg import OptionLeg
 import datetime
 import numpy as np
 import time  # Added for performance profiling
+import logging  # Added for logging
 from loguru import logger
 import cProfile
 import pstats
@@ -177,9 +178,24 @@ class OptionStrategy:
         for leg in self.legs:
             leg.update(current_time, option_chain_df)
 
-        self.net_premium = self.calculate_net_premium()
+        new_net_premium = self.calculate_net_premium()
 
         if self.status == "OPEN":
+            if len(self.premium_log) < 3:
+                # Use percentage logic for first 3 updates
+                if self.net_premium is not None and abs((new_net_premium - self.net_premium) / self.net_premium) > 0.15:
+                    logging.warning(f"Price spike detected: {abs((new_net_premium - self.net_premium) / self.net_premium) * 100}% change in net premium")
+                    return False
+            else:
+                # Use rolling standard deviation outlier detection for 3+ updates
+                last_three_premiums = [log["net_premium"] for log in self.premium_log[-3:]]
+                mean = np.mean(last_three_premiums)
+                std_dev = np.std(last_three_premiums)
+                if abs(new_net_premium - mean) > 3 * std_dev:
+                    logging.warning(f"Price spike detected: {new_net_premium} is more than 3 standard deviations away from the mean")
+                    return False
+
+            self.net_premium = new_net_premium
             self.premium_log.append({
                 "time": self.current_time,
                 "net_premium": self.net_premium
