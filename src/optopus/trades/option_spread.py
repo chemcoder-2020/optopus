@@ -891,11 +891,11 @@ class OptionStrategy:
 
         # Get strike prices using the converter
 
-        lower_strike_value = strategy.get_strike_value(
-            converter, lower_strike, expiration_date, option_type
-        )
         middle_strike_value = strategy.get_strike_value(
-            converter, middle_strike, expiration_date, option_type, reference_strike=lower_strike_value if isinstance(middle_strike, str) and (middle_strike[0] == "+" or middle_strike[0] == "-") else None
+            converter, middle_strike, expiration_date, option_type
+        )
+        lower_strike_value = strategy.get_strike_value(
+            converter, lower_strike, expiration_date, option_type, reference_strike=lower_strike_value if isinstance(lower_strike, str) and (lower_strike[0] == "+" or middle_strike[0] == "-") else None
         )
         upper_strike_value = strategy.get_strike_value(
             converter, upper_strike, expiration_date, option_type, reference_strike=middle_strike_value if isinstance(upper_strike, str) and (upper_strike[0] == "+" or upper_strike[0] == "-") else None
