@@ -418,7 +418,7 @@ class OptionStrategy:
         elif isinstance(strike_input, str):
             if strike_input.startswith(("+", "-")):
                 try:
-                    offset = float(strike_input[1:])
+                    offset = float(strike_input)
                     if abs(offset) < 1:
                         # ATM relative strike with delta
                         return converter.get_desired_strike(
@@ -753,6 +753,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
+        position_side="BUY",
         exit_scheme: ExitConditionChecker = None,
     ):
         """
@@ -794,7 +795,7 @@ class OptionStrategy:
             converter, strike, expiration_date, "CALL"
         )
         put_strike_value = cls.get_strike_value(
-            converter, strike, expiration_date, "PUT"
+            converter, call_strike_value, expiration_date, "PUT"
         )
 
         call_leg = OptionLeg(
@@ -805,7 +806,7 @@ class OptionStrategy:
             contracts,
             entry_time,
             option_chain_df,
-            "BUY",
+            position_side,
             commission=commission,
         )
         put_leg = OptionLeg(
@@ -816,11 +817,11 @@ class OptionStrategy:
             contracts,
             entry_time,
             option_chain_df,
-            "BUY",
+            position_side,
             commission=commission,
         )
 
-        strategy.strategy_side = "DEBIT"
+        strategy.strategy_side = "DEBIT" if position_side == "BUY" else "CREDIT"
 
         strategy.add_leg(call_leg, leg_ratio)
         strategy.add_leg(put_leg, leg_ratio)
