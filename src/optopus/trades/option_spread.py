@@ -457,13 +457,12 @@ class OptionStrategy:
                                     option_type,
                                     offset,
                                     by="atm_percent",
-                                    reference_strike=reference_strike
                                 )
                             else:
                                 return converter.get_desired_strike(
                                     expiration_date,
                                     option_type,
-                                    reference_strike + offset,
+                                    offset,
                                     by="atm",
                                 )
                         except ValueError:
@@ -528,12 +527,12 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Get strike prices using the converter
-        short_strike_value = cls.get_strike_value(
+        short_strike_value = strategy.get_strike_value(
             converter, short_strike, expiration_date, option_type
         )
 
-        long_strike_value = cls.get_strike_value(
-            converter, long_strike, expiration_date, option_type
+        long_strike_value = strategy.get_strike_value(
+            converter, long_strike, expiration_date, option_type, reference_strike=short_strike_value if isinstance(long_strike, str) and (long_strike[0] == "+" or long_strike[0] == "-") else None
         )
 
         if (long_strike_value > short_strike_value and option_type == "PUT") or (
