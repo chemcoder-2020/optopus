@@ -908,6 +908,7 @@ class OptionStrategy:
         stop_loss: float = None,
         trailing_stop: float = None,
         commission: float = 0.5,
+        position_side: str = "BUY",
         exit_scheme: ExitConditionChecker = None,
     ):
         """
@@ -924,6 +925,7 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
+            position_side (str, optional): The position side ('BUY' or 'SELL'). Defaults to 'BUY'.
 
         Returns:
             OptionStrategy: A naked call strategy object.
@@ -956,11 +958,11 @@ class OptionStrategy:
             contracts,
             entry_time,
             option_chain_df,
-            "BUY",
+            position_side,
             commission=commission,
         )
 
-        strategy.strategy_side = "DEBIT"
+        strategy.strategy_side = "DEBIT" if position_side == "BUY" else "CREDIT"
 
         strategy.add_leg(call_leg)
         strategy.entry_net_premium = strategy.net_premium = (
