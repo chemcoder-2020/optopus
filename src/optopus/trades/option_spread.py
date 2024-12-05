@@ -988,6 +988,7 @@ class OptionStrategy:
         trailing_stop: float = None,
         commission: float = 0.5,
         exit_scheme: ExitConditionChecker = None,
+        position_side: str = "BUY",
     ):
         """
         Create a naked put option strategy.
@@ -1003,6 +1004,8 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
+            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use.
+            position_side (str, optional): The position side ('BUY' or 'SELL'). Defaults to 'BUY'.
 
         Returns:
             OptionStrategy: A naked put strategy object.
@@ -1022,35 +1025,10 @@ class OptionStrategy:
 
         expiration_date = converter.get_closest_expiration(expiration)
 
-        # Determine strike selection method
-        if isinstance(strike, (int, float)):
-            # Numeric input treated as delta if float < 1, otherwise as strike price
-            strike_value = converter.get_desired_strike(
-                expiration_date,
-                "PUT",
-                strike,
-                by="delta" if abs(float(strike)) < 1 else "strike",
-            )
-        elif isinstance(strike, str):
-            if strike.upper() == "ATM":
-                strike_value = converter.get_atm_strike(expiration_date)
-            elif strike.startswith(("+", "-")):
-                # ATM relative strike
-                offset = float(strike)
-                strike_value = converter.get_desired_strike(
-                    expiration_date, "PUT", offset, by="atm"
-                )
-            else:
-                # Try to convert to float for direct strike price
-                try:
-                    strike_price = float(strike)
-                    strike_value = converter.get_desired_strike(
-                        expiration_date, "PUT", strike_price, by="strike"
-                    )
-                except ValueError:
-                    raise ValueError(f"Invalid strike input: {strike}")
-        else:
-            raise ValueError(f"Unsupported strike input type: {type(strike)}")
+        # Get strike price using the converter
+        strike_value = cls.get_strike_value(
+            converter, strike, expiration_date, "PUT"
+        )
 
         put_leg = OptionLeg(
             symbol,
@@ -1060,11 +1038,11 @@ class OptionStrategy:
             contracts,
             entry_time,
             option_chain_df,
-            "BUY",
+            position_side,
             commission=commission,
         )
 
-        strategy.strategy_side = "DEBIT"
+        strategy.strategy_side = "DEBIT" if position_side == "BUY" else "CREDIT"
 
         strategy.add_leg(put_leg)
         strategy.entry_net_premium = strategy.net_premium = (
