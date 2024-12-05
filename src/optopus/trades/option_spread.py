@@ -643,12 +643,20 @@ class OptionStrategy:
 
         expiration_date = converter.get_closest_expiration(expiration)
 
-        put_short_strike_value = strategy.get_strike_value(put_short_strike, "PUT")
-        put_long_strike_value = strategy.get_strike_value(put_long_strike, "PUT")
+        put_short_strike_value = strategy.get_strike_value(
+            converter, put_short_strike, expiration_date, "PUT"
+        )
+        put_long_strike_value = strategy.get_strike_value(
+            converter, put_long_strike, expiration_date, "PUT", reference_strike=put_short_strike_value if isinstance(put_long_strike, str) and (put_long_strike[0] == "+" or put_long_strike[0] == "-") else None
+        )
 
         # Get call strikes
-        call_short_strike_value = strategy.get_strike_value(call_short_strike, "CALL")
-        call_long_strike_value = strategy.get_strike_value(call_long_strike, "CALL")
+        call_short_strike_value = strategy.get_strike_value(
+            converter, call_short_strike, expiration_date, "CALL"
+        )
+        call_long_strike_value = strategy.get_strike_value(
+            converter, call_long_strike, expiration_date, "CALL", reference_strike=call_short_strike_value if isinstance(call_long_strike, str) and (call_long_strike[0] == "+" or call_long_strike[0] == "-") else None
+        )
 
         if (
             put_long_strike_value > put_short_strike_value
