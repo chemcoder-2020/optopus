@@ -95,6 +95,7 @@ class OptionStrategy:
         self.exit_dit = None
         self.exit_dte = None
         self.exit_scheme = exit_scheme
+        self.premium_log = []
 
     @staticmethod
     def _standardize_time(time_value):
@@ -177,6 +178,12 @@ class OptionStrategy:
             leg.update(current_time, option_chain_df)
 
         self.net_premium = self.calculate_net_premium()
+
+        if self.status == "OPEN":
+            self.premium_log.append({
+                "time": self.current_time,
+                "net_premium": self.net_premium
+            })
 
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
