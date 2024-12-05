@@ -870,86 +870,28 @@ class OptionStrategy:
             profit_target (float, optional): Profit target percentage.
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
+            commission (float, optional): Commission percentage.
+            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use.
 
         Returns:
             OptionStrategy: A butterfly strategy object.
         """
-        converter = OptionChainConverter(option_chain_df)
-
-        strategy = cls(
-            symbol,
-            "Butterfly",
-            profit_target,
-            stop_loss,
-            trailing_stop,
-            contracts,
-            commission,
-            exit_scheme,
-        )
-
-        expiration_date = converter.get_closest_expiration(expiration)
-
-        # Get strike prices using the converter
-
-        middle_strike_value = strategy.get_strike_value(
-            converter, middle_strike, expiration_date, option_type
-        )
-        lower_strike_value = strategy.get_strike_value(
-            converter, lower_strike, expiration_date, option_type, reference_strike=lower_strike_value if isinstance(lower_strike, str) and (lower_strike[0] == "+" or middle_strike[0] == "-") else None
-        )
-        upper_strike_value = strategy.get_strike_value(
-            converter, upper_strike, expiration_date, option_type, reference_strike=middle_strike_value if isinstance(upper_strike, str) and (upper_strike[0] == "+" or upper_strike[0] == "-") else None
-        )
-
-        lower_leg = OptionLeg(
-            symbol,
-            option_type,
-            lower_strike_value,
-            expiration_date,
-            contracts,
-            entry_time,
-            option_chain_df,
-            "BUY",
+        return cls.create_iron_condor(
+            symbol=symbol,
+            put_long_strike=lower_strike,
+            put_short_strike=middle_strike,
+            call_short_strike=middle_strike,
+            call_long_strike=upper_strike,
+            expiration=expiration,
+            contracts=contracts,
+            entry_time=entry_time,
+            option_chain_df=option_chain_df,
+            profit_target=profit_target,
+            stop_loss=stop_loss,
+            trailing_stop=trailing_stop,
             commission=commission,
+            exit_scheme=exit_scheme,
         )
-        middle_leg = OptionLeg(
-            symbol,
-            option_type,
-            middle_strike_value,
-            expiration_date,
-            contracts * 2,
-            entry_time,
-            option_chain_df,
-            "SELL",
-            commission=commission,
-        )
-        upper_leg = OptionLeg(
-            symbol,
-            option_type,
-            upper_strike_value,
-            expiration_date,
-            contracts,
-            entry_time,
-            option_chain_df,
-            "BUY",
-            commission=commission,
-        )
-
-        strategy.strategy_side = "CREDIT"
-
-        strategy.add_leg(lower_leg, 1)
-        strategy.add_leg(middle_leg, 2)
-        strategy.add_leg(upper_leg, 1)
-
-        strategy.entry_net_premium = strategy.net_premium = (
-            strategy.calculate_net_premium()
-        )
-
-        strategy.entry_time = cls._standardize_time(entry_time)
-        strategy.entry_ror = strategy.return_over_risk()
-        strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
-
-        return strategy
 
     @classmethod
     def create_naked_call(
