@@ -184,7 +184,7 @@ class OptionStrategy:
             if len(self.premium_log) < 3:
                 # Use percentage logic for first 3 updates
                 if self.net_premium is not None and abs((new_net_premium - self.net_premium) / self.net_premium) > 0.15:
-                    logging.warning(f"Price spike detected: {abs((new_net_premium - self.net_premium) / self.net_premium) * 100}% change in net premium")
+                    logger.warning(f"Price spike detected: {abs((new_net_premium - self.net_premium) / self.net_premium) * 100}% change in net premium")
                     return False
             else:
                 # Use rolling standard deviation outlier detection for 3+ updates
@@ -192,7 +192,7 @@ class OptionStrategy:
                 mean = np.mean(last_three_premiums)
                 std_dev = np.std(last_three_premiums)
                 if abs(new_net_premium - mean) > 3 * std_dev:
-                    logging.warning(f"Price spike detected: {new_net_premium} is more than 3 standard deviations away from the mean")
+                    logger.warning(f"Price spike detected: {new_net_premium} is more than 3 standard deviations away from the mean")
                     return False
 
             self.net_premium = new_net_premium
