@@ -789,21 +789,18 @@ class OptionStrategy:
 
         expiration_date = converter.get_closest_expiration(expiration)
 
-        # If strike is "ATM", use the ATM strike, otherwise use the specified strike
-        if strike == "ATM":
-            strike_value = converter.get_atm_strike(expiration_date)
-        else:
-            strike_value = converter.get_desired_strike(
-                expiration_date,
-                "CALL",
-                strike,
-                by="delta" if isinstance(strike, float) else "strike",
-            )
+        # Get strike prices using the converter
+        call_strike_value = cls.get_strike_value(
+            converter, strike, expiration_date, "CALL"
+        )
+        put_strike_value = cls.get_strike_value(
+            converter, strike, expiration_date, "PUT"
+        )
 
         call_leg = OptionLeg(
             symbol,
             "CALL",
-            strike_value,
+            call_strike_value,
             expiration_date,
             contracts,
             entry_time,
@@ -814,7 +811,7 @@ class OptionStrategy:
         put_leg = OptionLeg(
             symbol,
             "PUT",
-            strike_value,
+            put_strike_value,
             expiration_date,
             contracts,
             entry_time,
