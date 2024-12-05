@@ -1104,6 +1104,7 @@ class OptionStrategy:
             float: The calculated net premium.
         """
         bid, ask = self.calculate_bid_ask()
+        logger.debug(f"bid: {bid}, ask: {ask}")
         net_premium = (bid + ask) / 2
         if net_premium <= 0:
             return (

@@ -538,7 +538,7 @@ class OptionBacktester:
             print(f"CAGR: {metrics['cagr']:.2%}")
             print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
             print(f"Average Monthly P/L (Non-Zero Months): ${metrics['avg_monthly_pl_nonzero']:.2f}")
-            print(f"Average Return over Risk: {metrics["return_over_risk"]:.2%}")
+            print(f"Average Return over Risk: {metrics['return_over_risk']:.2%}")
             print(
                 f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}"
             )

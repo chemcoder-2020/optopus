@@ -145,6 +145,8 @@ class OptionLeg:
             (option_chain_df["STRIKE"] == self.strike)
             & (option_chain_df["EXPIRE_DATE"] == self.expiration)
         ]
+        # logger.debug(self.expiration)
+        # logger.debug(option_chain_df['EXPIRE_DATE'])
 
         if not option_data.empty:
             prefix = "C_" if self.option_type.upper() == "CALL" else "P_"
