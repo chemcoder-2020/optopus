@@ -1216,17 +1216,36 @@ class OptionStrategy:
 
     def calculate_median_return(self):
         """
-        Calculate the median return based on the last 5 net premium values.
+        Calculate the median return percentage based on the last 5 net premium values.
 
         Returns:
-            float: The median return.
+            float: The median return percentage.
         """
         if len(self.premium_log) < 5:
             return None  # or raise an exception, depending on your requirements
 
         last_5_premiums = [log["net_premium"] for log in self.premium_log[-5:]]
-        median_return = np.median(last_5_premiums)
-        return median_return
+        median_net_premium = np.median(last_5_premiums)
+
+        if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
+            median_pl = (
+                (self.entry_net_premium - median_net_premium)
+                * 100
+                * self.contracts
+            ) - self.calculate_total_commission()
+        elif hasattr(self, "strategy_side") and self.strategy_side == "DEBIT":
+            median_pl = (
+                (median_net_premium - self.entry_net_premium)
+                * 100
+                * self.contracts
+            ) - self.calculate_total_commission()
+        else:
+            raise ValueError(f"Unsupported strategy side: {self.strategy_side}")
+
+        premium = abs(self.entry_net_premium)
+        if premium == 0:
+            return 0
+        return (median_pl / (premium * 100 * self.contracts)) * 100
 
 
 if __name__ == "__main__":
