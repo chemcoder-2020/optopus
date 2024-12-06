@@ -148,15 +148,6 @@ class OptionStrategy:
         self.leg_ratios.append(ratio)
         leg.contracts = self._contracts * ratio
 
-        # Adjust premium based on position side
-        # premium_adjustment = leg.entry_price * ratio
-        # if leg.position_side == "SELL":
-        #     self.entry_net_premium += premium_adjustment
-        # else:  # BUY
-        #     self.entry_net_premium -= premium_adjustment
-
-        # self.net_premium = self.entry_net_premium
-
     def update(self, current_time: str, option_chain_df: pd.DataFrame):
         """
         Update the strategy with new market data and check exit conditions. This method will close the strategy if the exit conditions are met.
@@ -180,26 +171,11 @@ class OptionStrategy:
 
         new_net_premium = self.calculate_net_premium()
 
-        if self.status == "OPEN":
-            if len(self.premium_log) < 3:
-                # Use percentage logic for first 3 updates
-                if self.net_premium is not None and abs((new_net_premium - self.net_premium) / self.net_premium) > 0.15:
-                    logger.warning(f"Price spike detected: {abs((new_net_premium - self.net_premium) / self.net_premium) * 100}% change in net premium")
-                    return False
-            else:
-                # Use rolling standard deviation outlier detection for 3+ updates
-                last_three_premiums = [log["net_premium"] for log in self.premium_log[-3:]]
-                mean = np.mean(last_three_premiums)
-                std_dev = np.std(last_three_premiums)
-                if abs(new_net_premium - mean) > 3 * std_dev:
-                    logger.warning(f"Price spike detected: {new_net_premium} is more than 3 standard deviations away from the mean")
-                    return False
-
-            self.net_premium = new_net_premium
-            self.premium_log.append({
-                "time": self.current_time,
-                "net_premium": self.net_premium
-            })
+        self.net_premium = new_net_premium
+        self.premium_log.append({
+            "time": self.current_time,
+            "net_premium": self.net_premium
+        })
 
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
@@ -212,6 +188,7 @@ class OptionStrategy:
 
         # Calculate and store the strategy's bid-ask spread
         self.current_bid, self.current_ask = self.calculate_bid_ask()
+        return True
 
     def update_entry_net_premium(self):
         """Update the entry net premium. Helpful to update entry net premium after actual trading order is filled."""

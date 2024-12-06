@@ -350,7 +350,7 @@ class TestOptionStrategy(unittest.TestCase):
             option_type="PUT",
             long_strike="-2",
             short_strike="-0.3",
-            expiration=10,
+            expiration=5,
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
@@ -393,6 +393,7 @@ class TestOptionStrategy(unittest.TestCase):
             exit_scheme=default_exit_condition,
         )
         vertical_spread.update("2024-09-06 15:45:00", self.update_df)
+        logger.debug(vertical_spread.return_percentage())
         self.assertTrue(vertical_spread.status == "CLOSED")
 
 

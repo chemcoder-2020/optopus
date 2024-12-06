@@ -55,7 +55,11 @@ class OptionBacktester:
             # Update all active trades
             trades_to_close = []
             for trade in self.active_trades:
-                trade.update(current_time, option_chain_df)
+                trade_update_success = trade.update(current_time, option_chain_df)
+                if not trade_update_success:
+                    logger.warning(f"Trade {trade} update failed at {current_time}, due to spike in option chain.")
+                else:
+                    logger.debug(f"Trade {trade} updated at {current_time}")
                 if trade.status == "CLOSED":
                     trades_to_close.append(trade)
 
