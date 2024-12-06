@@ -177,6 +177,10 @@ class OptionStrategy:
             "net_premium": self.net_premium
         })
 
+        median_return = self.calculate_median_return()
+        if median_return is not None:
+            print(f"Median return: {median_return}")
+
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
 
@@ -1209,6 +1213,20 @@ class OptionStrategy:
             return_over_risk = float("inf")  # Default to infinity if not applicable
 
         return return_over_risk
+
+    def calculate_median_return(self):
+        """
+        Calculate the median return based on the last 5 net premium values.
+
+        Returns:
+            float: The median return.
+        """
+        if len(self.premium_log) < 5:
+            return None  # or raise an exception, depending on your requirements
+
+        last_5_premiums = [log["net_premium"] for log in self.premium_log[-5:]]
+        median_return = np.median(last_5_premiums)
+        return median_return
 
 
 if __name__ == "__main__":
