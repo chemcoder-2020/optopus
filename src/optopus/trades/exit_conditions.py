@@ -87,7 +87,7 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         current_return = strategy.return_percentage()
         logger.debug(f"Current return: {current_return}")
-        current_median_return = self.calculate_median_returns(strategy)
+        current_median_return = strategy.median_return_percentage
         logger.debug(f"Current median return: {current_median_return}")
         return current_return >= self.profit_target and current_median_return >= self.profit_target
     

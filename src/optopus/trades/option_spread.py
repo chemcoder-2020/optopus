@@ -172,14 +172,10 @@ class OptionStrategy:
         new_net_premium = self.calculate_net_premium()
 
         self.net_premium = new_net_premium
-        self.premium_log.append({
-            "time": self.current_time,
-            "net_premium": self.net_premium
-        })
+        self.premium_log.append(self.net_premium)
 
-        median_return = self.calculate_median_return()
-        if median_return is not None:
-            print(f"Median return: {median_return}")
+        if len(self.premium_log) > 5:
+            self.premium_log.pop(0)
 
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
@@ -221,9 +217,10 @@ class OptionStrategy:
     def _check_exit_conditions(self, option_chain_df):
         """Check and apply exit conditions."""
         current_return = self.return_percentage()
+        self.median_return_percentage = self.calculate_median_return()
 
         # Update highest return for trailing stop
-        self.highest_return = max(self.highest_return, current_return)
+        self.highest_return = max(self.highest_return, self.median_return_percentage)
 
         if hasattr(self, "exit_scheme") and self.exit_scheme:
             if self.exit_scheme.should_exit(self, self.current_time, option_chain_df):
@@ -1222,10 +1219,9 @@ class OptionStrategy:
             float: The median return percentage.
         """
         if len(self.premium_log) < 5:
-            return None  # or raise an exception, depending on your requirements
+            return np.nan  # or raise an exception, depending on your requirements
 
-        last_5_premiums = [log["net_premium"] for log in self.premium_log[-5:]]
-        median_net_premium = np.median(last_5_premiums)
+        median_net_premium = np.median(self.premium_log)
 
         if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
             median_pl = (
