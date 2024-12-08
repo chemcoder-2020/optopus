@@ -11,6 +11,7 @@ from .trades.option_leg import OptionLeg
 from .trades.option_manager import OptionBacktester
 from .trades.option_spread import OptionStrategy
 from .trades.exit_conditions import ExitConditionChecker
+from .utils.heapmedian import ContinuousMedian
 from .backtest.vertical_spread import BacktestVerticalSpread
 from .backtest.bidirectional_vertical_spread import BacktestBidirectionalVerticalSpread
 
@@ -25,6 +26,7 @@ __all__ = [
     "OptionBacktester",
     "OptionStrategy",
     "ExitConditionChecker",
+    "ContinuousMedian",
     "BacktestVerticalSpread",
     "BacktestBidirectionalVerticalSpread",
 ]
