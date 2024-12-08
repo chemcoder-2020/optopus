@@ -11,6 +11,7 @@ import pstats
 from pstats import SortKey
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
 from .option_chain_converter import OptionChainConverter
+from src.optopus.utils.heapmedian import ContinuousMedian
 
 
 class OptionStrategy:
@@ -96,7 +97,7 @@ class OptionStrategy:
         self.exit_dit = None
         self.exit_dte = None
         self.exit_scheme = exit_scheme
-        self.premium_log = []
+        self.median_tracker = ContinuousMedian()
 
     @staticmethod
     def _standardize_time(time_value):
