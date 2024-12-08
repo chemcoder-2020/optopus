@@ -91,29 +91,6 @@ class ProfitTargetCondition(ExitConditionChecker):
         logger.debug(f"Current median return: {current_median_return}")
         return current_return >= self.profit_target and current_median_return >= self.profit_target
     
-    def calculate_median_returns(self, strategy):
-        premium = abs(strategy.entry_net_premium)
-        premium_log = pd.DataFrame(strategy.premium_log)
-        current_median_premium = np.median(premium_log['net_premium'][-self.kwargs.get("median_window", 5):])
-
-        if hasattr(strategy, "strategy_side") and strategy.strategy_side == "CREDIT":
-            total_pl = (
-                (strategy.entry_net_premium - current_median_premium)
-                * 100
-                * strategy.contracts
-            ) - strategy.calculate_total_commission()
-        elif hasattr(strategy, "strategy_side") and strategy.strategy_side == "DEBIT":
-            total_pl = (
-                (current_median_premium - strategy.entry_net_premium)
-                * 100
-                * strategy.contracts
-            ) - strategy.calculate_total_commission()
-        else:
-            raise ValueError(f"Unsupported strategy side: {strategy.strategy_side}")
-        
-        median_return = (total_pl / (premium * 100 * strategy.contracts)) * 100
-        return median_return
-
 class StopLossCondition(ExitConditionChecker):
     """
     Exit condition based on a stop loss.

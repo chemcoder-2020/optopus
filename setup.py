@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='optopus',
-    version='0.9.0-dev9',
+    version='0.9.0-dev10',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     author='Huy Nguyen',

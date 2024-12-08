@@ -11,7 +11,7 @@ import pstats
 from pstats import SortKey
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
 from .option_chain_converter import OptionChainConverter
-from src.optopus.utils.heapmedian import ContinuousMedian
+from ..utils.heapmedian import ContinuousMedian
 
 
 class OptionStrategy:
