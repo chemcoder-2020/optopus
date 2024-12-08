@@ -173,10 +173,9 @@ class OptionStrategy:
         new_net_premium = self.calculate_net_premium()
 
         self.net_premium = new_net_premium
-        self.premium_log.append(self.net_premium)
-
-        if len(self.premium_log) > 5:
-            self.premium_log.pop(0)
+        self.median_tracker.add(self.net_premium)
+        if len(self.median_tracker.max_heap) > 5:
+            self.median_tracker.remove(self.median_tracker.max_heap[0])
 
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
