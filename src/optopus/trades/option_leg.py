@@ -145,8 +145,6 @@ class OptionLeg:
             (option_chain_df["STRIKE"] == self.strike)
             & (option_chain_df["EXPIRE_DATE"] == self.expiration)
         ]
-        # logger.debug(self.expiration)
-        # logger.debug(option_chain_df['EXPIRE_DATE'])
 
         if not option_data.empty:
             prefix = "C_" if self.option_type.upper() == "CALL" else "P_"
@@ -196,6 +194,8 @@ class OptionLeg:
 
             if is_entry:
                 self.entry_price = self.current_mark
+                self.entry_bid = self.current_bid
+                self.entry_ask = self.current_ask
                 self.entry_underlying_last = self.underlying_last
             else:
                 self.underlying_diff = self.underlying_last - self.entry_underlying_last

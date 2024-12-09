@@ -97,7 +97,7 @@ class OptionStrategy:
         self.exit_dit = None
         self.exit_dte = None
         self.exit_scheme = exit_scheme
-        # self.median_tracker = ContinuousMedian()
+        self.median_tracker = ContinuousMedian()
         self.premium_log = []
 
     @staticmethod
@@ -175,14 +175,10 @@ class OptionStrategy:
 
         self.net_premium = new_net_premium
         self.premium_log.append(self.net_premium)
-        if len(self.premium_log) > 5:
-            self.premium_log.pop(0)
 
         self.median_tracker.add(self.net_premium)
-        if len(self.median_tracker.max_heap) > 5:
-            self.median_tracker.remove(self.median_tracker.max_heap[0])
-        
-        
+        if len(self.premium_log) > 5:
+            self.median_tracker.remove(self.premium_log.pop(0))
 
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
@@ -405,23 +401,24 @@ class OptionStrategy:
         )
 
     @classmethod
-    def get_strike_value(cls, converter, strike_input, expiration_date, option_type, reference_strike=None):
+    def get_strike_value(
+        cls,
+        converter,
+        strike_input,
+        expiration_date,
+        option_type,
+        reference_strike=None,
+    ):
         if isinstance(strike_input, (int, float)):
             if abs(strike_input) < 1:
                 # Numeric input treated as delta if float < 1
                 return converter.get_desired_strike(
-                    expiration_date,
-                    option_type,
-                    strike_input,
-                    by="delta"
+                    expiration_date, option_type, strike_input, by="delta"
                 )
             else:
                 # Numeric input treated as a specific strike price
                 return converter.get_desired_strike(
-                    expiration_date,
-                    option_type,
-                    strike_input,
-                    by="strike"
+                    expiration_date, option_type, strike_input, by="strike"
                 )
         elif isinstance(strike_input, str):
             if strike_input.startswith(("+", "-")):
@@ -430,10 +427,7 @@ class OptionStrategy:
                     if abs(offset) < 1:
                         # ATM relative strike with delta
                         return converter.get_desired_strike(
-                            expiration_date,
-                            option_type,
-                            offset,
-                            by="delta"
+                            expiration_date, option_type, offset, by="delta"
                         )
                     else:
                         return converter.get_desired_strike(
@@ -448,10 +442,7 @@ class OptionStrategy:
                 try:
                     strike_price = float(strike_input)
                     return converter.get_desired_strike(
-                        expiration_date,
-                        option_type,
-                        strike_price,
-                        by="strike"
+                        expiration_date, option_type, strike_price, by="strike"
                     )
                 except ValueError:
                     if strike_input.upper() == "ATM":
@@ -540,7 +531,16 @@ class OptionStrategy:
         )
 
         long_strike_value = strategy.get_strike_value(
-            converter, long_strike, expiration_date, option_type, reference_strike=short_strike_value if isinstance(long_strike, str) and (long_strike[0] == "+" or long_strike[0] == "-") else None
+            converter,
+            long_strike,
+            expiration_date,
+            option_type,
+            reference_strike=(
+                short_strike_value
+                if isinstance(long_strike, str)
+                and (long_strike[0] == "+" or long_strike[0] == "-")
+                else None
+            ),
         )
 
         if (long_strike_value > short_strike_value and option_type == "PUT") or (
@@ -587,6 +587,7 @@ class OptionStrategy:
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
+        strategy.entry_bid, strategy.entry_ask = strategy.current_bid, strategy.current_ask
 
         if strategy.entry_net_premium > abs(short_strike_value - long_strike_value):
             raise ValueError(
@@ -655,7 +656,16 @@ class OptionStrategy:
             converter, put_short_strike, expiration_date, "PUT"
         )
         put_long_strike_value = strategy.get_strike_value(
-            converter, put_long_strike, expiration_date, "PUT", reference_strike=put_short_strike_value if isinstance(put_long_strike, str) and (put_long_strike[0] == "+" or put_long_strike[0] == "-") else None
+            converter,
+            put_long_strike,
+            expiration_date,
+            "PUT",
+            reference_strike=(
+                put_short_strike_value
+                if isinstance(put_long_strike, str)
+                and (put_long_strike[0] == "+" or put_long_strike[0] == "-")
+                else None
+            ),
         )
 
         # Get call strikes
@@ -663,7 +673,16 @@ class OptionStrategy:
             converter, call_short_strike, expiration_date, "CALL"
         )
         call_long_strike_value = strategy.get_strike_value(
-            converter, call_long_strike, expiration_date, "CALL", reference_strike=call_short_strike_value if isinstance(call_long_strike, str) and (call_long_strike[0] == "+" or call_long_strike[0] == "-") else None
+            converter,
+            call_long_strike,
+            expiration_date,
+            "CALL",
+            reference_strike=(
+                call_short_strike_value
+                if isinstance(call_long_strike, str)
+                and (call_long_strike[0] == "+" or call_long_strike[0] == "-")
+                else None
+            ),
         )
 
         if (
@@ -954,9 +973,7 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Get strike price using the converter
-        strike_value = cls.get_strike_value(
-            converter, strike, expiration_date, "CALL"
-        )
+        strike_value = cls.get_strike_value(converter, strike, expiration_date, "CALL")
 
         call_leg = OptionLeg(
             symbol,
@@ -1034,9 +1051,7 @@ class OptionStrategy:
         expiration_date = converter.get_closest_expiration(expiration)
 
         # Get strike price using the converter
-        strike_value = cls.get_strike_value(
-            converter, strike, expiration_date, "PUT"
-        )
+        strike_value = cls.get_strike_value(converter, strike, expiration_date, "PUT")
 
         put_leg = OptionLeg(
             symbol,
@@ -1228,21 +1243,17 @@ class OptionStrategy:
         if len(self.premium_log) < 5:
             return np.nan
 
-        # median_net_premium = self.median_tracker.get_median()
-        median_net_premium = np.median(self.premium_log)
+        median_net_premium = self.median_tracker.get_median()
+        # median_net_premium = np.median(self.premium_log)
         # print(median_net_premium)
 
         if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
             median_pl = (
-                (self.entry_net_premium - median_net_premium)
-                * 100
-                * self.contracts
+                (self.entry_net_premium - median_net_premium) * 100 * self.contracts
             ) - self.calculate_total_commission()
         elif hasattr(self, "strategy_side") and self.strategy_side == "DEBIT":
             median_pl = (
-                (median_net_premium - self.entry_net_premium)
-                * 100
-                * self.contracts
+                (median_net_premium - self.entry_net_premium) * 100 * self.contracts
             ) - self.calculate_total_commission()
         else:
             raise ValueError(f"Unsupported strategy side: {self.strategy_side}")

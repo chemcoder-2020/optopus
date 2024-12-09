@@ -248,6 +248,8 @@ class OptionBacktester:
                 "entry_underlying_last": trade.entry_underlying_last,
                 "exit_underlying_last": trade.exit_underlying_last,
                 "entry_net_premium": trade.entry_net_premium,
+                "entry_bid": trade.entry_bid,
+                "entry_ask": trade.entry_ask,
                 "exit_net_premium": trade.exit_net_premium,
                 "entry_delta": trade.entry_delta,
                 "closed_pl": pl,
@@ -266,6 +268,8 @@ class OptionBacktester:
                         f"leg{i+1}_strike": leg.strike,
                         f"leg{i+1}_position": leg.position_side,
                         f"leg{i+1}_entry_price": leg.entry_price,
+                        f"leg{i+1}_entry_bid": leg.entry_bid,
+                        f"leg{i+1}_entry_ask": leg.entry_ask,
                         f"leg{i+1}_exit_price": leg.current_price,
                     }
                 )
