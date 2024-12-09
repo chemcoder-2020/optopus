@@ -8,6 +8,8 @@ class ContinuousMedian:
         self.min_heap = []  # Min heap for the upper half of the data
 
     def add(self, num):
+        if pd.isna(num):
+            return
         if not self.max_heap or num <= -self.max_heap[0]:
             heapq.heappush(self.max_heap, -num)
         else:
@@ -26,6 +28,8 @@ class ContinuousMedian:
             return -self.max_heap[0]
 
     def remove(self, num):
+        if pd.isna(num):
+            return
         if num <= -self.max_heap[0]:
             self.max_heap.remove(-num)
             heapq.heapify(self.max_heap)
@@ -40,10 +44,14 @@ class ContinuousMedian:
             heapq.heappush(self.max_heap, -heapq.heappop(self.min_heap))
 
 
+import pandas as pd
+
 def test_rolling_performance(window_size=7):
     import numpy as np
 
-    data = np.random.randint(0, 10000, 1000000)
+    data = np.random.randint(0, 10000, 1000000).astype(float)
+    # Introduce some NaN values
+    data[np.random.choice(data.size, size=int(data.size * 0.01), replace=False)] = np.nan
 
     # Test ContinuousMedian
     start_time = time.time()
