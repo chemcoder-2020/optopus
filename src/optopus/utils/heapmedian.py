@@ -1,6 +1,6 @@
 import heapq
 import time
-
+import pandas as pd
 
 class ContinuousMedian:
     def __init__(self):
@@ -44,7 +44,7 @@ class ContinuousMedian:
             heapq.heappush(self.max_heap, -heapq.heappop(self.min_heap))
 
 
-import pandas as pd
+
 
 def test_rolling_performance(window_size=7):
     import numpy as np
