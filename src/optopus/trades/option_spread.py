@@ -97,7 +97,8 @@ class OptionStrategy:
         self.exit_dit = None
         self.exit_dte = None
         self.exit_scheme = exit_scheme
-        self.median_tracker = ContinuousMedian()
+        # self.median_tracker = ContinuousMedian()
+        self.premium_log = []
 
     @staticmethod
     def _standardize_time(time_value):
@@ -173,9 +174,15 @@ class OptionStrategy:
         new_net_premium = self.calculate_net_premium()
 
         self.net_premium = new_net_premium
+        self.premium_log.append(self.net_premium)
+        if len(self.premium_log) > 5:
+            self.premium_log.pop(0)
+
         self.median_tracker.add(self.net_premium)
         if len(self.median_tracker.max_heap) > 5:
             self.median_tracker.remove(self.median_tracker.max_heap[0])
+        
+        
 
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
@@ -1219,9 +1226,11 @@ class OptionStrategy:
             float: The median return percentage.
         """
         if len(self.premium_log) < 5:
-            return np.nan  # or raise an exception, depending on your requirements
+            return np.nan
 
+        # median_net_premium = self.median_tracker.get_median()
         median_net_premium = np.median(self.premium_log)
+        # print(median_net_premium)
 
         if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
             median_pl = (
