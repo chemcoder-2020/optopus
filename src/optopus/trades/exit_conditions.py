@@ -77,10 +77,10 @@ class MedianCalculator:
         else:
             raise ValueError(f"Unsupported strategy side: {strategy.strategy_side}")
 
-        premium = abs(self.entry_net_premium)
+        premium = abs(strategy.entry_net_premium)
         if premium == 0:
             return 0
-        return (median_pl / (premium * 100 * self.contracts)) * 100
+        return (median_pl / (premium * 100 * strategy.contracts)) * 100
 
 
 class ProfitTargetCondition(ExitConditionChecker):
@@ -363,7 +363,7 @@ class DefaultExitCondition(ExitConditionChecker):
         exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
     """
 
-    def __init__(self, profit_target: float=40, exit_time_before_expiration: pd.Timedelta=pd.Timedelta(minutes=15)):
+    def __init__(self, profit_target: float=40, exit_time_before_expiration: pd.Timedelta=pd.Timedelta(minutes=15), **kwargs):
         """
         Initialize the DefaultExitCondition.
 
@@ -371,7 +371,7 @@ class DefaultExitCondition(ExitConditionChecker):
             profit_target (float): The profit target percentage.
             exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
         """
-        profit_target_condition = ProfitTargetCondition(profit_target=profit_target)
+        profit_target_condition = ProfitTargetCondition(profit_target=profit_target, window_size=kwargs.get("window_size", 5), fluctuation=kwargs.get("fluctuation", 0.1))
         time_based_condition = TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration)
         self.composite_condition = CompositeExitCondition(
             conditions=[profit_target_condition, time_based_condition],
