@@ -420,7 +420,7 @@ class OptionBacktester:
 
     def calculate_avg_monthly_pl_nonzero(self, df):
         """Calculate the average monthly P/L, considering only non-zero months."""
-        monthly_pl = df.set_index("time")["total_pl"].resample("M").last().diff().dropna()
+        monthly_pl = df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
         non_zero_months = monthly_pl[monthly_pl != 0]
         return non_zero_months.mean() if not non_zero_months.empty else 0
 
