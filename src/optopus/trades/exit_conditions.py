@@ -64,6 +64,7 @@ class MedianCalculator:
         mark = (ask + bid) / 2
         self.add_premium(mark)
         median_net_premium = self.get_median()
+        strategy.premium_log = self.premiums.copy()
 
         if hasattr(strategy, "strategy_side") and strategy.strategy_side == "CREDIT":
             median_pl = (
