@@ -12,9 +12,10 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from abc import ABC, abstractmethod
 
 
-class BaseBacktest:
+class BaseBacktest(ABC):
     def __init__(
         self,
         config,
@@ -33,6 +34,10 @@ class BaseBacktest:
         self.trading_end_time = trading_end_time
         self.debug = debug
         self.backtester = OptionBacktester(self.config)
+
+    @abstractmethod
+    def create_spread(self, time, option_chain_df):
+        pass
 
     def run_backtest(
         self,
