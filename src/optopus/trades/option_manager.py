@@ -397,13 +397,13 @@ class OptionBacktester:
 
     def _calculate_avg_monthly_pl(self, df):
         """Calculate Average Monthly P/L."""
-        monthly_pl = df.set_index("time")["total_pl"].resample("M").last().diff()
+        monthly_pl = df.set_index("time")["closed_pl"].resample("M").last().diff()
         return monthly_pl.mean()
 
     def _calculate_probability_of_positive_monthly_pl(self, df):
         """Calculate the probability of having a positive monthly P/L."""
         monthly_pl = (
-            df.set_index("time")["total_pl"].resample("M").last().diff().dropna()
+            df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
         )
         positive_months = monthly_pl[monthly_pl > 0]
         total_months = monthly_pl[monthly_pl != 0]
