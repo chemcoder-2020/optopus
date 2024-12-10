@@ -387,7 +387,7 @@ class OptionBacktester:
     def _calculate_cagr(self, df):
         """Calculate Compound Annual Growth Rate."""
         start_value = self.config.initial_capital
-        end_value = start_value + df["total_pl"].iloc[-1]
+        end_value = start_value + df["closed_pl"].iloc[-1]
         df["time"] = pd.DatetimeIndex(df.index)
         n_years = (df["time"].iloc[-1] - df["time"].iloc[0]).days / 365.25
         try:
