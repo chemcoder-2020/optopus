@@ -17,6 +17,13 @@ import matplotlib.pyplot as plt
 class TradingManager(OptionBacktester):
 
     def __init__(self, config: Config, name: str = "TradingManager"):
+        """
+        Initialize the TradingManager class.
+
+        Parameters:
+        - config (Config): Configuration parameters.
+        - name (str, optional): Name of the trading manager. Defaults to "TradingManager".
+        """
         super().__init__(config)
         self.active_orders: List[Order] = self.active_trades
         self.closed_orders: List[Order] = self.closed_trades
@@ -30,14 +37,21 @@ class TradingManager(OptionBacktester):
         self.name = name
 
     def add_order(self, order: Order) -> bool:
-        """Add an order to the list of active orders."""
+        """
+        Add an order to the list of active orders.
+
+        Parameters:
+        - order (Order): The order to add.
+
+        Returns:
+        - bool: True if the order was successfully added, False otherwise.
+        """
         market_isopen = order.market_isOpen()
         if market_isopen and (
             hasattr(self, "automation_on") == False or self.automation_on
         ):
             if self.add_spread(order):
                 if order.submit_entry():
-                    # self.active_orders.append(order)
                     return True
                 else:
                     self.active_trades.pop()  # if not submitted, remove from active trades (which would remove from active orders because they're identical)
@@ -52,7 +66,16 @@ class TradingManager(OptionBacktester):
         return False
 
     def _process_order(self, order, option_chain_df=None):
-        """Helper function to process individual orders."""
+        """
+        Helper function to process individual orders.
+
+        Parameters:
+        - order (Order): The order to process.
+        - option_chain_df (pd.DataFrame, optional): The option chain DataFrame. Defaults to None.
+
+        Returns:
+        - Order or None: The closed order if it was closed, None otherwise.
+        """
         order.update_order(option_chain_df)
         if order.status == "CLOSED":
             if order.exit_order_id:
@@ -62,7 +85,12 @@ class TradingManager(OptionBacktester):
         return None
 
     def update_orders(self, option_chain_df=None):
-        """Update the status of all orders using parallel processing."""
+        """
+        Update the status of all orders using parallel processing.
+
+        Parameters:
+        - option_chain_df (pd.DataFrame, optional): The option chain DataFrame. Defaults to None.
+        """
         if (
             self.active_orders
             and self.active_orders[0].market_isOpen()
@@ -93,6 +121,12 @@ class TradingManager(OptionBacktester):
                 self._record_performance_data(current_time)
 
     def _record_performance_data(self, current_time):
+        """
+        Record performance data for the given time.
+
+        Parameters:
+        - current_time (datetime): The current time.
+        """
         total_pl = self.get_total_pl()
         closed_pl = self.get_closed_pl()
         active_positions = len(self.active_trades)
@@ -106,7 +140,9 @@ class TradingManager(OptionBacktester):
         )
     
     def plot_performance(self):
-        """Generate performance visualizations."""
+        """
+        Generate performance visualizations.
+        """
         if not self.performance_data:
             logger.warning("No performance data available for plotting.")
             return
@@ -149,18 +185,40 @@ class TradingManager(OptionBacktester):
         plt.show()
 
     def get_active_orders(self) -> List[Order]:
+        """
+        Get the list of active orders.
+
+        Returns:
+        - List[Order]: List of active orders.
+        """
         return self.active_orders
 
     def get_closed_orders(self) -> List[Order]:
+        """
+        Get the list of closed orders.
+
+        Returns:
+        - List[Order]: List of closed orders.
+        """
         return self.closed_orders
 
     def freeze(self, file_path: str) -> None:
-        """Save the TradingManager instance to a dill file."""
+        """
+        Save the TradingManager instance to a dill file.
+
+        Parameters:
+        - file_path (str): Path to the file where the instance will be saved.
+        """
         with open(file_path, "wb") as file:
             dill.dump(self, file)
 
     def get_orders_dataframe(self) -> pd.DataFrame:
-        """Returns a DataFrame containing important information about the active orders."""
+        """
+        Returns a DataFrame containing important information about the active and closed orders.
+
+        Returns:
+        - pd.DataFrame: DataFrame with order information.
+        """
         columns = [
             "Order ID",
             "Symbol",
@@ -184,7 +242,7 @@ class TradingManager(OptionBacktester):
             "Total P/L",
             "Return (%)",
             "Highest Return",
-            "Total Commission", 
+            "Total Commission",
             "DIT",
             "DTE",
             "Entry Delta",
@@ -230,14 +288,19 @@ class TradingManager(OptionBacktester):
                     order.calculate_total_commission(),
                     order.DIT,
                     round(calculate_dte(order.min_expiration, order.current_time)),
-                    order.entry_delta if hasattr(order, 'entry_delta') else None,
+                    order.entry_delta if hasattr(order, "entry_delta") else None,
                 ]
             )
 
         return pd.DataFrame(data, columns=columns)
-
+    
     def get_active_orders_dataframe(self) -> pd.DataFrame:
-        """Returns a DataFrame containing important information about the active orders."""
+        """
+        Returns a DataFrame containing important information about the active orders.
+
+        Returns:
+        - pd.DataFrame: DataFrame with order information.
+        """
         columns = [
             "Order ID",
             "Symbol",
@@ -307,7 +370,7 @@ class TradingManager(OptionBacktester):
                     order.calculate_total_commission(),
                     order.DIT,
                     round(calculate_dte(order.min_expiration, order.current_time)),
-                    order.entry_delta if hasattr(order, 'entry_delta') else None,
+                    order.entry_delta if hasattr(order, "entry_delta") else None,
                 ]
             )
 

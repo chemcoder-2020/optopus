@@ -1,17 +1,5 @@
-import pandas as pd
-import os
-from ..trades.option_manager import OptionBacktester
 from ..trades.option_spread import OptionStrategy
-import numpy as np
 from loguru import logger
-from datetime import datetime
-from typing import List, Tuple
-import contextlib
-import joblib
-from tqdm import tqdm
-from joblib import Parallel, delayed
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from .base_backtest import BaseBacktest
 
 
@@ -27,6 +15,19 @@ class BacktestVerticalSpread(BaseBacktest):
         strategy_params,
         debug=False,
     ):
+        """
+        Initialize the BacktestVerticalSpread class.
+
+        Parameters:
+        - config (dict): Configuration parameters.
+        - data_folder (str): Path to the data folder.
+        - start_date (str): Start date for the backtest.
+        - end_date (str): End date for the backtest.
+        - trading_start_time (str): Start time for trading.
+        - trading_end_time (str): End time for trading.
+        - strategy_params (dict): Strategy parameters.
+        - debug (bool, optional): Debug mode flag. Defaults to False.
+        """
         super().__init__(
             config,
             data_folder,
@@ -40,7 +41,16 @@ class BacktestVerticalSpread(BaseBacktest):
         self.symbol = self.strategy_params["symbol"]
 
     def create_spread(self, time, option_chain_df):
-        """Create a vertical spread for the given time and option chain."""
+        """
+        Create a vertical spread for the given time and option chain.
+
+        Parameters:
+        - time (datetime): The time at which the spread is created.
+        - option_chain_df (pd.DataFrame): The option chain DataFrame.
+
+        Returns:
+        - OptionStrategy or None: The created vertical spread or None if an error occurs.
+        """
         try:
             new_spread = OptionStrategy.create_vertical_spread(
                 symbol=self.symbol,
