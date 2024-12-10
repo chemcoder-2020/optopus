@@ -11,7 +11,6 @@ import pstats
 from pstats import SortKey
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
 from .option_chain_converter import OptionChainConverter
-from ..utils.heapmedian import ContinuousMedian
 
 
 class OptionStrategy:
@@ -97,7 +96,6 @@ class OptionStrategy:
         self.exit_dit = None
         self.exit_dte = None
         self.exit_scheme = exit_scheme
-        self.premium_log = []
 
     @staticmethod
     def _standardize_time(time_value):
@@ -1228,36 +1226,6 @@ class OptionStrategy:
             return_over_risk = float("inf")  # Default to infinity if not applicable
 
         return return_over_risk
-
-    def calculate_median_return(self):
-        """
-        Calculate the median return percentage based on the last 5 net premium values.
-
-        Returns:
-            float: The median return percentage.
-        """
-        if len(self.premium_log) < 5:
-            return np.nan
-
-        median_net_premium = self.median_tracker.get_median()
-        # median_net_premium = np.median(self.premium_log)
-        # print(median_net_premium)
-
-        if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
-            median_pl = (
-                (self.entry_net_premium - median_net_premium) * 100 * self.contracts
-            ) - self.calculate_total_commission()
-        elif hasattr(self, "strategy_side") and self.strategy_side == "DEBIT":
-            median_pl = (
-                (median_net_premium - self.entry_net_premium) * 100 * self.contracts
-            ) - self.calculate_total_commission()
-        else:
-            raise ValueError(f"Unsupported strategy side: {self.strategy_side}")
-
-        premium = abs(self.entry_net_premium)
-        if premium == 0:
-            return 0
-        return (median_pl / (premium * 100 * self.contracts)) * 100
 
 
 if __name__ == "__main__":
