@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from typing import Union, List
 from loguru import logger
+from ..utils.heapmedian import ContinuousMedian
 
 class ExitConditionChecker(ABC):
     """
@@ -42,6 +43,46 @@ class ExitConditionChecker(ABC):
         """
         pass
 
+class MedianCalculator:
+    def __init__(self, window_size=5, fluctuation=0.1):
+        self.median_calculator = ContinuousMedian()
+        self.window_size = window_size
+        self.fluctuation = fluctuation
+        self.premiums = []
+
+    def add_premium(self, mark):
+        self.median_calculator.add(mark)
+        self.premiums.append(mark)
+        if len(self.premiums) > self.window_size:
+            self.median_calculator.remove(self.premiums.pop(0))
+
+    def get_median(self):
+        return self.median_calculator.get_median()
+    
+    def get_median_return_percentage(self, strategy):
+        bid = strategy.current_bid
+        ask = strategy.current_ask
+        mark = (ask + bid) / 2
+        self.add_premium(mark)
+        median_net_premium = self.get_median()
+
+        if hasattr(strategy, "strategy_side") and strategy.strategy_side == "CREDIT":
+            median_pl = (
+                (strategy.entry_net_premium - median_net_premium) * 100 * strategy.contracts
+            ) - strategy.calculate_total_commission()
+        elif hasattr(strategy, "strategy_side") and strategy.strategy_side == "DEBIT":
+            median_pl = (
+                (median_net_premium - strategy.entry_net_premium) * 100 * strategy.contracts
+            ) - strategy.calculate_total_commission()
+        else:
+            raise ValueError(f"Unsupported strategy side: {strategy.strategy_side}")
+
+        premium = abs(self.entry_net_premium)
+        if premium == 0:
+            return 0
+        return (median_pl / (premium * 100 * self.contracts)) * 100
+
+
 class ProfitTargetCondition(ExitConditionChecker):
     """
     Exit condition based on a profit target.
@@ -58,6 +99,7 @@ class ProfitTargetCondition(ExitConditionChecker):
             profit_target (float): The profit target percentage.
         """
         self.profit_target = profit_target
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5), kwargs.get("fluctuation", 0.1))
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -87,7 +129,7 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         current_return = strategy.return_percentage()
         logger.debug(f"Current return: {current_return}")
-        current_median_return = strategy.median_return_percentage
+        current_median_return = self.median_calculator.get_median_return_percentage(strategy)
         logger.debug(f"Current median return: {current_median_return}")
         return current_return >= self.profit_target and current_median_return >= self.profit_target
     

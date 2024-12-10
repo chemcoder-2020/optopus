@@ -97,7 +97,6 @@ class OptionStrategy:
         self.exit_dit = None
         self.exit_dte = None
         self.exit_scheme = exit_scheme
-        self.median_tracker = ContinuousMedian()
         self.premium_log = []
 
     @staticmethod
@@ -174,11 +173,6 @@ class OptionStrategy:
         new_net_premium = self.calculate_net_premium()
 
         self.net_premium = new_net_premium
-        self.premium_log.append(self.net_premium)
-
-        self.median_tracker.add(self.net_premium)
-        if len(self.premium_log) > 5:
-            self.median_tracker.remove(self.premium_log.pop(0))
 
         if self.status == "OPEN":
             self._check_exit_conditions(option_chain_df)
@@ -220,10 +214,12 @@ class OptionStrategy:
     def _check_exit_conditions(self, option_chain_df):
         """Check and apply exit conditions."""
         current_return = self.return_percentage()
-        self.median_return_percentage = self.calculate_median_return()
 
         # Update highest return for trailing stop
-        self.highest_return = max(self.highest_return, self.median_return_percentage)
+        if hasattr(self, "median_return_percentage"):
+            self.highest_return = max(self.highest_return, self.median_return_percentage)
+        else:
+            self.highest_return = max(self.highest_return, current_return)
 
         if hasattr(self, "exit_scheme") and self.exit_scheme:
             if self.exit_scheme.should_exit(self, self.current_time, option_chain_df):
