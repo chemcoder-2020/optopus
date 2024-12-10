@@ -44,10 +44,9 @@ class ExitConditionChecker(ABC):
         pass
 
 class MedianCalculator:
-    def __init__(self, window_size=5, fluctuation=0.1):
+    def __init__(self, window_size=5):
         self.median_calculator = ContinuousMedian()
         self.window_size = window_size
-        self.fluctuation = fluctuation
         self.premiums = []
 
     def add_premium(self, mark):
@@ -99,7 +98,7 @@ class ProfitTargetCondition(ExitConditionChecker):
             profit_target (float): The profit target percentage.
         """
         self.profit_target = profit_target
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5), kwargs.get("fluctuation", 0.1))
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5))
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -372,7 +371,7 @@ class DefaultExitCondition(ExitConditionChecker):
             profit_target (float): The profit target percentage.
             exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
         """
-        profit_target_condition = ProfitTargetCondition(profit_target=profit_target, window_size=kwargs.get("window_size", 5), fluctuation=kwargs.get("fluctuation", 0.1))
+        profit_target_condition = ProfitTargetCondition(profit_target=profit_target, window_size=kwargs.get("window_size", 5))
         time_based_condition = TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration)
         self.composite_condition = CompositeExitCondition(
             conditions=[profit_target_condition, time_based_condition],
