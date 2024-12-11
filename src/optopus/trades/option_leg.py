@@ -157,7 +157,6 @@ class OptionLeg:
             prefix = "C_" if self.option_type.upper() == "CALL" else "P_"
 
             # Optimize MARK calculation
-            mark_key = f"{prefix}MARK"
             bid_key = f"{prefix}BID"
             ask_key = f"{prefix}ASK"
             last_key = f"{prefix}LAST"
