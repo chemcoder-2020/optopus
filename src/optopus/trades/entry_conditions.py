@@ -11,8 +11,8 @@ class EntryConditionChecker(ABC):
     """
     Abstract base class for entry condition checkers.
 
-    Methods:
-        should_enter() -> bool:
+    Method:
+        should_enter(strategy, manager, time) -> bool:
             Check if the entry conditions are met for the option strategy.
     """
     @abstractmethod
@@ -20,7 +20,13 @@ class EntryConditionChecker(ABC):
         pass
 
 class CapitalRequirementCondition(EntryConditionChecker):
-    """Checks if there is sufficient capital for the trade."""
+    """
+    Checks if there is sufficient capital for the trade.
+
+    Method:
+        should_enter(strategy, manager, time) -> bool:
+            Adjusts the number of contracts based on the capital requirement and checks if the required capital is available.
+    """
     def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
         max_capital = min(manager.allocation * manager.config.position_size, manager.available_to_trade)
         original_contracts = strategy.contracts
@@ -47,7 +53,13 @@ class CapitalRequirementCondition(EntryConditionChecker):
         return has_sufficient_capital
 
 class PositionLimitCondition(EntryConditionChecker):
-    """Checks if position limits are respected."""
+    """
+    Checks if position limits are respected.
+
+    Method:
+        should_enter(strategy, manager, time) -> bool:
+            Checks if the number of active trades, daily trades, and weekly trades are within the configured limits.
+    """
     def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
         position_limit_ok = len(manager.active_trades) < manager.config.max_positions
         if not position_limit_ok:
@@ -72,7 +84,13 @@ class PositionLimitCondition(EntryConditionChecker):
         return all([position_limit_ok, daily_limit_ok, weekly_limit_ok])
 
 class RORThresholdCondition(EntryConditionChecker):
-    """Checks if return over risk meets the threshold."""
+    """
+    Checks if return over risk meets the threshold.
+
+    Method:
+        should_enter(strategy, manager, time) -> bool:
+            Checks if the return over risk meets the configured threshold.
+    """
     def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
         if manager.config.ror_threshold is None:
             logger.info("ROR threshold check skipped: No threshold configured")
@@ -89,7 +107,16 @@ class RORThresholdCondition(EntryConditionChecker):
         return meets_threshold
 
 class ConflictCondition(EntryConditionChecker):
-    """Checks for conflicts with existing positions."""
+    """
+    Checks for conflicts with existing positions.
+
+    Args:
+        check_closed_trades (bool): Whether to also check for conflicts with closed trades.
+
+    Method:
+        should_enter(strategy, manager, time) -> bool:
+            Checks for conflicts with existing active and closed trades if enabled.
+    """
     def __init__(self, check_closed_trades: bool = False):
         """
         Initialize the conflict condition checker.
@@ -124,7 +151,16 @@ class ConflictCondition(EntryConditionChecker):
         return True
 
 class CompositeEntryCondition(EntryConditionChecker):
-    """Combines multiple entry conditions."""
+    """
+    Combines multiple entry conditions.
+
+    Args:
+        conditions (List[EntryConditionChecker]): List of entry conditions to combine.
+
+    Method:
+        should_enter(strategy, manager, time) -> bool:
+            Checks if all combined entry conditions are met.
+    """
     def __init__(self, conditions: List[EntryConditionChecker]):
         self.conditions = conditions
 
@@ -143,6 +179,10 @@ class CompositeEntryCondition(EntryConditionChecker):
 class DefaultEntryCondition(EntryConditionChecker):
     """
     Default entry condition that combines all standard checks.
+
+    Method:
+        should_enter(strategy, manager, time) -> bool:
+            Checks if all default entry conditions are met.
     """
     def __init__(self):
         self.composite = CompositeEntryCondition([
