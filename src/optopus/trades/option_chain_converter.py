@@ -173,10 +173,6 @@ class OptionChainConverter:
         """
         if option_type not in ["CALL", "PUT"]:
             raise ValueError("option_type must be either 'CALL' or 'PUT'")
-        if by not in ["delta", "strike", "atm", "atm_percent"]:
-            raise ValueError(
-                "by must be either 'delta', 'strike', 'atm', or 'atm_percent'"
-            )
 
         if by not in ["delta", "strike", "atm", "atm_percent"]:
             raise ValueError(
