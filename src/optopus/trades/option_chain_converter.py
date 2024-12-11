@@ -45,6 +45,7 @@ class OptionChainConverter:
 
         :param target_date: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
         :return: Closest expiration date as pd.Timestamp.
+        :raises ValueError: If no valid expiration dates are found.
         """
         t0 = self.option_chain_df["QUOTE_READTIME"].iloc[0]
 
@@ -91,6 +92,7 @@ class OptionChainConverter:
 
         :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
         :return: The ATM strike price.
+        :raises ValueError: If no data is found for the given expiration.
         """
         # Get the closest expiration date
         closest_expiration = self.get_closest_expiration(expiration)
