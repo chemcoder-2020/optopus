@@ -11,6 +11,7 @@ import pstats
 from pstats import SortKey
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
 from .option_chain_converter import OptionChainConverter
+from typing import Union, Tuple
 
 
 class OptionStrategy:
