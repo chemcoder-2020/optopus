@@ -20,9 +20,9 @@ class OptionStrategy:
     Attributes:
         symbol (str): The underlying asset symbol.
         strategy_type (str): The type of option strategy.
-        legs (list): List of OptionLeg objects comprising the strategy.
-        entry_time (datetime): The entry time for the strategy.
-        current_time (datetime): The current time.
+        legs (List[OptionLeg]): List of OptionLeg objects comprising the strategy.
+        entry_time (Timestamp): The entry time for the strategy.
+        current_time (Timestamp): The current time.
         status (str): The status of the strategy ("OPEN" or "CLOSED").
         profit_target (float): Profit target percentage.
         stop_loss (float): Stop loss percentage.
@@ -34,14 +34,21 @@ class OptionStrategy:
         DIT (int): Days in Trade, representing the number of calendar days since the trade was opened.
         contracts (int): The number of contracts for the strategy.
         commission (float): The commission per contract.
+        exit_scheme (ExitConditionChecker): The exit condition scheme to use.
 
     Methods:
-        add_leg(leg): Add an option leg to the strategy.
-        update(current_time, option_chain_df): Update the strategy with new market data.
+        add_leg(leg, ratio): Add an option leg to the strategy with a specified ratio.
+        update(current_time, option_chain_df): Update the strategy with new market data and check exit conditions.
         close_strategy(close_time, option_chain_df): Close the option strategy.
         total_pl(): Calculate the total profit/loss of the strategy.
         return_percentage(): Calculate the return percentage of the strategy.
         current_delta(): Calculate the current delta of the strategy.
+        conflicts_with(other_spread): Check if this option spread conflicts with another option spread.
+        get_required_capital(): Calculate the required capital for the option strategy.
+        get_required_capital_per_contract(): Calculate the required capital per contract for the option strategy.
+        calculate_net_premium(): Calculate the net premium based on the current prices and position sides of the legs.
+        calculate_bid_ask(): Calculate the bid-ask spread for the entire option strategy.
+        return_over_risk(): Calculate the current return over risk value for the spread.
     """
 
     def __init__(
@@ -124,7 +131,7 @@ class OptionStrategy:
 
     def add_leg(self, leg: OptionLeg, ratio: int = 1):
         """
-        Add an option leg to the strategy.
+        Add an option leg to the strategy with a specified ratio.
 
         Args:
             leg (OptionLeg): The option leg to add.
@@ -147,12 +154,12 @@ class OptionStrategy:
         self.leg_ratios.append(ratio)
         leg.contracts = self._contracts * ratio
 
-    def update(self, current_time: str, option_chain_df: pd.DataFrame):
+    def update(self, current_time: Union[str, Timestamp, datetime.datetime], option_chain_df: pd.DataFrame):
         """
         Update the strategy with new market data and check exit conditions. This method will close the strategy if the exit conditions are met.
 
         Args:
-            current_time (str): The current time for evaluation.
+            current_time (Union[str, Timestamp, datetime.datetime]): The current time for evaluation.
             option_chain_df (pd.DataFrame): The updated option chain data.
         """
         if self.status == "CLOSED":
@@ -294,12 +301,12 @@ class OptionStrategy:
         self.exit_dte = None
         self.highest_return = max(0, self.return_percentage())
 
-    def close_strategy(self, close_time: str, option_chain_df: pd.DataFrame):
+    def close_strategy(self, close_time: Union[str, Timestamp, datetime.datetime], option_chain_df: pd.DataFrame):
         """
         Close the option strategy.
 
         Args:
-            close_time (str): The time at which the strategy is being closed.
+            close_time (Union[str, Timestamp, datetime.datetime]): The time at which the strategy is being closed.
             option_chain_df (pd.DataFrame): The option chain data at close time.
 
         Raises:
@@ -314,8 +321,12 @@ class OptionStrategy:
     def calculate_total_commission(self):
         return sum(leg.calculate_total_commission() for leg in self.legs)
 
-    def total_pl(self):
-        """Calculate the total profit/loss of the strategy."""
+    def total_pl(self) -> float:
+        """Calculate the total profit/loss of the strategy.
+
+        Returns:
+            float: The total profit/loss of the strategy.
+        """
         # return sum(leg.calculate_pl() for leg in self.legs)
         if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
             return (
@@ -332,17 +343,24 @@ class OptionStrategy:
         else:
             raise ValueError(f"Unsupported strategy side: {self.strategy_side}")
 
-    def return_percentage(self):
-        """Calculate the return percentage of the strategy."""
+    def return_percentage(self) -> float:
+        """Calculate the return percentage of the strategy.
+
+        Returns:
+            float: The return percentage of the strategy.
+        """
         premium = abs(self.entry_net_premium)
         if premium == 0:
             return 0
         return (self.total_pl() / (premium * 100 * self.contracts)) * 100
 
-    def current_delta(self):
+    def current_delta(self) -> float:
         """
         Calculate the current delta of the strategy.
         Takes into account position side (BUY/SELL) and contract multiplier.
+
+        Returns:
+            float: The current delta of the strategy.
         """
         return sum(
             leg.current_delta
@@ -352,12 +370,12 @@ class OptionStrategy:
             for leg in self.legs
         )
 
-    def conflicts_with(self, other_spread):
+    def conflicts_with(self, other_spread) -> bool:
         """
         Check if this option spread conflicts with another option spread.
 
         Args:
-            other_spread (OptionSpread): The other option spread to compare with.
+            other_spread (OptionStrategy): The other option spread to compare with.
 
         Returns:
             bool: True if there's a conflict, False otherwise.
@@ -1077,7 +1095,7 @@ class OptionStrategy:
         This is typically the maximum potential loss of the strategy.
 
         Returns:
-            float: The required capital for the strategy.
+            float: The required capital for the strategy, including commission.
         """
 
         if self.strategy_type in ["Vertical Spread", "Iron Condor"]:
@@ -1106,7 +1124,7 @@ class OptionStrategy:
         This is typically the maximum potential loss of the strategy per contract.
 
         Returns:
-            float: The required capital per contract for the strategy.
+            float: The required capital per contract for the strategy, including commission.
         """
 
         required_capital_per_contract = self.get_required_capital() / self.contracts
@@ -1118,7 +1136,7 @@ class OptionStrategy:
         Calculate the net premium based on the current prices and position sides of the legs.
 
         Returns:
-            float: The calculated net premium.
+            float: The calculated net premium, representing the average of the bid and ask prices.
         """
         bid, ask = self.calculate_bid_ask()
         logger.debug(f"bid: {bid}, ask: {ask}")
@@ -1129,12 +1147,12 @@ class OptionStrategy:
             )  # Do not allow negative net premium. This is a safety net.
         return net_premium
 
-    def calculate_bid_ask(self):
+    def calculate_bid_ask(self) -> Tuple[float, float]:
         """
         Calculate the bid-ask spread for the entire option strategy.
 
         Returns:
-            tuple: A tuple containing (bid, ask) for the strategy.
+            Tuple[float, float]: A tuple containing (bid, ask) for the strategy.
         """
         strategy_bid = 0
         strategy_ask = 0
@@ -1205,13 +1223,13 @@ class OptionStrategy:
             f")"
         )
 
-    def return_over_risk(self):
+    def return_over_risk(self) -> float:
         """
         Calculate the current return over risk value for the spread.
         This represents the current potential return divided by the current potential risk.
 
         Returns:
-            float: The current return over risk ratio.
+            float: The current return over risk ratio, or infinity if the risk is zero.
         """
 
         if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
