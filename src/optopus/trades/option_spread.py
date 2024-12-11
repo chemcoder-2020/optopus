@@ -69,12 +69,50 @@ class OptionStrategy:
         Args:
             symbol (str): The underlying asset symbol.
             strategy_type (str): The type of option strategy.
-            profit_target (float, optional): Profit target percentage.
-            stop_loss (float, optional): Stop loss percentage.
-            trailing_stop (float, optional): Trailing stop percentage.
+            profit_target (float, optional): The profit target percentage. Defaults to None.
+            stop_loss (float, optional): The stop loss percentage. Defaults to None.
+            trailing_stop (float, optional): The trailing stop percentage. Defaults to None.
             contracts (int, optional): The number of contracts for the strategy. Defaults to 1.
-            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use. Defaults to DefaultExitCondition.
+            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use. Defaults to None.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the exit_scheme is not an instance of ExitConditionChecker.
         """
+        if exit_scheme is not None and not isinstance(exit_scheme, ExitConditionChecker):
+            raise ValueError("exit_scheme must be an instance of ExitConditionChecker")
+
+        self.symbol = symbol
+        self.strategy_type = strategy_type
+        self.strategy_side = None
+        self.legs = []
+        self.entry_time = None
+        self.exit_time = None
+        self.current_time = None
+        self.status = "OPEN"
+        self.profit_target = profit_target
+        self.stop_loss = stop_loss
+        self.trailing_stop = trailing_stop
+        self.highest_return = 0
+        self.entry_net_premium = None
+        self.net_premium = None
+        self.current_bid = None
+        self.current_ask = None
+        self.won = None  # Initialize won to None for open trades
+        self.DIT = 0  # Initialize Days in Trade to 0
+        self._contracts = contracts
+        self.commission = commission
+        self.leg_ratios = []  # Store the ratio for each leg
+        self.entry_ror = None
+        self.exit_net_premium = None
+        self.exit_ror = None
+        self.entry_underlying_last = None
+        self.exit_underlying_last = None
+        self.exit_dit = None
+        self.exit_dte = None
+        self.exit_scheme = exit_scheme
         self.symbol = symbol
         self.strategy_type = strategy_type
         self.strategy_side = None
