@@ -1,10 +1,32 @@
+"""
+Module for handling broker interactions.
+
+This module provides a class `OptionBroker` that encapsulates the functionality for interacting with a broker, including authentication, data retrieval, and trading operations.
+"""
+
 from ..brokers.order import Order
 from loguru import logger
 import os
 
 
 class OptionBroker:
+    """
+    Class for managing broker interactions.
+
+    Attributes:
+        config (dict): Configuration settings for the broker.
+        auth (object): Authentication API object.
+        data (object): Data API object.
+        trading (object): Trading API object.
+    """
+
     def __init__(self, config):
+        """
+        Initialize the OptionBroker.
+
+        Args:
+            config (dict): Configuration settings for the broker.
+        """
         self.config = config
         self.auth = self._get_auth_api()
         self.data = self._get_data_api()
@@ -14,6 +36,12 @@ class OptionBroker:
         return f"{self.__class__.__name__}(config={self.config}, broker={self.config.get('broker')})"
 
     def _get_auth_api(self):
+        """
+        Get the authentication API object.
+
+        Returns:
+            object: Authentication API object.
+        """
         if self.config.get("broker", "Schwab").lower() == "schwab":
             from ..brokers.schwab.schwab_auth import SchwabAuth
 
@@ -32,6 +60,12 @@ class OptionBroker:
             )
 
     def _get_data_api(self):
+        """
+        Get the data API object.
+
+        Returns:
+            object: Data API object.
+        """
         if self.config.get("broker", "Schwab").lower() == "schwab":
             from ..brokers.schwab.schwab_data import SchwabData
 
@@ -56,6 +90,12 @@ class OptionBroker:
                 )
 
     def _get_trading_api(self):
+        """
+        Get the trading API object.
+
+        Returns:
+            object: Trading API object.
+        """
         if self.config.get("broker", "Schwab").lower() == "schwab":
             from ..brokers.schwab.schwab_trade import SchwabTrade
 
@@ -80,6 +120,15 @@ class OptionBroker:
                 )
 
     def create_order(self, option_strategy) -> Order:
+        """
+        Create an order for the given option strategy.
+
+        Args:
+            option_strategy (OptionStrategy): The option strategy for which to create the order.
+
+        Returns:
+            Order: The created order object.
+        """
         broker = self.config.get("broker", "Schwab")
         api_key = self.config.get("api_key")
         client_secret = self.config.get("client_secret", None)
