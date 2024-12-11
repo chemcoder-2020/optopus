@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from .option_spread import OptionStrategy
 from datetime import datetime
 from loguru import logger
