@@ -1,3 +1,10 @@
+"""
+Module for defining exit conditions for option trading strategies.
+
+This module provides an abstract base class `ExitConditionChecker` and several concrete implementations
+for different exit conditions, such as profit targets, stop losses, and time-based conditions.
+"""
+
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
@@ -11,11 +18,17 @@ class ExitConditionChecker(ABC):
     Abstract base class for exit condition checkers.
 
     Methods:
-        check_exit_conditions(current_time: datetime, option_chain_df: pd.DataFrame) -> bool:
+        should_exit(strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
             Check if the exit conditions are met for the option strategy.
     """
 
     def __repr__(self):
+        """
+        Return a string representation of the exit condition checker.
+
+        Returns:
+            str: String representation of the exit condition checker.
+        """
         return f"{self.__class__.__name__}()"
 
     def update(self, **kwargs):
@@ -35,6 +48,7 @@ class ExitConditionChecker(ABC):
         Check if the exit conditions are met for the option strategy.
 
         Args:
+            strategy (OptionStrategy): The option strategy to check.
             current_time (datetime): The current time for evaluation.
             option_chain_df (pd.DataFrame): The updated option chain data.
 
@@ -44,21 +58,57 @@ class ExitConditionChecker(ABC):
         pass
 
 class MedianCalculator:
+    """
+    Class for calculating the median of a rolling window of premiums.
+
+    Attributes:
+        window_size (int): The size of the rolling window.
+        premiums (list): List of premiums.
+        median_calculator (ContinuousMedian): Continuous median calculator.
+    """
+
     def __init__(self, window_size=5):
+        """
+        Initialize the MedianCalculator.
+
+        Args:
+            window_size (int): The size of the rolling window.
+        """
         self.median_calculator = ContinuousMedian()
         self.window_size = window_size
         self.premiums = []
 
     def add_premium(self, mark):
+        """
+        Add a new premium to the rolling window.
+
+        Args:
+            mark (float): The new premium.
+        """
         self.median_calculator.add(mark)
         self.premiums.append(mark)
         if len(self.premiums) > self.window_size:
             self.median_calculator.remove(self.premiums.pop(0))
 
     def get_median(self):
+        """
+        Get the current median of the rolling window.
+
+        Returns:
+            float: The current median.
+        """
         return self.median_calculator.get_median()
     
     def get_median_return_percentage(self, strategy):
+        """
+        Calculate the median return percentage for the given strategy.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to calculate the return percentage for.
+
+        Returns:
+            float: The median return percentage.
+        """
         bid = strategy.current_bid
         ask = strategy.current_ask
         mark = (ask + bid) / 2
@@ -89,6 +139,7 @@ class ProfitTargetCondition(ExitConditionChecker):
 
     Attributes:
         profit_target (float): The profit target percentage.
+        median_calculator (MedianCalculator): Median calculator for rolling window.
     """
 
     def __init__(self, profit_target: float, **kwargs):
@@ -97,12 +148,19 @@ class ProfitTargetCondition(ExitConditionChecker):
 
         Args:
             profit_target (float): The profit target percentage.
+            **kwargs: Additional keyword arguments.
         """
         self.profit_target = profit_target
         self.median_calculator = MedianCalculator(kwargs.get("window_size", 5))
         self.kwargs = kwargs
 
     def __repr__(self):
+        """
+        Return a string representation of the profit target condition.
+
+        Returns:
+            str: String representation of the profit target condition.
+        """
         return f"{self.__class__.__name__}(profit_target={self.profit_target})"
     
     def update(self, **kwargs):
@@ -152,6 +210,12 @@ class StopLossCondition(ExitConditionChecker):
         self.stop_loss = stop_loss
 
     def __repr__(self):
+        """
+        Return a string representation of the stop loss condition.
+
+        Returns:
+            str: String representation of the stop loss condition.
+        """
         return f"{self.__class__.__name__}(stop_loss={self.stop_loss})"
 
     def update(self, **kwargs):
@@ -197,11 +261,17 @@ class TimeBasedCondition(ExitConditionChecker):
         self.exit_time_before_expiration = exit_time_before_expiration
 
     def __repr__(self):
+        """
+        Return a string representation of the time-based condition.
+
+        Returns:
+            str: String representation of the time-based condition.
+        """
         return f"{self.__class__.__name__}(exit_time_before_expiration={self.exit_time_before_expiration})"
     
     def update(self, **kwargs):
         """
-        Update the attributes of the time based condition.
+        Update the attributes of the time-based condition.
 
         Args:
             **kwargs: Keyword arguments for the attributes to update.
@@ -246,6 +316,12 @@ class TrailingStopCondition(ExitConditionChecker):
         self.stop_loss = stop_loss
 
     def __repr__(self):
+        """
+        Return a string representation of the trailing stop condition.
+
+        Returns:
+            str: String representation of the trailing stop condition.
+        """
         return f"{self.__class__.__name__}(trigger={self.trigger}, stop_loss={self.stop_loss})"
     
     def update(self, **kwargs):
@@ -286,8 +362,7 @@ class CompositeExitCondition(ExitConditionChecker):
 
     Attributes:
         conditions (List[ExitConditionChecker]): List of exit conditions to combine.
-        logical_operation (str): The logical operation to combine the conditions ('AND' or 'OR').
-        attributes (dict): A dictionary containing the attributes of each condition.
+        logical_operations (List[str]): List of logical operations to combine the conditions ('AND' or 'OR').
     """
 
     def __init__(self, conditions: List[ExitConditionChecker], logical_operations: List[str] = ['AND']):
@@ -304,6 +379,12 @@ class CompositeExitCondition(ExitConditionChecker):
             self.__dict__.update(condition.__dict__)
 
     def __repr__(self):
+        """
+        Return a string representation of the composite exit condition.
+
+        Returns:
+            str: String representation of the composite exit condition.
+        """
         return f"{self.__class__.__name__}(conditions={self.conditions}, logical_operations='{self.logical_operations}')"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
@@ -362,6 +443,7 @@ class DefaultExitCondition(ExitConditionChecker):
     Attributes:
         profit_target (float): The profit target percentage.
         exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
+        composite_condition (CompositeExitCondition): Composite exit condition combining profit target and time-based conditions.
     """
 
     def __init__(self, profit_target: float=40, exit_time_before_expiration: pd.Timedelta=pd.Timedelta(minutes=15), **kwargs):
@@ -371,6 +453,7 @@ class DefaultExitCondition(ExitConditionChecker):
         Args:
             profit_target (float): The profit target percentage.
             exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
+            **kwargs: Additional keyword arguments.
         """
         profit_target_condition = ProfitTargetCondition(profit_target=profit_target, window_size=kwargs.get("window_size", 5))
         time_based_condition = TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration)
@@ -381,6 +464,12 @@ class DefaultExitCondition(ExitConditionChecker):
         self.__dict__.update(self.composite_condition.__dict__)
 
     def __repr__(self):
+        """
+        Return a string representation of the default exit condition.
+
+        Returns:
+            str: String representation of the default exit condition.
+        """
         return f"{self.__class__.__name__}(composite_condition={self.composite_condition})"
 
     def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
@@ -404,6 +493,5 @@ class DefaultExitCondition(ExitConditionChecker):
         Args:
             **kwargs: Keyword arguments for the attributes to update.
         """
-
         self.composite_condition.update(**kwargs)
         self.__dict__.update(self.composite_condition.__dict__)
