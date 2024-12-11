@@ -167,12 +167,16 @@ class OptionChainConverter:
         :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
         :param option_type: Type of option ('CALL' or 'PUT').
         :param target: Target value (delta, strike price, or offset from ATM).
-        :param by: Method to find strike ('delta', 'strike', or 'atm', defaults to 'delta').
+        :param by: Method to find strike ('delta', 'strike', 'atm', or 'atm_percent', defaults to 'delta').
         :return: Closest strike price available at the specified expiration.
         :raises ValueError: If invalid option_type or method is provided.
         """
         if option_type not in ["CALL", "PUT"]:
             raise ValueError("option_type must be either 'CALL' or 'PUT'")
+        if by not in ["delta", "strike", "atm", "atm_percent"]:
+            raise ValueError(
+                "by must be either 'delta', 'strike', 'atm', or 'atm_percent'"
+            )
 
         if by not in ["delta", "strike", "atm", "atm_percent"]:
             raise ValueError(
