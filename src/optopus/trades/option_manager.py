@@ -736,6 +736,12 @@ class OptionBacktester:
                 f"Max Drawdown (Percentage): {metrics['max_drawdown_percentage']:.2%}"
             )
             print(f"Average Days in Trade: {metrics['average_dit']:.2f}")
+
+            # Print time range of closed positions
+            if self.closed_trades:
+                first_entry_time = min(trade.entry_time for trade in self.closed_trades)
+                last_exit_time = max(trade.exit_time for trade in self.closed_trades)
+                print(f"Time Range of Closed Positions: {first_entry_time} to {last_exit_time}")
         else:
             print("No performance data available for summary.")
 
