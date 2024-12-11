@@ -35,8 +35,15 @@ class Config:
 
 
 class OptionBacktester:
+    """Backtests option trading strategies."""
 
     def __init__(self, config: Config):
+        """
+        Initialize the backtester with a configuration.
+
+        Args:
+            config (Config): Configuration parameters for the backtester.
+        """
         self.config = config
         self.capital = config.initial_capital
         self.allocation = config.initial_capital
@@ -49,6 +56,13 @@ class OptionBacktester:
         self.performance_data = []
 
     def update(self, current_time: datetime, option_chain_df: pd.DataFrame) -> None:
+        """
+        Update the backtester with the current time and option chain data.
+
+        Args:
+            current_time (datetime): Current time for the update.
+            option_chain_df (pd.DataFrame): DataFrame containing the option chain data.
+        """
         try:
             current_time = pd.to_datetime(current_time)
 
@@ -94,6 +108,15 @@ class OptionBacktester:
             logger.error(f"Error updating backtester: {str(e)}")
 
     def add_spread(self, new_spread: OptionStrategy) -> bool:
+        """
+        Add a new option spread to the backtester.
+
+        Args:
+            new_spread (OptionStrategy): The new option spread to add.
+
+        Returns:
+            bool: True if the spread was added, False otherwise.
+        """
         try:
             if not self._can_add_spread(new_spread):
                 return False
@@ -111,6 +134,15 @@ class OptionBacktester:
             return False
 
     def _can_add_spread(self, new_spread: OptionStrategy) -> bool:
+        """
+        Check if a new spread can be added based on entry conditions.
+
+        Args:
+            new_spread (OptionStrategy): The new option spread to check.
+
+        Returns:
+            bool: True if the spread can be added, False otherwise.
+        """
         if self.capital <= 0:
             logger.warning("Cannot add spread: no capital left.")
             return False
@@ -122,6 +154,9 @@ class OptionBacktester:
         )
 
     def _update_trade_counts(self) -> None:
+        """
+        Update the count of trades entered today and this week.
+        """
         self.trades_entered_today = sum(
             1 for trade in self.active_trades if trade.DIT == 0
         )
@@ -130,31 +165,80 @@ class OptionBacktester:
         )
 
     def _check_conflict(self, new_spread: OptionStrategy) -> bool:
+        """
+        Check if a new spread conflicts with any active trades.
+
+        Args:
+            new_spread (OptionStrategy): The new option spread to check.
+
+        Returns:
+            bool: True if there is a conflict, False otherwise.
+        """
         return any(
             existing_spread.conflicts_with(new_spread)
             for existing_spread in self.active_trades
         )
 
     def _check_ror(self, spread: OptionStrategy) -> bool:
+        """
+        Check if a spread meets the return over risk threshold.
+
+        Args:
+            spread (OptionStrategy): The option spread to check.
+
+        Returns:
+            bool: True if the spread meets the threshold, False otherwise.
+        """
         return spread.return_over_risk() >= self.config.ror_threshold
 
     def get_total_pl(self) -> float:
+        """
+        Calculate the total profit and loss from all trades.
+
+        Returns:
+            float: Total profit and loss.
+        """
         return sum(
             trade.total_pl() for trade in self.active_trades + self.closed_trades
         )
 
     def get_closed_pl(self) -> float:
+        """
+        Calculate the profit and loss from closed trades.
+
+        Returns:
+            float: Profit and loss from closed trades.
+        """
         return sum(trade.total_pl() for trade in self.closed_trades)
 
     def get_open_positions(self) -> int:
+        """
+        Get the number of open positions.
+
+        Returns:
+            int: Number of open positions.
+        """
         return len(self.active_trades)
 
     def get_closed_positions(self) -> int:
+        """
+        Get the number of closed positions.
+
+        Returns:
+            int: Number of closed positions.
+        """
         return len(self.closed_trades)
 
     def _record_performance_data(
         self, current_time: datetime, option_chain_df: pd.DataFrame
     ) -> None:
+        """
+        Record performance data at the current time.
+
+        Args:
+            current_time (datetime): Current time for the performance data.
+            option_chain_df (pd.DataFrame): DataFrame containing the option chain data.
+        """
         total_pl = self.get_total_pl()
         closed_pl = self.get_closed_pl()
         active_positions = len(self.active_trades)
@@ -175,7 +259,9 @@ class OptionBacktester:
         )
 
     def plot_performance(self):
-        """Generate performance visualizations."""
+        """
+        Generate and display performance visualizations.
+        """
         if not self.performance_data:
             logger.warning("No performance data available for plotting.")
             return
@@ -225,12 +311,12 @@ class OptionBacktester:
         plt.tight_layout()
         plt.show()
 
-    def get_closed_trades_df(self):
+    def get_closed_trades_df(self) -> pd.DataFrame:
         """
-        Compute a dataframe of closed trades with various attributes.
+        Generate a DataFrame of closed trades with various attributes.
 
         Returns:
-            pd.DataFrame: A dataframe containing information about closed trades.
+            pd.DataFrame: DataFrame containing closed trades information.
         """
         closed_trades_data = []
         cumulative_pl = 0
@@ -278,8 +364,13 @@ class OptionBacktester:
 
         return pd.DataFrame(closed_trades_data)
 
-    def calculate_performance_metrics(self):
-        """Calculate various performance metrics."""
+    def calculate_performance_metrics(self) -> Optional[dict]:
+        """
+        Calculate various performance metrics.
+
+        Returns:
+            dict: Dictionary containing performance metrics.
+        """
         if not self.performance_data:
             logger.warning("No performance data available for metric calculation.")
             return None
@@ -370,22 +461,46 @@ class OptionBacktester:
 
         return metrics
 
-    def _calculate_sharpe_ratio(self, daily_returns):
-        """Calculate Sharpe Ratio."""
+    def _calculate_sharpe_ratio(self, daily_returns: pd.Series) -> float:
+        """
+        Calculate the Sharpe Ratio.
+
+        Args:
+            daily_returns (pd.Series): Series of daily returns.
+
+        Returns:
+            float: Sharpe Ratio.
+        """
         risk_free_rate = 0.02  # Assume 2% risk-free rate
         excess_returns = (
             daily_returns - risk_free_rate / 252
         )  # Assuming 252 trading days
         return np.sqrt(252) * excess_returns.mean() / excess_returns.std()
 
-    def _calculate_profit_factor(self, daily_returns):
-        """Calculate Profit Factor."""
+    def _calculate_profit_factor(self, daily_returns: pd.Series) -> float:
+        """
+        Calculate the Profit Factor.
+
+        Args:
+            daily_returns (pd.Series): Series of daily returns.
+
+        Returns:
+            float: Profit Factor.
+        """
         profits = daily_returns[daily_returns > 0].sum()
         losses = abs(daily_returns[daily_returns < 0].sum())
         return profits / losses if losses != 0 else np.inf
 
-    def _calculate_cagr(self, df):
-        """Calculate Compound Annual Growth Rate."""
+    def _calculate_cagr(self, df: pd.DataFrame) -> float:
+        """
+        Calculate the Compound Annual Growth Rate (CAGR).
+
+        Args:
+            df (pd.DataFrame): DataFrame containing performance data.
+
+        Returns:
+            float: CAGR.
+        """
         start_value = self.config.initial_capital
         end_value = start_value + df["closed_pl"].iloc[-1]
         df["time"] = pd.DatetimeIndex(df.index)
@@ -395,13 +510,29 @@ class OptionBacktester:
         except ZeroDivisionError:
             return np.nan
 
-    def _calculate_avg_monthly_pl(self, df):
-        """Calculate Average Monthly P/L."""
+    def _calculate_avg_monthly_pl(self, df: pd.DataFrame) -> float:
+        """
+        Calculate the average monthly profit and loss.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing performance data.
+
+        Returns:
+            float: Average monthly P/L.
+        """
         monthly_pl = df.set_index("time")["closed_pl"].resample("M").last().diff()
         return monthly_pl.mean()
 
-    def _calculate_probability_of_positive_monthly_pl(self, df):
-        """Calculate the probability of having a positive monthly P/L."""
+    def _calculate_probability_of_positive_monthly_pl(self, df: pd.DataFrame) -> float:
+        """
+        Calculate the probability of having a positive monthly P/L.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing performance data.
+
+        Returns:
+            float: Probability of positive monthly P/L.
+        """
         monthly_pl = (
             df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
         )
@@ -409,8 +540,16 @@ class OptionBacktester:
         total_months = monthly_pl[monthly_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
-    def _calculate_probability_of_positive_monthly_closed_pl(self, df):
-        """Calculate the probability of having a positive monthly closed P/L."""
+    def _calculate_probability_of_positive_monthly_closed_pl(self, df: pd.DataFrame) -> float:
+        """
+        Calculate the probability of having a positive monthly closed P/L.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing performance data.
+
+        Returns:
+            float: Probability of positive monthly closed P/L.
+        """
         monthly_closed_pl = (
             df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
         )
@@ -418,35 +557,70 @@ class OptionBacktester:
         total_months = monthly_closed_pl[monthly_closed_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
-    def calculate_avg_monthly_pl_nonzero(self, df):
-        """Calculate the average monthly P/L, considering only non-zero months."""
+    def calculate_avg_monthly_pl_nonzero(self, df: pd.DataFrame) -> float:
+        """
+        Calculate the average monthly P/L, considering only non-zero months.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing performance data.
+
+        Returns:
+            float: Average monthly P/L for non-zero months.
+        """
         monthly_pl = df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
         non_zero_months = monthly_pl[monthly_pl != 0]
         return non_zero_months.mean() if not non_zero_months.empty else 0
 
-    def _calculate_max_drawdown(self, df):
-        """Calculate the maximum drawdown percentage and dollars."""
+    def _calculate_max_drawdown(self, df: pd.DataFrame) -> Tuple[float, float]:
+        """
+        Calculate the maximum drawdown in dollars and percentage.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing performance data.
+
+        Returns:
+            Tuple[float, float]: Maximum drawdown in dollars and percentage.
+        """
         df["peak"] = df["total_pl"].cummax()
         df["drawdown"] = df["peak"] - df["total_pl"]
         max_drawdown_dollars = df["drawdown"].max()
         max_drawdown_percentage = max_drawdown_dollars / self.allocation
         return max_drawdown_dollars, max_drawdown_percentage
 
-    def _calculate_win_rate(self):
-        """Calculate Win Rate."""
+    def _calculate_win_rate(self) -> float:
+        """
+        Calculate the win rate of closed trades.
+
+        Returns:
+            float: Win rate.
+        """
         total_trades = len(self.closed_trades)
         winning_trades = sum(1 for trade in self.closed_trades if trade.won)
         return winning_trades / total_trades if total_trades > 0 else 0
 
     def monte_carlo_risk_of_ruin(
         self,
-        data,
-        initial_balance,
-        num_simulations=20000,
-        num_steps=252,
-        drawdown_threshold_pct=0.25,
-        distribution="histogram",
-    ):
+        data: np.ndarray,
+        initial_balance: float,
+        num_simulations: int = 20000,
+        num_steps: int = 252,
+        drawdown_threshold_pct: float = 0.25,
+        distribution: str = "histogram",
+    ) -> float:
+        """
+        Calculate the risk of ruin using Monte Carlo simulation.
+
+        Args:
+            data (np.ndarray): Array of trade returns.
+            initial_balance (float): Initial capital balance.
+            num_simulations (int): Number of Monte Carlo simulations.
+            num_steps (int): Number of steps in each simulation.
+            drawdown_threshold_pct (float): Drawdown threshold percentage.
+            distribution (str): Type of distribution for random returns ("normal", "kde", "histogram").
+
+        Returns:
+            float: Risk of ruin.
+        """
         # Calculate returns based on allocation
         returns = data / initial_balance
 
@@ -500,14 +674,14 @@ class OptionBacktester:
 
         return risk_of_ruin
 
-    def update_config(self, **kwargs):
+    def update_config(self, **kwargs) -> bool:
         """
         Update configuration parameters.
-        
+
         Args:
             **kwargs: Configuration parameters to update.
-                     Only existing attributes in Config will be updated.
-        
+                      Only existing attributes in Config will be updated.
+
         Returns:
             bool: True if any parameters were updated, False otherwise.
         """
@@ -537,7 +711,9 @@ class OptionBacktester:
         return updated
 
     def print_performance_summary(self):
-        """Print a summary of performance metrics."""
+        """
+        Print a summary of performance metrics.
+        """
         metrics = self.calculate_performance_metrics()
         if metrics:
             print("\nPerformance Summary:")
