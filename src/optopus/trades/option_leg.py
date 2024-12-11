@@ -13,21 +13,23 @@ class OptionLeg:
         symbol (str): The underlying asset symbol.
         option_type (str): The type of option ('CALL' or 'PUT').
         strike (float): The strike price of the option.
-        expiration (datetime): The expiration date of the option.
+        expiration (pd.Timestamp): The expiration date of the option.
         contracts (int): The number of contracts.
-        entry_time (datetime): The entry time for the option position.
+        entry_time (pd.Timestamp): The entry time for the option position.
         position_side (str): The side of the position ('BUY' or 'SELL').
-        current_time (datetime): The current time of the option.
+        current_time (pd.Timestamp): The current time of the option.
         entry_price (float): The entry price of the option.
         entry_underlying_last (float): The underlying last price at entry.
         current_price (float): The current price of the option.
         current_mark (float): The current mark price of the option.
         current_last (float): The current last price of the option.
+        current_bid (float): The current bid price of the option.
+        current_ask (float): The current ask price of the option.
         current_delta (float): The current delta of the option.
         underlying_last (float): The current underlying last price.
-        underlying_diff (float): The difference between current and entry underlying last price.
+        underlying_diff (float): The difference between the current and entry underlying last price.
         is_itm (bool): Whether the option is in-the-money.
-        price_diff (float): The difference between current and entry price.
+        price_diff (float): The difference between the current and entry price.
         pl (float): The profit/loss of the option.
         dte (float): The days to expiration of the option.
         commission (float): The commission per contract.
@@ -38,9 +40,9 @@ class OptionLeg:
         symbol: str,
         option_type: str,
         strike: float,
-        expiration,
+        expiration: Union[str, pd.Timestamp, datetime.datetime],
         contracts: int,
-        entry_time: str,
+        entry_time: Union[str, pd.Timestamp, datetime.datetime],
         option_chain_df: pd.DataFrame,
         position_side: str,
         commission: float = 0.5,  # Default commission per contract
@@ -52,9 +54,9 @@ class OptionLeg:
             symbol (str): The underlying asset symbol.
             option_type (str): The type of option ('CALL' or 'PUT').
             strike (float): The strike price of the option.
-            expiration: The expiration date of the option.
+            expiration (Union[str, pd.Timestamp, datetime.datetime]): The expiration date of the option.
             contracts (int): The number of contracts.
-            entry_time (str): The entry time for the option position.
+            entry_time (Union[str, pd.Timestamp, datetime.datetime]): The entry time for the option position.
             option_chain_df (pd.DataFrame): The option chain data.
             position_side (str): The side of the position ('BUY' or 'SELL').
             commission (float): The commission per contract.
@@ -103,12 +105,17 @@ class OptionLeg:
 
         self.update(entry_time, option_chain_df, is_entry=True)
 
-    def update(self, current_time, option_chain_df, is_entry=False):
+    def update(
+        self,
+        current_time: Union[str, pd.Timestamp, datetime.datetime],
+        option_chain_df: pd.DataFrame,
+        is_entry: bool = False,
+    ) -> None:
         """
         Update the option leg with new market data.
 
         Args:
-            current_time: The current time to update the option data.
+            current_time (Union[str, pd.Timestamp, datetime.datetime]): The current time to update the option data.
             option_chain_df (pd.DataFrame): The updated option chain data.
             is_entry (bool): Whether this update is the entry point.
 
@@ -211,7 +218,7 @@ class OptionLeg:
                 self.entry_underlying_last = np.nan
             self.dte = calculate_dte(self.expiration, current_datetime)
 
-    def calculate_pl(self):
+    def calculate_pl(self) -> float:
         """
         Calculate the profit/loss for the option leg.
 
@@ -224,7 +231,7 @@ class OptionLeg:
             multiplier * self.price_diff * self.contracts * 100 - total_commission
         )  # Assuming each contract is for 100 shares
 
-    def calculate_total_commission(self):
+    def calculate_total_commission(self) -> float:
         """
         Calculate the total commission for the option leg.
 
@@ -233,20 +240,36 @@ class OptionLeg:
         """
         return self.commission * self.contracts * 2  # Opening and closing
 
-    def update_entry_price(self, new_price: float):
-        """Modify the entry price of the option leg. Helpful for updating entry prices after actual trading order is filled."""
+    def update_entry_price(self, new_price: float) -> None:
+        """
+        Modify the entry price of the option leg. Helpful for updating entry prices after actual trading order is filled.
+
+        Args:
+            new_price (float): The new entry price.
+        """
         self.entry_price = new_price
         self.price_diff = self.current_price - self.entry_price
         self.pl = self.calculate_pl()
 
-    def update_exit_price(self, new_price: float):
-        """Modify the current price of the option leg. Helpful for updating exit prices after actual trading order is filled."""
+    def update_exit_price(self, new_price: float) -> None:
+        """
+        Modify the exit price of the option leg. Helpful for updating exit prices after actual trading order is filled.
+
+        Args:
+            new_price (float): The new exit price.
+        """
         self.exit_price = new_price
         self.price_diff = self.exit_price - self.entry_price
         self.pl = self.calculate_pl()
 
-    def __repr__(self):
-        return f"OptionLeg(symbol={self.symbol}, option_type={self.option_type}, strike={self.strike}, expiration={self.expiration}, contracts={self.contracts}, entry_price={self.entry_price}, current_price={self.current_price}, current_mark={self.current_mark}, current_last={self.current_last}, current_delta={self.current_delta}, entry_underlying_last={self.entry_underlying_last}, underlying_last={self.underlying_last}, underlying_diff={self.underlying_diff}, is_itm={self.is_itm}, price_diff={self.price_diff}, pl={self.pl}, position_side={self.position_side}, dte={self.dte}, commission={self.commission})"
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the OptionLeg instance.
+
+        Returns:
+            str: A string representation of the OptionLeg instance.
+        """
+        return f"OptionLeg(symbol={self.symbol}, option_type={self.option_type}, strike={self.strike}, expiration={self.expiration}, contracts={self.contracts}, entry_price={self.entry_price}, current_price={self.current_price}, current_mark={self.current_mark}, current_last={self.current_last}, current_bid={self.current_bid}, current_ask={self.current_ask}, current_delta={self.current_delta}, entry_underlying_last={self.entry_underlying_last}, underlying_last={self.underlying_last}, underlying_diff={self.underlying_diff}, is_itm={self.is_itm}, price_diff={self.price_diff}, pl={self.pl}, position_side={self.position_side}, dte={self.dte}, commission={self.commission})"
 
     @classmethod
     def from_delta_and_dte(
@@ -256,22 +279,22 @@ class OptionLeg:
         target_delta: Union[str, float],  # Target delta,
         target_dte: float,
         contracts: int,
-        entry_time: str,
+        entry_time: Union[str, pd.Timestamp, datetime.datetime],
         option_chain_df: pd.DataFrame,
         position_side: str,
         max_dte: float = None,
         reference_strike: float = None,
         commission: float = 0.5,  # Default commission per contract
-    ):
+    ) -> "OptionLeg":
         """
         Create an OptionLeg instance based on target delta and days to expiration (DTE).
 
         Args:
             symbol (str): The underlying asset symbol.
             option_type (str): The type of option ('CALL' or 'PUT').
-            target_delta (float or str): The target delta for the option or 'ATM' for at-the-money.
+            target_delta (Union[str, float]): The target delta for the option or 'ATM' for at-the-money.
             target_dte (float): The target days to expiration.
-            entry_time (str): The entry time for the option position.
+            entry_time (Union[str, pd.Timestamp, datetime.datetime]): The entry time for the option position.
             contracts (int): The number of contracts.
             option_chain_df (pd.DataFrame): The option chain data.
             position_side (str): The side of the position ('BUY' or 'SELL').
@@ -338,20 +361,20 @@ class OptionLeg:
 
     @staticmethod
     def calculate_closest_match(
-        subset,
-        delta_col,
-        target_delta,
-        comparison="closest",
-        option_type=None,
-        reference_strike=None,
-    ):
+        subset: pd.DataFrame,
+        delta_col: str,
+        target_delta: Union[str, float],
+        comparison: str = "closest",
+        option_type: str = None,
+        reference_strike: float = None,
+    ) -> pd.Series:
         """
         Calculate the closest match to the target delta in the given subset of options.
 
         Args:
             subset (pd.DataFrame): A subset of the option chain.
             delta_col (str): The name of the delta column.
-            target_delta (float or str): The target delta or 'ATM' for at-the-money.
+            target_delta (Union[str, float]): The target delta or 'ATM' for at-the-money.
             comparison (str): The comparison method ('closest', 'lower', or 'higher').
             option_type (str, optional): The option type ('call' or 'put').
             reference_strike (float, optional): A reference strike price for relative selection.
@@ -407,7 +430,7 @@ class OptionLeg:
         else:
             raise ValueError("Invalid target_delta or option_type")
 
-    def conflicts_with(self, other_leg):
+    def conflicts_with(self, other_leg: "OptionLeg") -> bool:
         """
         Check if this option leg conflicts with another option leg.
 
@@ -425,7 +448,13 @@ class OptionLeg:
         )
 
     @property
-    def schwab_symbol(self):
+    def schwab_symbol(self) -> str:
+        """
+        Generate the Schwab symbol for the option leg.
+
+        Returns:
+            str: The Schwab symbol for the option leg.
+        """
         if isinstance(self.expiration, pd.Timestamp):
             expiration = self.expiration.strftime("%y%m%d")
         elif isinstance(self.expiration, str):
@@ -435,13 +464,16 @@ class OptionLeg:
         return option_symbol
 
 
-def calculate_dte(expiration_date, current_date) -> float:
+def calculate_dte(
+    expiration_date: Union[str, pd.Timestamp, datetime.datetime],
+    current_date: Union[str, pd.Timestamp, datetime.datetime],
+) -> float:
     """
     Calculate the days to expiration (DTE) for an option.
 
     Args:
-        expiration_date: The expiration date of the option.
-        current_date: The current date.
+        expiration_date (Union[str, pd.Timestamp, datetime.datetime]): The expiration date of the option.
+        current_date (Union[str, pd.Timestamp, datetime.datetime]): The current date.
 
     Returns:
         float: The calculated days to expiration.
