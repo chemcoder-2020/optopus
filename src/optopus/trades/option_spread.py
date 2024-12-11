@@ -107,15 +107,17 @@ class OptionStrategy:
 
     @staticmethod
     def _standardize_time(time_value):
-        """Convert time to a standard pandas Timestamp object."""
-        if isinstance(time_value, str):
-            return pd.to_datetime(time_value)
-        elif isinstance(
-            time_value, (pd.Timestamp, pd.DatetimeIndex, datetime.datetime)
-        ):
-            return pd.Timestamp(time_value)
-        else:
-            raise ValueError(f"Unsupported time format: {type(time_value)}")
+        """Convert time to a pandas Timestamp object.
+
+        Args:
+            time_value (str, pd.Timestamp, pd.DatetimeIndex, datetime.datetime): The time value to standardize.
+
+        Returns:
+            pd.Timestamp: The standardized Timestamp object.
+
+        Raises:
+            ValueError: If the time format is unsupported.
+        """
 
     @property
     def contracts(self):
