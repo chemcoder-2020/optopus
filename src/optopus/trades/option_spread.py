@@ -11,7 +11,7 @@ import pstats
 from pstats import SortKey
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
 from .option_chain_converter import OptionChainConverter
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 
 class OptionStrategy:
@@ -31,6 +31,8 @@ class OptionStrategy:
         highest_return (float): The highest return percentage achieved.
         entry_net_premium (float): The net premium at entry.
         net_premium (float): The current net premium.
+        current_bid (float): The current bid price of the strategy.
+        current_ask (float): The current ask price of the strategy.
         won (bool or None): Whether the trade was won (True), lost (False), or is still open (None).
         DIT (int): Days in Trade, representing the number of calendar days since the trade was opened.
         contracts (int): The number of contracts for the strategy.
@@ -56,12 +58,12 @@ class OptionStrategy:
         self,
         symbol: str,
         strategy_type: str,
-        profit_target: float = None,
-        stop_loss: float = None,
-        trailing_stop: float = None,
+        profit_target: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        trailing_stop: Optional[float] = None,
         contracts: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = None,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
     ):
         """
         Initialize an OptionStrategy object.
@@ -73,7 +75,9 @@ class OptionStrategy:
             stop_loss (float, optional): The stop loss percentage. Defaults to None.
             trailing_stop (float, optional): The trailing stop percentage. Defaults to None.
             contracts (int, optional): The number of contracts for the strategy. Defaults to 1.
-            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use. Defaults to None.
+            commission (float, optional): Commission per contract. Defaults to 0.5.
+            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
             None
@@ -81,38 +85,11 @@ class OptionStrategy:
         Raises:
             ValueError: If the exit_scheme is not an instance of ExitConditionChecker.
         """
-        if exit_scheme is not None and not isinstance(exit_scheme, ExitConditionChecker):
+        if exit_scheme is not None and not isinstance(
+            exit_scheme, ExitConditionChecker
+        ):
             raise ValueError("exit_scheme must be an instance of ExitConditionChecker")
 
-        self.symbol = symbol
-        self.strategy_type = strategy_type
-        self.strategy_side = None
-        self.legs = []
-        self.entry_time = None
-        self.exit_time = None
-        self.current_time = None
-        self.status = "OPEN"
-        self.profit_target = profit_target
-        self.stop_loss = stop_loss
-        self.trailing_stop = trailing_stop
-        self.highest_return = 0
-        self.entry_net_premium = None
-        self.net_premium = None
-        self.current_bid = None
-        self.current_ask = None
-        self.won = None  # Initialize won to None for open trades
-        self.DIT = 0  # Initialize Days in Trade to 0
-        self._contracts = contracts
-        self.commission = commission
-        self.leg_ratios = []  # Store the ratio for each leg
-        self.entry_ror = None
-        self.exit_net_premium = None
-        self.exit_ror = None
-        self.entry_underlying_last = None
-        self.exit_underlying_last = None
-        self.exit_dit = None
-        self.exit_dte = None
-        self.exit_scheme = exit_scheme
         self.symbol = symbol
         self.strategy_type = strategy_type
         self.strategy_side = None
@@ -156,17 +133,41 @@ class OptionStrategy:
         Raises:
             ValueError: If the time format is unsupported.
         """
+        if isinstance(time_value, str):
+            return pd.to_datetime(time_value)
+        elif isinstance(
+            time_value, (pd.Timestamp, pd.DatetimeIndex, datetime.datetime)
+        ):
+            return pd.Timestamp(time_value)
+        else:
+            raise ValueError(f"Unsupported time format: {type(time_value)}")
 
     @property
     def contracts(self):
+        """
+        Get the number of contracts in the strategy.
+
+        Returns:
+            int: The number of contracts.
+        """
         return self._contracts
 
     @contracts.setter
     def contracts(self, value):
+        """
+        Set the number of contracts for the strategy and update all legs accordingly.
+
+        Args:
+            value (int): The new number of contracts.
+        """
         self._contracts = value
         self._update_leg_contracts()
 
     def _update_leg_contracts(self):
+        """
+        Update the contracts for all legs based on their ratios and the strategy's contract count.
+        This is an internal method called when the strategy's contract count is modified.
+        """
         for leg, ratio in zip(self.legs, self.leg_ratios):
             leg.contracts = self._contracts * ratio
 
@@ -195,7 +196,11 @@ class OptionStrategy:
         self.leg_ratios.append(ratio)
         leg.contracts = self._contracts * ratio
 
-    def update(self, current_time: Union[str, Timestamp, datetime.datetime], option_chain_df: pd.DataFrame):
+    def update(
+        self,
+        current_time: Union[str, Timestamp, datetime.datetime],
+        option_chain_df: pd.DataFrame,
+    ):
         """
         Update the strategy with new market data and check exit conditions. This method will close the strategy if the exit conditions are met.
 
@@ -263,7 +268,9 @@ class OptionStrategy:
 
         # Update highest return for trailing stop
         if hasattr(self, "median_return_percentage"):
-            self.highest_return = max(self.highest_return, self.median_return_percentage)
+            self.highest_return = max(
+                self.highest_return, self.median_return_percentage
+            )
         else:
             self.highest_return = max(self.highest_return, current_return)
 
@@ -332,6 +339,10 @@ class OptionStrategy:
         self.exit_dte = (pd.to_datetime(self.legs[0].expiration) - self.exit_time).days
 
     def _reopen_strategy(self):
+        """
+        Reopen a closed strategy by resetting all exit-related attributes.
+        This is an internal method used when a strategy needs to be reopened.
+        """
         self.status = "OPEN"
         self.won = None
         self.exit_time = None
@@ -342,7 +353,11 @@ class OptionStrategy:
         self.exit_dte = None
         self.highest_return = max(0, self.return_percentage())
 
-    def close_strategy(self, close_time: Union[str, Timestamp, datetime.datetime], option_chain_df: pd.DataFrame):
+    def close_strategy(
+        self,
+        close_time: Union[str, Timestamp, datetime.datetime],
+        option_chain_df: pd.DataFrame,
+    ):
         """
         Close the option strategy.
 
@@ -535,12 +550,12 @@ class OptionStrategy:
         contracts: int,
         entry_time: str,
         option_chain_df: pd.DataFrame,
-        profit_target: float = None,
-        stop_loss: float = None,
-        trailing_stop: float = None,
+        profit_target: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = None,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
     ):
         """
         Create a vertical spread option strategy.
@@ -558,7 +573,9 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
-            commission (float, optional): The commission per contract per leg.
+            commission (float, optional): Commission per contract per leg.
+            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
             OptionStrategy: A vertical spread strategy object.
@@ -640,7 +657,10 @@ class OptionStrategy:
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
-        strategy.entry_bid, strategy.entry_ask = strategy.current_bid, strategy.current_ask
+        strategy.entry_bid, strategy.entry_ask = (
+            strategy.current_bid,
+            strategy.current_ask,
+        )
 
         if strategy.entry_net_premium > abs(short_strike_value - long_strike_value):
             raise ValueError(
@@ -661,12 +681,12 @@ class OptionStrategy:
         contracts: int,
         entry_time: str,
         option_chain_df: pd.DataFrame,
-        profit_target: float = None,
-        stop_loss: float = None,
-        trailing_stop: float = None,
+        profit_target: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = None,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
     ):
         """
         Create an iron condor option strategy.
@@ -685,7 +705,9 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
-            commission (float, optional): The commission per contract per leg.
+            commission (float, optional): Commission per contract per leg.
+            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
             OptionStrategy: An iron condor strategy object.
@@ -828,13 +850,13 @@ class OptionStrategy:
         contracts: int,
         entry_time: str,
         option_chain_df: pd.DataFrame,
-        profit_target: float = None,
-        stop_loss: float = None,
-        trailing_stop: float = None,
+        profit_target: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
         position_side="BUY",
-        exit_scheme: ExitConditionChecker = None,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
     ):
         """
         Create a straddle option strategy.
@@ -850,7 +872,10 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
-            commission (float, optional): The commission per contract per leg.
+            commission (float, optional): Commission per contract per leg.
+            position_side (str, optional): Position side ('BUY' or 'SELL'). Defaults to 'BUY'.
+            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
             OptionStrategy: A straddle strategy object.
@@ -928,11 +953,11 @@ class OptionStrategy:
         contracts: int,
         entry_time: str,
         option_chain_df: pd.DataFrame,
-        profit_target: float = None,
-        stop_loss: float = None,
-        trailing_stop: float = None,
+        profit_target: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        trailing_stop: Optional[float] = None,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = None,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
     ):
         """
         Create a butterfly option strategy.
@@ -951,7 +976,8 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
-            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use.
+            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
             OptionStrategy: A butterfly strategy object.
@@ -984,12 +1010,12 @@ class OptionStrategy:
         contracts: int,
         entry_time: str,
         option_chain_df: pd.DataFrame,
-        profit_target: float = None,
-        stop_loss: float = None,
-        trailing_stop: float = None,
+        profit_target: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        trailing_stop: Optional[float] = None,
         commission: float = 0.5,
         position_side: str = "BUY",
-        exit_scheme: ExitConditionChecker = None,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
     ):
         """
         Create a naked call option strategy.
@@ -1006,6 +1032,8 @@ class OptionStrategy:
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
             position_side (str, optional): The position side ('BUY' or 'SELL'). Defaults to 'BUY'.
+            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
             OptionStrategy: A naked call strategy object.
@@ -1061,11 +1089,11 @@ class OptionStrategy:
         contracts: int,
         entry_time: str,
         option_chain_df: pd.DataFrame,
-        profit_target: float = None,
-        stop_loss: float = None,
-        trailing_stop: float = None,
+        profit_target: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        trailing_stop: Optional[float] = None,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = None,
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
         position_side: str = "BUY",
     ):
         """
@@ -1082,7 +1110,8 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
-            exit_scheme (ExitConditionChecker, optional): The exit condition scheme to use.
+            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
             position_side (str, optional): The position side ('BUY' or 'SELL'). Defaults to 'BUY'.
 
         Returns:
@@ -1221,6 +1250,10 @@ class OptionStrategy:
         Args:
             attr_name (str): The name of the attribute to set.
             attr_value: The value to set the attribute to.
+
+        Note:
+            This method provides a way to dynamically set attributes on the strategy object,
+            which can be useful for custom exit conditions or strategy modifications.
         """
         if hasattr(self, attr_name):
             setattr(self, attr_name, attr_value)
@@ -1230,6 +1263,12 @@ class OptionStrategy:
             )
 
     def __repr__(self):
+        """
+        Return a string representation of the OptionStrategy object.
+
+        Returns:
+            str: A string containing the strategy type, symbol, and status.
+        """
         legs_repr = "\n    ".join(repr(leg) for leg in self.legs)
         return (
             f"OptionStrategy(\n"
@@ -1676,7 +1715,7 @@ if __name__ == "__main__":
         option_chain_df=entry_df,
     )
     negative_pl_strategy.update(
-        "2024-09-09 09:45:00", update_df2
+        "2024-09-09 9:45:00", update_df2
     )  # Assuming this results in negative P&L
     negative_pl_strategy.close_strategy("2024-09-09 09:45:00", update_df2)
     print(f"Test 22: Negative P&L strategy 'won' attribute: {negative_pl_strategy.won}")
