@@ -21,16 +21,16 @@ class OptionStrategy:
     Attributes:
         symbol (str): The underlying asset symbol.
         strategy_type (str): The type of option strategy.
-        legs (List[OptionLeg]): List of OptionLeg objects comprising the strategy.
+        legs (List[OptionLeg]): List of OptionLeg objects in the strategy.
         entry_time (Timestamp): The entry time for the strategy.
         current_time (Timestamp): The current time.
         status (str): The status of the strategy ("OPEN" or "CLOSED").
-        profit_target (float): Profit target percentage.
-        stop_loss (float): Stop loss percentage.
-        trailing_stop (float): Trailing stop percentage.
-        highest_return (float): Highest return percentage achieved.
-        entry_net_premium (float): Net premium at entry.
-        net_premium (float): Current net premium.
+        profit_target (float): The profit target percentage.
+        stop_loss (float): The stop loss percentage.
+        trailing_stop (float): The trailing stop percentage.
+        highest_return (float): The highest return percentage achieved.
+        entry_net_premium (float): The net premium at entry.
+        net_premium (float): The current net premium.
         won (bool or None): Whether the trade was won (True), lost (False), or is still open (None).
         DIT (int): Days in Trade, representing the number of calendar days since the trade was opened.
         contracts (int): The number of contracts for the strategy.
@@ -47,7 +47,7 @@ class OptionStrategy:
         conflicts_with(other_spread): Check if this option spread conflicts with another option spread.
         get_required_capital(): Calculate the required capital for the option strategy.
         get_required_capital_per_contract(): Calculate the required capital per contract for the option strategy.
-        calculate_net_premium(): Calculate the net premium based on the current prices and position sides of the legs.
+        calculate_net_premium(): Calculate the net premium based on current prices and position sides of the legs.
         calculate_bid_ask(): Calculate the bid-ask spread for the entire option strategy.
         return_over_risk(): Calculate the current return over risk value for the spread.
     """
