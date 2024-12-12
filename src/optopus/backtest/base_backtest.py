@@ -315,7 +315,6 @@ class BaseBacktest(ABC):
                             "count": len(values_array),
                             "iqr": np.nan
                         }
-                }
 
         logger.info("\nCross-Validation Results:")
         logger.info("==========================")
