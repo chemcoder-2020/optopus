@@ -200,6 +200,18 @@ class BaseBacktest(ABC):
         years_per_split: float,
     ):
         """Cross-validate the backtest."""
+        logger.info("\nStarting Cross-Validation")
+        logger.info("==========================")
+        logger.info("Configuration:")
+        logger.info(f"Number of splits: {n_splits}")
+        logger.info(f"Years per split: {years_per_split}")
+        logger.info(f"Date range: {self.start_date} to {self.end_date}")
+        logger.info(f"Trading hours: {self.trading_start_time} to {self.trading_end_time}")
+        logger.info("Strategy config:")
+        for key, value in self.config.items():
+            logger.info(f"  {key}: {value}")
+        logger.info("==========================\n")
+
         ts_folds = self.create_time_ranges(
             self.start_date,
             self.end_date,
