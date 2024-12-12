@@ -936,7 +936,7 @@ class OptionStrategy:
         )
 
         # Calculate the width of the spread
-        spread_width = abs(long_leg.strike - short_leg.strike)
+        spread_width = abs(call_leg.strike - put_leg.strike)
         strategy.max_exit_net_premium = spread_width
 
         strategy.entry_time = cls._standardize_time(entry_time)
