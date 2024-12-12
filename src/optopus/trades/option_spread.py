@@ -646,6 +646,10 @@ class OptionStrategy:
         strategy.add_leg(long_leg, leg_ratio)
         strategy.add_leg(short_leg, leg_ratio)
 
+        # Calculate the width of the spread
+        spread_width = abs(long_leg.strike - short_leg.strike)
+        strategy.max_exit_net_premium = spread_width
+
         strategy.entry_net_premium = strategy.net_premium = (
             strategy.calculate_net_premium()
         )
@@ -658,7 +662,7 @@ class OptionStrategy:
             strategy.current_ask,
         )
 
-        if strategy.entry_net_premium > abs(short_strike_value - long_strike_value):
+        if strategy.entry_net_premium > spread_width:
             raise ValueError(
                 "Entry net premium cannot be greater than the spread width."
             )
