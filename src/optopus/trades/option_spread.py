@@ -328,7 +328,7 @@ class OptionStrategy:
         self.status = "CLOSED"
         self.won = self.total_pl() > 0
         self.exit_time = self.current_time
-        self.exit_net_premium = self.net_premium
+        self.exit_net_premium = min(self.net_premium, self.max_exit_net_premium)
         self.exit_ror = self.return_over_risk()
         self.exit_underlying_last = self.legs[0].underlying_last
         self.exit_dit = self.DIT
@@ -930,6 +930,10 @@ class OptionStrategy:
         strategy.entry_net_premium = strategy.net_premium = (
             strategy.calculate_net_premium()
         )
+
+        # Calculate the width of the spread
+        spread_width = abs(long_leg.strike - short_leg.strike)
+        strategy.max_exit_net_premium = spread_width
 
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
