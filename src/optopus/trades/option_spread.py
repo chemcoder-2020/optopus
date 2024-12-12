@@ -1256,25 +1256,26 @@ class OptionStrategy:
 
         Returns:
             Tuple[float, float]: A tuple containing (bid, ask) for the strategy.
+            For a credit spread, both values will be positive (you receive a credit).
+            For a debit spread, both values will be negative (you pay a debit).
         """
         strategy_bid = 0
         strategy_ask = 0
 
         for leg, ratio in zip(self.legs, self.leg_ratios):
+            if leg.current_bid is None or leg.current_ask is None:
+                continue
+                
             if leg.position_side == "BUY":
-                if leg.current_ask is not None:
-                    strategy_ask += leg.current_ask * ratio
-                if leg.current_bid is not None:
-                    strategy_bid += leg.current_bid * ratio
+                # When buying, we pay the ask and receive the bid
+                strategy_ask -= leg.current_ask * ratio  # Cost (negative)
+                strategy_bid -= leg.current_bid * ratio  # Cost (negative)
             elif leg.position_side == "SELL":
-                if leg.current_bid is not None:
-                    strategy_ask -= leg.current_bid * ratio
-                if leg.current_ask is not None:
-                    strategy_bid -= leg.current_ask * ratio
+                # When selling, we receive the bid and pay the ask
+                strategy_ask += leg.current_bid * ratio  # Credit (positive)
+                strategy_bid += leg.current_ask * ratio  # Credit (positive)
 
-        strategy_bid = abs(strategy_bid)
-        strategy_ask = abs(strategy_ask)
-        return min(strategy_bid, strategy_ask), max(strategy_bid, strategy_ask)
+        return strategy_bid, strategy_ask
 
     def set_attribute(self, attr_name, attr_value):
         """
