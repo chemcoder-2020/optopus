@@ -63,7 +63,11 @@ class OptionStrategy:
         trailing_stop: Optional[float] = None,
         contracts: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(
+            profit_target=40,
+            exit_time_before_expiration=Timedelta(minutes=15),
+            window_size=5,
+        ),
     ):
         """
         Initialize an OptionStrategy object.
@@ -328,7 +332,7 @@ class OptionStrategy:
         self.status = "CLOSED"
         self.won = self.total_pl() > 0
         self.exit_time = self.current_time
-        self.exit_net_premium = min(self.net_premium, self.max_exit_net_premium)
+        self.exit_net_premium = min(self.net_premium, self.max_exit_net_premium) if hasattr(self, "max_exit_net_premium") else self.net_premium
         self.exit_ror = self.return_over_risk()
         self.exit_underlying_last = self.legs[0].underlying_last
         self.exit_dit = self.DIT
@@ -551,7 +555,11 @@ class OptionStrategy:
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(
+            profit_target=40,
+            exit_time_before_expiration=Timedelta(minutes=15),
+            window_size=5,
+        ),
     ):
         """
         Create a vertical spread option strategy.
@@ -647,7 +655,7 @@ class OptionStrategy:
         strategy.add_leg(short_leg, leg_ratio)
 
         # Calculate the width of the spread
-        spread_width = abs(long_leg.strike - short_leg.strike)
+        spread_width = abs(long_strike_value - short_strike_value)
         strategy.max_exit_net_premium = spread_width
 
         strategy.entry_net_premium = strategy.net_premium = (
@@ -686,7 +694,11 @@ class OptionStrategy:
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(
+            profit_target=40,
+            exit_time_before_expiration=Timedelta(minutes=15),
+            window_size=5,
+        ),
     ):
         """
         Create an iron condor option strategy.
@@ -835,6 +847,11 @@ class OptionStrategy:
                 "Entry net premium cannot be greater than the spread width."
             )
 
+        strategy.max_exit_net_premium = max(
+            abs(call_short_strike_value - call_long_strike_value),
+            abs(put_short_strike_value - put_long_strike_value),
+        )
+
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
@@ -856,7 +873,11 @@ class OptionStrategy:
         leg_ratio: int = 1,
         commission: float = 0.5,
         position_side="BUY",
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(
+            profit_target=40,
+            exit_time_before_expiration=Timedelta(minutes=15),
+            window_size=5,
+        ),
     ):
         """
         Create a straddle option strategy.
@@ -935,10 +956,6 @@ class OptionStrategy:
             strategy.calculate_net_premium()
         )
 
-        # Calculate the width of the spread
-        spread_width = abs(call_leg.strike - put_leg.strike)
-        strategy.max_exit_net_premium = spread_width
-
         strategy.entry_time = cls._standardize_time(entry_time)
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
@@ -961,7 +978,11 @@ class OptionStrategy:
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(
+            profit_target=40,
+            exit_time_before_expiration=Timedelta(minutes=15),
+            window_size=5,
+        ),
     ):
         """
         Create a butterfly option strategy.
@@ -1019,7 +1040,11 @@ class OptionStrategy:
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
         position_side: str = "BUY",
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(
+            profit_target=40,
+            exit_time_before_expiration=Timedelta(minutes=15),
+            window_size=5,
+        ),
     ):
         """
         Create a naked call option strategy.
@@ -1097,7 +1122,11 @@ class OptionStrategy:
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(profit_target=40, exit_time_before_expiration=Timedelta(minutes=15), window_size=5),
+        exit_scheme: ExitConditionChecker = DefaultExitCondition(
+            profit_target=40,
+            exit_time_before_expiration=Timedelta(minutes=15),
+            window_size=5,
+        ),
         position_side: str = "BUY",
     ):
         """
