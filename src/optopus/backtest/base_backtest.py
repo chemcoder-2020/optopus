@@ -202,14 +202,23 @@ class BaseBacktest(ABC):
         """Cross-validate the backtest."""
         logger.info("\nStarting Cross-Validation")
         logger.info("==========================")
-        logger.info("Configuration:")
+        logger.info("Cross-Validation Parameters:")
         logger.info(f"Number of splits: {n_splits}")
         logger.info(f"Years per split: {years_per_split}")
+        logger.info("\nBacktest Parameters:")
         logger.info(f"Date range: {self.start_date} to {self.end_date}")
         logger.info(f"Trading hours: {self.trading_start_time} to {self.trading_end_time}")
-        logger.info("Strategy config:")
-        for key, value in self.config.items():
-            logger.info(f"  {key}: {value}")
+        logger.info("\nStrategy Configuration:")
+        logger.info(f"  Initial capital: ${self.config.initial_capital:,.2f}")
+        logger.info(f"  Max positions: {self.config.max_positions}")
+        logger.info(f"  Max positions per day: {self.config.max_positions_per_day}")
+        logger.info(f"  Max positions per week: {self.config.max_positions_per_week}")
+        logger.info(f"  Position size: {self.config.position_size:.1%}")
+        logger.info(f"  ROR threshold: {self.config.ror_threshold:.1%}" if self.config.ror_threshold else "  ROR threshold: None")
+        logger.info(f"  Gain reinvesting: {self.config.gain_reinvesting}")
+        logger.info(f"  Trade type: {self.config.trade_type}")
+        logger.info(f"  Ticker: {self.config.ticker}")
+        logger.info(f"  Entry condition: {self.config.entry_condition.__class__.__name__}")
         logger.info("==========================\n")
 
         ts_folds = self.create_time_ranges(
