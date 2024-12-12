@@ -3,6 +3,7 @@ import os
 from ..trades.option_manager import OptionBacktester
 from ..trades.option_spread import OptionStrategy
 import numpy as np
+from scipy import stats
 from loguru import logger
 from datetime import datetime
 from typing import List, Tuple
@@ -243,12 +244,23 @@ class BaseBacktest(ABC):
         for metric in results[0].keys():
             if metric != "performance_data":
                 values = [result[metric] for result in results]
+                values_array = np.array(values)
+                non_nan_values = values_array[~np.isnan(values_array)]
+                
                 aggregated_results[metric] = {
                     "mean": np.nanmean(values),
                     "median": np.nanmedian(values),
                     "std": np.nanstd(values),
                     "min": np.nanmin(values),
                     "max": np.nanmax(values),
+                    "percentile_25": np.percentile(non_nan_values, 25),
+                    "percentile_75": np.percentile(non_nan_values, 75),
+                    "percentile_90": np.percentile(non_nan_values, 90),
+                    "percentile_95": np.percentile(non_nan_values, 95),
+                    "skewness": stats.skew(non_nan_values),
+                    "kurtosis": stats.kurtosis(non_nan_values),
+                    "count": len(non_nan_values),
+                    "iqr": np.percentile(non_nan_values, 75) - np.percentile(non_nan_values, 25),
                 }
 
         logger.info("\nCross-Validation Results:")
@@ -261,6 +273,14 @@ class BaseBacktest(ABC):
                 logger.info(f"  Std Dev: {stats['std']:.4f}")
                 logger.info(f"  Min: {stats['min']:.4f}")
                 logger.info(f"  Max: {stats['max']:.4f}")
+                logger.info(f"  25th Percentile: {stats['percentile_25']:.4f}")
+                logger.info(f"  75th Percentile: {stats['percentile_75']:.4f}")
+                logger.info(f"  90th Percentile: {stats['percentile_90']:.4f}")
+                logger.info(f"  95th Percentile: {stats['percentile_95']:.4f}")
+                logger.info(f"  IQR: {stats['iqr']:.4f}")
+                logger.info(f"  Skewness: {stats['skewness']:.4f}")
+                logger.info(f"  Kurtosis: {stats['kurtosis']:.4f}")
+                logger.info(f"  Sample Count: {stats['count']}")
 
         # Plot and save closed_pl vs timedelta for all splits on one chart
         import matplotlib.ticker as ticker
