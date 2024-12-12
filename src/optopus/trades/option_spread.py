@@ -1268,12 +1268,12 @@ class OptionStrategy:
                 
             if leg.position_side == "BUY":
                 # When buying, we pay the ask and receive the bid
-                strategy_ask -= leg.current_ask * ratio  # Cost (negative)
-                strategy_bid -= leg.current_bid * ratio  # Cost (negative)
+                strategy_bid -= leg.current_ask * ratio  # Cost (negative)
+                strategy_ask -= leg.current_bid * ratio  # Cost (negative)
             elif leg.position_side == "SELL":
                 # When selling, we receive the bid and pay the ask
-                strategy_ask += leg.current_bid * ratio  # Credit (positive)
-                strategy_bid += leg.current_ask * ratio  # Credit (positive)
+                strategy_bid += leg.current_bid * ratio  # Credit (positive)
+                strategy_ask += leg.current_ask * ratio  # Credit (positive)
 
         return strategy_bid, strategy_ask
 
