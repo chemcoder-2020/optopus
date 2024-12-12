@@ -266,7 +266,6 @@ class BaseBacktest(ABC):
             if metric != "performance_data":
                 values = [result[metric] for result in results]
                 values_array = np.array(values)
-                non_nan_values = values_array[~np.isnan(values_array)]
                 
                 aggregated_results[metric] = {
                     "mean": np.nanmean(values),
@@ -274,14 +273,14 @@ class BaseBacktest(ABC):
                     "std": np.nanstd(values),
                     "min": np.nanmin(values),
                     "max": np.nanmax(values),
-                    "percentile_25": np.percentile(non_nan_values, 25),
-                    "percentile_75": np.percentile(non_nan_values, 75),
-                    "percentile_90": np.percentile(non_nan_values, 90),
-                    "percentile_95": np.percentile(non_nan_values, 95),
-                    "skewness": scipy.stats.skew(non_nan_values),
-                    "kurtosis": scipy.stats.kurtosis(non_nan_values),
-                    "count": len(non_nan_values),
-                    "iqr": np.percentile(non_nan_values, 75) - np.percentile(non_nan_values, 25),
+                    "percentile_25": np.nanpercentile(values_array, 25),
+                    "percentile_75": np.nanpercentile(values_array, 75),
+                    "percentile_90": np.nanpercentile(values_array, 90),
+                    "percentile_95": np.nanpercentile(values_array, 95),
+                    "skewness": scipy.stats.skew(values_array),
+                    "kurtosis": scipy.stats.kurtosis(values_array),
+                    "count": len(values_array),
+                    "iqr": np.nanpercentile(values_array, 75) - np.nanpercentile(values_array, 25),
                 }
 
         logger.info("\nCross-Validation Results:")
