@@ -3,7 +3,7 @@ import os
 from ..trades.option_manager import OptionBacktester
 from ..trades.option_spread import OptionStrategy
 import numpy as np
-from scipy import stats
+import scipy.stats
 from loguru import logger
 from datetime import datetime
 from typing import List, Tuple
@@ -257,8 +257,8 @@ class BaseBacktest(ABC):
                     "percentile_75": np.percentile(non_nan_values, 75),
                     "percentile_90": np.percentile(non_nan_values, 90),
                     "percentile_95": np.percentile(non_nan_values, 95),
-                    "skewness": stats.skew(non_nan_values),
-                    "kurtosis": stats.kurtosis(non_nan_values),
+                    "skewness": scipy.stats.skew(non_nan_values),
+                    "kurtosis": scipy.stats.kurtosis(non_nan_values),
                     "count": len(non_nan_values),
                     "iqr": np.percentile(non_nan_values, 75) - np.percentile(non_nan_values, 25),
                 }
