@@ -1275,6 +1275,11 @@ class OptionStrategy:
                 strategy_bid += leg.current_bid * ratio  # Credit (positive)
                 strategy_ask += leg.current_ask * ratio  # Credit (positive)
 
+        # Cap bid and ask to max_exit_net_premium if it exists
+        if hasattr(self, 'max_exit_net_premium'):
+            strategy_bid = min(strategy_bid, self.max_exit_net_premium)
+            strategy_ask = min(strategy_ask, self.max_exit_net_premium)
+
         return strategy_bid, strategy_ask
 
     def set_attribute(self, attr_name, attr_value):
