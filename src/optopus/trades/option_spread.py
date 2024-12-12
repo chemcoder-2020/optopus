@@ -325,10 +325,6 @@ class OptionStrategy:
         if self.status == "CLOSED":
             return  # Already closed, do nothing
 
-        # Perform any final calculations or updates here
-        for leg in self.legs:
-            leg.update(self.current_time, option_chain_df)
-
         self.status = "CLOSED"
         self.won = self.total_pl() > 0
         self.exit_time = self.current_time
