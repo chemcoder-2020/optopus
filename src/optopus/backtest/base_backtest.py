@@ -277,21 +277,44 @@ class BaseBacktest(ABC):
                         "true_ratio": true_count / total_count if total_count > 0 else 0
                     }
                 else:
-                    # For numeric metrics
-                    aggregated_results[metric] = {
-                        "mean": np.nanmean(values),
-                        "median": np.nanmedian(values),
-                        "std": np.nanstd(values),
-                        "min": np.nanmin(values),
-                        "max": np.nanmax(values),
-                        "percentile_25": np.percentile(values_array[~np.isnan(values_array)], 25) if len(values_array[~np.isnan(values_array)]) > 0 else np.nan,
-                        "percentile_75": np.percentile(values_array[~np.isnan(values_array)], 75) if len(values_array[~np.isnan(values_array)]) > 0 else np.nan,
-                        "percentile_90": np.percentile(values_array[~np.isnan(values_array)], 90) if len(values_array[~np.isnan(values_array)]) > 0 else np.nan,
-                        "percentile_95": np.percentile(values_array[~np.isnan(values_array)], 95) if len(values_array[~np.isnan(values_array)]) > 0 else np.nan,
-                        "skewness": scipy.stats.skew(values_array[~np.isnan(values_array)]) if len(values_array[~np.isnan(values_array)]) > 0 else np.nan,
-                        "kurtosis": scipy.stats.kurtosis(values_array[~np.isnan(values_array)]) if len(values_array[~np.isnan(values_array)]) > 0 else np.nan,
-                        "count": len(values_array),
-                        "iqr": np.percentile(values_array[~np.isnan(values_array)], 75) - np.percentile(values_array[~np.isnan(values_array)], 25) if len(values_array[~np.isnan(values_array)]) > 0 else np.nan,
+                    # Convert to float array and handle NaN values
+                    values_array = np.array(values, dtype=float)
+                    valid_values = values_array[~np.isnan(values_array)]
+                    
+                    if len(valid_values) > 0:
+                        # For numeric metrics
+                        aggregated_results[metric] = {
+                            "mean": np.nanmean(values_array),
+                            "median": np.nanmedian(values_array),
+                            "std": np.nanstd(values_array),
+                            "min": np.nanmin(values_array),
+                            "max": np.nanmax(values_array),
+                            "percentile_25": np.percentile(valid_values, 25),
+                            "percentile_75": np.percentile(valid_values, 75),
+                            "percentile_90": np.percentile(valid_values, 90),
+                            "percentile_95": np.percentile(valid_values, 95),
+                            "skewness": scipy.stats.skew(valid_values),
+                            "kurtosis": scipy.stats.kurtosis(valid_values),
+                            "count": len(values_array),
+                            "iqr": np.percentile(valid_values, 75) - np.percentile(valid_values, 25)
+                        }
+                    else:
+                        # Handle case when all values are NaN
+                        aggregated_results[metric] = {
+                            "mean": np.nan,
+                            "median": np.nan,
+                            "std": np.nan,
+                            "min": np.nan,
+                            "max": np.nan,
+                            "percentile_25": np.nan,
+                            "percentile_75": np.nan,
+                            "percentile_90": np.nan,
+                            "percentile_95": np.nan,
+                            "skewness": np.nan,
+                            "kurtosis": np.nan,
+                            "count": len(values_array),
+                            "iqr": np.nan
+                        }
                 }
 
         logger.info("\nCross-Validation Results:")
