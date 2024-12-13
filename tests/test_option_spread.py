@@ -340,6 +340,60 @@ class TestOptionStrategy(unittest.TestCase):
         ) + credit_put_spread.calculate_total_commission()
         self.assertEqual(credit_put_capital, expected_credit_put_capital)
 
+    def test_required_capital_debit_straddle(self):
+        debit_straddle = OptionStrategy.create_straddle(
+            symbol="SPY",
+            strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+            position_side="BUY",
+        )
+        debit_straddle_capital = debit_straddle.get_required_capital()
+        expected_debit_straddle_capital = (
+            debit_straddle.entry_net_premium * 100 * debit_straddle.contracts
+        ) + debit_straddle.calculate_total_commission()
+        self.assertEqual(debit_straddle_capital, expected_debit_straddle_capital)
+
+    def test_required_capital_debit_butterfly(self):
+        debit_butterfly = OptionStrategy.create_butterfly(
+            symbol="SPY",
+            option_type="CALL",
+            lower_strike=540,
+            middle_strike=550,
+            upper_strike=560,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        debit_butterfly_capital = debit_butterfly.get_required_capital()
+        expected_debit_butterfly_capital = (
+            debit_butterfly.entry_net_premium * 100 * debit_butterfly.contracts
+        ) + debit_butterfly.calculate_total_commission()
+        self.assertEqual(debit_butterfly_capital, expected_debit_butterfly_capital)
+
+    def test_required_capital_debit_iron_condor(self):
+        debit_iron_condor = OptionStrategy.create_iron_condor(
+            symbol="SPY",
+            put_long_strike=550,
+            put_short_strike=540,
+            call_short_strike=570,
+            call_long_strike=580,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        debit_iron_condor_capital = debit_iron_condor.get_required_capital()
+        expected_debit_iron_condor_capital = (
+            debit_iron_condor.entry_net_premium * 100 * debit_iron_condor.contracts
+        ) + debit_iron_condor.calculate_total_commission()
+        self.assertEqual(
+            debit_iron_condor_capital, expected_debit_iron_condor_capital
+        )
+
     def test_required_capital_iron_condor(self):
         iron_condor = OptionStrategy.create_iron_condor(
             symbol="SPY",
