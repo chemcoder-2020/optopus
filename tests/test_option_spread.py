@@ -287,6 +287,40 @@ class TestOptionStrategy(unittest.TestCase):
         ) + credit_call_spread.calculate_total_commission()
         self.assertEqual(credit_call_capital, expected_credit_call_capital)
 
+    def test_required_capital_debit_call_spread(self):
+        debit_call_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike=550,
+            short_strike=560,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        debit_call_capital = debit_call_spread.get_required_capital()
+        expected_debit_call_capital = (
+            debit_call_spread.entry_net_premium * 100 * debit_call_spread.contracts
+        ) + debit_call_spread.calculate_total_commission()
+        self.assertEqual(debit_call_capital, expected_debit_call_capital)
+
+    def test_required_capital_debit_put_spread(self):
+        debit_put_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="PUT",
+            long_strike=550,
+            short_strike=540,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        debit_put_capital = debit_put_spread.get_required_capital()
+        expected_debit_put_capital = (
+            debit_put_spread.entry_net_premium * 100 * debit_put_spread.contracts
+        ) + debit_put_spread.calculate_total_commission()
+        self.assertEqual(debit_put_capital, expected_debit_put_capital)
+
     def test_required_capital_credit_put_spread(self):
         credit_put_spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
