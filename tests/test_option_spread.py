@@ -22,8 +22,8 @@ class TestOptionStrategy(unittest.TestCase):
     def test_vertical_spread_creation(self):
         vertical_spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
-            option_type="CALL",
-            long_strike="ATM+1.5%",
+            option_type="PUT",
+            long_strike="ATM-1.5%",
             short_strike="ATM",
             expiration="2024-10-31",
             contracts=1,
@@ -31,7 +31,9 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         for leg in vertical_spread.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}")
+            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side} | {leg.entry_bid} | {leg.entry_ask}")
+        print(vertical_spread.entry_bid, vertical_spread.entry_ask)
+        self.assertEqual(vertical_spread.entry_bid, vertical_spread.legs[1].entry_bid - vertical_spread.legs[0].entry_ask)
         self.assertEqual(len(vertical_spread.legs), 2)
         self.assertEqual(vertical_spread.strategy_type, "Vertical Spread")
 

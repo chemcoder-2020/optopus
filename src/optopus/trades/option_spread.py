@@ -663,6 +663,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
         strategy.entry_bid, strategy.entry_ask = (
@@ -853,6 +854,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
@@ -957,6 +959,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
@@ -1105,6 +1108,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
         return strategy
@@ -1188,6 +1192,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
         return strategy
