@@ -1063,7 +1063,7 @@ class OptionStrategy:
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
-        position_side: str = "BUY",
+        strategy_side: str = "DEBIT",
         exit_scheme: ExitConditionChecker = DefaultExitCondition(
             profit_target=40,
             exit_time_before_expiration=Timedelta(minutes=15),
@@ -1117,11 +1117,11 @@ class OptionStrategy:
             contracts,
             entry_time,
             option_chain_df,
-            position_side,
+            "BUY" if strategy_side == "DEBIT" else "SELL",
             commission=commission,
         )
 
-        strategy.strategy_side = "DEBIT" if position_side == "BUY" else "CREDIT"
+        strategy.strategy_side = strategy_side
 
         strategy.add_leg(call_leg)
         strategy.entry_net_premium = strategy.net_premium = (
@@ -1201,11 +1201,11 @@ class OptionStrategy:
             contracts,
             entry_time,
             option_chain_df,
-            position_side,
+            "BUY" if strategy_side == "DEBIT" else "SELL",
             commission=commission,
         )
 
-        strategy.strategy_side = "DEBIT" if position_side == "BUY" else "CREDIT"
+        strategy.strategy_side = strategy_side
 
         strategy.add_leg(put_leg)
         strategy.entry_net_premium = strategy.net_premium = (
