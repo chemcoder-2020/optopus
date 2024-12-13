@@ -268,19 +268,128 @@ class TestOptionStrategy(unittest.TestCase):
         )
         self.assertFalse(spread1.conflicts_with(spread2))
 
-    def test_required_capital(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+    def test_required_capital_credit_call_spread(self):
+        credit_call_spread = OptionStrategy.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
-            long_strike="+2",
-            short_strike="+0.3",
-            expiration="2024-10-31",
+            long_strike=560,
+            short_strike=550,
+            expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        capital = vertical_spread.get_required_capital()
-        self.assertGreater(capital, 0)
+        credit_call_capital = credit_call_spread.get_required_capital()
+        expected_credit_call_capital = (
+            (560 - 550 - credit_call_spread.entry_net_premium)
+            * 100
+            * credit_call_spread.contracts
+        ) + credit_call_spread.calculate_total_commission()
+        self.assertEqual(credit_call_capital, expected_credit_call_capital)
+
+    def test_required_capital_credit_put_spread(self):
+        credit_put_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="PUT",
+            long_strike=540,
+            short_strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        credit_put_capital = credit_put_spread.get_required_capital()
+        expected_credit_put_capital = (
+            (550 - 540 - credit_put_spread.entry_net_premium)
+            * 100
+            * credit_put_spread.contracts
+        ) + credit_put_spread.calculate_total_commission()
+        self.assertEqual(credit_put_capital, expected_credit_put_capital)
+
+    def test_required_capital_iron_condor(self):
+        iron_condor = OptionStrategy.create_iron_condor(
+            symbol="SPY",
+            put_long_strike=540,
+            put_short_strike=550,
+            call_short_strike=570,
+            call_long_strike=580,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        iron_condor_capital = iron_condor.get_required_capital()
+        expected_iron_condor_capital = (
+            (max(abs(540 - 550), abs(570 - 580)) - iron_condor.entry_net_premium)
+            * 100
+            * iron_condor.contracts
+        ) + iron_condor.calculate_total_commission()
+        self.assertEqual(iron_condor_capital, expected_iron_condor_capital)
+
+    def test_required_capital_straddle(self):
+        straddle = OptionStrategy.create_straddle(
+            symbol="SPY",
+            strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        straddle_capital = straddle.get_required_capital()
+        expected_straddle_capital = (
+            straddle.entry_net_premium * 100 * straddle.contracts
+        ) + straddle.calculate_total_commission()
+        self.assertEqual(straddle_capital, expected_straddle_capital)
+
+    def test_required_capital_butterfly(self):
+        butterfly = OptionStrategy.create_butterfly(
+            symbol="SPY",
+            option_type="CALL",
+            lower_strike=540,
+            middle_strike=550,
+            upper_strike=560,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        butterfly_capital = butterfly.get_required_capital()
+        expected_butterfly_capital = (
+            (butterfly.legs[1].strike - butterfly.legs[0].strike)
+            * 100
+            * butterfly.contracts
+        ) + butterfly.calculate_total_commission()
+        self.assertEqual(butterfly_capital, expected_butterfly_capital)
+
+    def test_required_capital_naked_call(self):
+        naked_call = OptionStrategy.create_naked_call(
+            symbol="SPY",
+            strike=550,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        naked_call_capital = naked_call.get_required_capital()
+        expected_naked_call_capital = (
+            abs(naked_call.entry_net_premium * 100 * naked_call.contracts)
+        ) + naked_call.calculate_total_commission()
+        self.assertEqual(naked_call_capital, expected_naked_call_capital)
+
+    def test_required_capital_naked_put(self):
+        naked_put = OptionStrategy.create_naked_put(
+            symbol="SPY",
+            strike=540,
+            expiration="2024-12-20",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        naked_put_capital = naked_put.get_required_capital()
+        expected_naked_put_capital = (
+            abs(naked_put.entry_net_premium * 100 * naked_put.contracts)
+        ) + naked_put.calculate_total_commission()
+        self.assertEqual(naked_put_capital, expected_naked_put_capital)
 
     def test_dit_calculation(self):
         vertical_spread = OptionStrategy.create_vertical_spread(
