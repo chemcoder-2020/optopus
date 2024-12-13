@@ -371,6 +371,7 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         naked_call_capital = naked_call.get_required_capital()
+        print(naked_call.entry_net_premium)
         expected_naked_call_capital = (
             abs(naked_call.entry_net_premium * 100 * naked_call.contracts)
         ) + naked_call.calculate_total_commission()
