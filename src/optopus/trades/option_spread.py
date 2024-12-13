@@ -383,7 +383,7 @@ class OptionStrategy:
         Returns:
             float: The total profit/loss of the strategy.
         """
-        # return sum(leg.calculate_pl() for leg in self.legs)
+
         if hasattr(self, "strategy_side") and self.strategy_side == "CREDIT":
             return (
                 (self.entry_net_premium - self.calculate_net_premium())
@@ -969,11 +969,11 @@ class OptionStrategy:
     def create_butterfly(
         cls,
         symbol: str,
-        option_type: str,
         lower_strike,
         middle_strike,
         upper_strike,
         expiration,
+        strategy_side: str,
         contracts: int,
         entry_time: str,
         option_chain_df: pd.DataFrame,
@@ -992,11 +992,11 @@ class OptionStrategy:
 
         Args:
             symbol (str): The underlying asset symbol.
-            option_type (str): The option type, either "CALL" or "PUT".
             lower_strike: The lower strike price, delta, or ATM offset (e.g., "-2", -0.3, or "ATM").
             middle_strike: The middle strike price, delta, or ATM offset.
             upper_strike: The upper strike price, delta, or ATM offset (e.g., "+2", 0.3, or "ATM").
             expiration (str or int): The option expiration date or target DTE.
+            strategy_side (str): The strategy side, either "DEBIT" or "CREDIT".
             contracts (int): The number of contracts for the strategy (will be doubled for the middle leg).
             entry_time (str): The entry time for the strategy.
             option_chain_df (pd.DataFrame): The option chain data.
@@ -1010,22 +1010,43 @@ class OptionStrategy:
         Returns:
             OptionStrategy: A butterfly strategy object.
         """
-        strategy = cls.create_iron_condor(
-            symbol=symbol,
-            put_long_strike=lower_strike,
-            put_short_strike=middle_strike,
-            call_short_strike=middle_strike,
-            call_long_strike=upper_strike,
-            expiration=expiration,
-            contracts=contracts,
-            entry_time=entry_time,
-            option_chain_df=option_chain_df,
-            profit_target=profit_target,
-            stop_loss=stop_loss,
-            trailing_stop=trailing_stop,
-            commission=commission,
-            exit_scheme=exit_scheme,
-        )
+        if strategy_side not in ["DEBIT", "CREDIT"]:
+            raise ValueError("Invalid strategy side. Must be 'DEBIT' or 'CREDIT'.")
+
+        if strategy_side == "DEBIT":
+            strategy = cls.create_iron_condor(
+                symbol=symbol,
+                put_long_strike=middle_strike,
+                put_short_strike=lower_strike,
+                call_short_strike=upper_strike,
+                call_long_strike=middle_strike,
+                expiration=expiration,
+                contracts=contracts,
+                entry_time=entry_time,
+                option_chain_df=option_chain_df,
+                profit_target=profit_target,
+                stop_loss=stop_loss,
+                trailing_stop=trailing_stop,
+                commission=commission,
+                exit_scheme=exit_scheme,
+            )
+        else:
+            strategy = cls.create_iron_condor(
+                symbol=symbol,
+                put_long_strike=lower_strike,
+                put_short_strike=middle_strike,
+                call_short_strike=middle_strike,
+                call_long_strike=upper_strike,
+                expiration=expiration,
+                contracts=contracts,
+                entry_time=entry_time,
+                option_chain_df=option_chain_df,
+                profit_target=profit_target,
+                stop_loss=stop_loss,
+                trailing_stop=trailing_stop,
+                commission=commission,
+                exit_scheme=exit_scheme,
+            )
         strategy.strategy_type = "Butterfly"
         return strategy
 
@@ -1205,25 +1226,26 @@ class OptionStrategy:
         Returns:
             float: The required capital for the strategy, including commission.
         """
-
-        if self.strategy_type in ["Vertical Spread", "Iron Condor"]:
-            max_width = max(
-                abs(leg1.strike - leg2.strike)
-                for leg1, leg2 in zip(self.legs[::2], self.legs[1::2])
-            )
+        if self.strategy_side == "CREDIT":
+            if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
+                max_width = max(
+                    abs(leg1.strike - leg2.strike)
+                    for leg1, leg2 in zip(self.legs[::2], self.legs[1::2])
+                )
+                required_capital = (
+                    (max_width - self.entry_net_premium) * 100 * self.contracts
+                )
+            elif self.strategy_type == "Straddle":
+                collateral = sum(leg.strike for leg in self.legs)
+                required_capital = (collateral - self.entry_net_premium) * 100 * self.contracts
+            elif self.strategy_type in ["Naked Call", "Naked Put"]:
+                required_capital = (self.legs[0].strike - self.entry_net_premium) * 100 * self.contracts
+            else:
+                raise ValueError(f"Unsupported strategy type: {self.strategy_type}")
+        elif self.strategy_side == "DEBIT":
             required_capital = (
-                (max_width - self.entry_net_premium) * 100 * self.contracts
+                self.entry_net_premium * 100 * self.contracts
             )
-        elif self.strategy_type == "Straddle":
-            required_capital = self.entry_net_premium * 100 * self.contracts
-        elif self.strategy_type == "Butterfly":
-            wing_width = self.legs[1].strike - self.legs[0].strike
-            required_capital = wing_width * 100 * self.contracts
-        elif self.strategy_type in ["Naked Call", "Naked Put"]:
-            required_capital = abs(self.entry_net_premium * 100 * self.contracts)
-        else:
-            raise ValueError(f"Unsupported strategy type: {self.strategy_type}")
-
         return required_capital + self.calculate_total_commission()
 
     def get_required_capital_per_contract(self) -> float:
@@ -1279,6 +1301,10 @@ class OptionStrategy:
                 # When selling, we receive the bid and pay the ask
                 strategy_bid += leg.current_bid * ratio  # Credit (positive)
                 strategy_ask += leg.current_ask * ratio  # Credit (positive)
+        
+        strategy_bid = abs(strategy_bid)
+        strategy_ask = abs(strategy_ask)
+        strategy_bid, strategy_ask = sorted([strategy_bid, strategy_ask])
 
         # Cap bid and ask to max_exit_net_premium if it exists
         if hasattr(self, 'max_exit_net_premium'):
