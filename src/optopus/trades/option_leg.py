@@ -32,6 +32,7 @@ class OptionLeg:
         price_diff (float): The difference between the current and entry price.
         pl (float): The profit/loss of the option.
         dte (float): The days to expiration of the option.
+        open_interest (int): The open interest of the option.
         commission (float): The commission per contract.
     """
 
@@ -101,6 +102,7 @@ class OptionLeg:
         self.price_diff = 0
         self.pl = 0
         self.dte = None
+        self.open_interest = None
         self.commission = commission
 
         self.update(entry_time, option_chain_df, is_entry=True)
@@ -161,6 +163,7 @@ class OptionLeg:
             ask_key = f"{prefix}ASK"
             last_key = f"{prefix}LAST"
             delta_key = f"{prefix}DELTA"
+            oi_key = f"{prefix}OI"
             itm_key = f"{prefix}ITM"
 
             if bid_key in option_data.columns:
@@ -183,6 +186,12 @@ class OptionLeg:
             self.current_delta = (
                 option_data[delta_key].iloc[0]
                 if delta_key in option_data.columns
+                else np.nan
+            )
+            self.open_interest = (
+                option_data[oi_key].iloc[0]
+                if oi_key in option_data.columns
+                else np.nan
                 else np.nan
             )
             self.underlying_last = (
