@@ -329,6 +329,7 @@ class OptionBacktester:
                 "symbol": trade.symbol,
                 "strategy_type": trade.strategy_type,
                 "entry_time": trade.entry_time,
+                "entry_dte": trade.entry_dte,
                 "exit_time": trade.exit_time,
                 "contracts": trade.contracts,
                 "entry_underlying_last": trade.entry_underlying_last,
