@@ -192,7 +192,6 @@ class OptionLeg:
                 option_data[oi_key].iloc[0]
                 if oi_key in option_data.columns
                 else np.nan
-                else np.nan
             )
             self.underlying_last = (
                 option_data["UNDERLYING_LAST"].iloc[0]
@@ -277,7 +276,7 @@ class OptionLeg:
         Returns:
             str: A string representation of the OptionLeg instance.
         """
-        return f"OptionLeg(symbol={self.symbol}, option_type={self.option_type}, strike={self.strike}, expiration={self.expiration}, contracts={self.contracts}, entry_price={self.entry_price}, current_price={self.current_price}, current_mark={self.current_mark}, current_last={self.current_last}, current_bid={self.current_bid}, current_ask={self.current_ask}, current_delta={self.current_delta}, entry_underlying_last={self.entry_underlying_last}, underlying_last={self.underlying_last}, underlying_diff={self.underlying_diff}, is_itm={self.is_itm}, price_diff={self.price_diff}, pl={self.pl}, position_side={self.position_side}, dte={self.dte}, commission={self.commission})"
+        return f"OptionLeg(symbol={self.symbol}, option_type={self.option_type}, strike={self.strike}, expiration={self.expiration}, contracts={self.contracts}, entry_price={self.entry_price}, current_price={self.current_price}, current_mark={self.current_mark}, current_last={self.current_last}, current_bid={self.current_bid}, current_ask={self.current_ask}, current_delta={self.current_delta}, entry_underlying_last={self.entry_underlying_last}, underlying_last={self.underlying_last}, underlying_diff={self.underlying_diff}, is_itm={self.is_itm}, price_diff={self.price_diff}, pl={self.pl}, position_side={self.position_side}, dte={self.dte}, open_interest={self.open_interest}, commission={self.commission})"
 
     @classmethod
     def from_delta_and_dte(

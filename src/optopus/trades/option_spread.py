@@ -336,7 +336,7 @@ class OptionStrategy:
         self.exit_ror = self.return_over_risk()
         self.exit_underlying_last = self.legs[0].underlying_last
         self.exit_dit = self.DIT
-        self.exit_dte = (pd.to_datetime(self.legs[0].expiration) - self.exit_time).days
+        self.exit_dte = (pd.to_datetime(self.legs[0].expiration).date() - self.exit_time.date()).days
 
     def _reopen_strategy(self):
         """
@@ -663,7 +663,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
-        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration).date() - strategy.entry_time.date()).days
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
         strategy.entry_bid, strategy.entry_ask = (
@@ -854,7 +854,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
-        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration).date() - strategy.entry_time.date()).days
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
@@ -959,7 +959,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
-        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration).date() - strategy.entry_time.date()).days
         strategy.entry_ror = strategy.return_over_risk()
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
@@ -1084,7 +1084,7 @@ class OptionStrategy:
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
-            position_side (str, optional): The position side ('BUY' or 'SELL'). Defaults to 'BUY'.
+            strategy_side (str, optional): The strategy side ('DEBIT' or 'CREDIT'). Defaults to 'DEBIT'.
             exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
                 Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
@@ -1129,7 +1129,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
-        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration).date() - strategy.entry_time.date()).days
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
         return strategy
@@ -1152,7 +1152,7 @@ class OptionStrategy:
             exit_time_before_expiration=Timedelta(minutes=15),
             window_size=5,
         ),
-        position_side: str = "BUY",
+        strategy_side: str = "DEBIT",
     ):
         """
         Create a naked put option strategy.
@@ -1170,7 +1170,7 @@ class OptionStrategy:
             commission (float, optional): Commission percentage.
             exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
                 Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
-            position_side (str, optional): The position side ('BUY' or 'SELL'). Defaults to 'BUY'.
+            strategy_side (str, optional): The strategy side ('DEBIT' or 'CREDIT'). Defaults to 'DEBIT'.
 
         Returns:
             OptionStrategy: A naked put strategy object.
@@ -1213,7 +1213,7 @@ class OptionStrategy:
         )
 
         strategy.entry_time = cls._standardize_time(entry_time)
-        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration) - strategy.entry_time).days
+        strategy.entry_dte = (pd.to_datetime(strategy.legs[0].expiration).date() - strategy.entry_time.date()).days
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
 
         return strategy

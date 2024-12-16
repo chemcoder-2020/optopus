@@ -295,7 +295,7 @@ class BaseBacktest(ABC):
                             "percentile_95": np.percentile(valid_values, 95),
                             "skewness": scipy.stats.skew(valid_values),
                             "kurtosis": scipy.stats.kurtosis(valid_values),
-                            "count": len(values_array),
+                            "count": len(valid_values),
                             "iqr": np.percentile(valid_values, 75) - np.percentile(valid_values, 25)
                         }
                     else:

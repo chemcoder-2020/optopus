@@ -359,11 +359,11 @@ class TestOptionStrategy(unittest.TestCase):
     def test_required_capital_debit_butterfly(self):
         debit_butterfly = OptionStrategy.create_butterfly(
             symbol="SPY",
-            option_type="CALL",
             lower_strike=540,
             middle_strike=550,
             upper_strike=560,
             expiration="2024-12-20",
+            strategy_side="DEBIT",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
@@ -379,8 +379,8 @@ class TestOptionStrategy(unittest.TestCase):
             symbol="SPY",
             put_long_strike=550,
             put_short_strike=540,
-            call_short_strike=570,
-            call_long_strike=580,
+            call_short_strike=580,
+            call_long_strike=570,
             expiration="2024-12-20",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
@@ -432,11 +432,11 @@ class TestOptionStrategy(unittest.TestCase):
     def test_required_capital_butterfly(self):
         butterfly = OptionStrategy.create_butterfly(
             symbol="SPY",
-            option_type="CALL",
             lower_strike=540,
             middle_strike=550,
             upper_strike=560,
             expiration="2024-12-20",
+            strategy_side="CREDIT",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
@@ -447,6 +447,11 @@ class TestOptionStrategy(unittest.TestCase):
             * 100
             * butterfly.contracts
         ) + butterfly.calculate_total_commission()
+        expected_butterfly_capital = (
+            (max(abs(540 - 550), abs(550 - 560)) - butterfly.entry_net_premium)
+            * 100
+            * butterfly.contracts
+        ) + butterfly.calculate_total_commission()
         self.assertEqual(butterfly_capital, expected_butterfly_capital)
 
     def test_required_capital_naked_call(self):
@@ -454,12 +459,12 @@ class TestOptionStrategy(unittest.TestCase):
             symbol="SPY",
             strike=550,
             expiration="2024-12-20",
+            strategy_side="DEBIT",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
         naked_call_capital = naked_call.get_required_capital()
-        print(naked_call.entry_net_premium)
         expected_naked_call_capital = (
             abs(naked_call.entry_net_premium * 100 * naked_call.contracts)
         ) + naked_call.calculate_total_commission()
@@ -470,6 +475,7 @@ class TestOptionStrategy(unittest.TestCase):
             symbol="SPY",
             strike=540,
             expiration="2024-12-20",
+            strategy_side="DEBIT",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
@@ -477,6 +483,38 @@ class TestOptionStrategy(unittest.TestCase):
         naked_put_capital = naked_put.get_required_capital()
         expected_naked_put_capital = (
             abs(naked_put.entry_net_premium * 100 * naked_put.contracts)
+        ) + naked_put.calculate_total_commission()
+        self.assertEqual(naked_put_capital, expected_naked_put_capital)
+    
+    def test_required_capital_credit_naked_call(self):
+        naked_call = OptionStrategy.create_naked_call(
+            symbol="SPY",
+            strike=550,
+            expiration="2024-12-20",
+            strategy_side="CREDIT",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        naked_call_capital = naked_call.get_required_capital()
+        expected_naked_call_capital = (
+            abs((naked_call.legs[0].strike - naked_call.entry_net_premium) * 100 * naked_call.contracts)
+        ) + naked_call.calculate_total_commission()
+        self.assertEqual(naked_call_capital, expected_naked_call_capital)
+
+    def test_required_capital_credit_naked_put(self):
+        naked_put = OptionStrategy.create_naked_put(
+            symbol="SPY",
+            strike=540,
+            expiration="2024-12-20",
+            strategy_side="CREDIT",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        naked_put_capital = naked_put.get_required_capital()
+        expected_naked_put_capital = (
+            abs((naked_put.legs[0].strike - naked_put.entry_net_premium) * 100 * naked_put.contracts)
         ) + naked_put.calculate_total_commission()
         self.assertEqual(naked_put_capital, expected_naked_put_capital)
 
@@ -494,6 +532,32 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.DIT, 0)
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertEqual(vertical_spread.DIT, 3)
+    
+    def test_dte_calculation1(self):
+        vertical_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike="+2",
+            short_strike="+0.3",
+            expiration="2024-09-06",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        self.assertEqual(vertical_spread.entry_dte, 0)
+    
+    def test_dte_calculation2(self):
+        vertical_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike="+2",
+            short_strike="+0.3",
+            expiration="2024-10-31",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        self.assertEqual(vertical_spread.entry_dte, 55)
 
     def test_close_strategy(self):
         vertical_spread = OptionStrategy.create_vertical_spread(
@@ -508,6 +572,36 @@ class TestOptionStrategy(unittest.TestCase):
         )
         vertical_spread.close_strategy("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(vertical_spread.status, "CLOSED")
+    
+    def test_close_strategy_dte(self):
+        vertical_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike="+2",
+            short_strike="+0.3",
+            expiration="2024-10-31",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        vertical_spread.close_strategy("2024-09-06 15:45:00", self.update_df)
+        self.assertEqual(vertical_spread.status, "CLOSED")
+        self.assertEqual(vertical_spread.exit_dte, 55)
+    
+    def test_close_strategy_dit(self):
+        vertical_spread = OptionStrategy.create_vertical_spread(
+            symbol="SPY",
+            option_type="CALL",
+            long_strike="+2",
+            short_strike="+0.3",
+            expiration="2024-10-31",
+            contracts=1,
+            entry_time="2024-09-06 15:30:00",
+            option_chain_df=self.entry_df,
+        )
+        vertical_spread.close_strategy("2024-09-06 15:45:00", self.update_df)
+        self.assertEqual(vertical_spread.status, "CLOSED")
+        self.assertEqual(vertical_spread.exit_dit, 0)
 
     def test_won_attribute(self):
         profit_target_condition = ProfitTargetCondition(profit_target=1)

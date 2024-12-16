@@ -344,6 +344,7 @@ class OptionBacktester:
                 "return_percentage": trade.return_percentage(),
                 "return_over_risk": pl / trade.get_required_capital(),
                 "dit": trade.DIT,
+                "exit_dte": trade.exit_dte,
                 "won": trade.won,
             }
 
