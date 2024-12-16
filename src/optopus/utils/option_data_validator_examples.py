@@ -1,5 +1,10 @@
 import pandas as pd
-from optopus.utils.option_data_validator import validate_option_data, EXPECTED_OPTION_DATA_SCHEMA, OPTIONAL_OPTION_DATA_SCHEMA
+from option_data_validator import (
+    validate_option_data,
+    EXPECTED_OPTION_DATA_SCHEMA,
+    OPTIONAL_OPTION_DATA_SCHEMA,
+)
+
 
 def create_modified_dataframe(original_df: pd.DataFrame, scenario: str) -> pd.DataFrame:
     """
@@ -16,22 +21,23 @@ def create_modified_dataframe(original_df: pd.DataFrame, scenario: str) -> pd.Da
     if scenario == "missing_required":
         # Remove a required column
         if "STRIKE" in df.columns:
-          df = df.drop(columns=["STRIKE"])
+            df = df.drop(columns=["STRIKE"])
     elif scenario == "incorrect_required_type":
         # Change the data type of a required column
         if "C_BID" in df.columns:
-          df["C_BID"] = df["C_BID"].astype(str)
+            df["C_BID"] = df["C_BID"].astype(str)
     elif scenario == "missing_optional":
         # Remove an optional column
         if "C_LAST" in df.columns:
-          df = df.drop(columns=["C_LAST"])
+            df = df.drop(columns=["C_LAST"])
     elif scenario == "incorrect_optional_type":
         # Change the data type of an optional column
         if "P_OI" in df.columns:
-          df["P_OI"] = df["P_OI"].astype(float)
+            df["P_OI"] = df["P_OI"].astype(float)
     else:
         raise ValueError(f"Invalid scenario: {scenario}")
     return df
+
 
 if __name__ == "__main__":
     # Replace with the actual path to your parquet file
