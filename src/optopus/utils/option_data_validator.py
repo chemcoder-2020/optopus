@@ -1,7 +1,19 @@
 import pandas as pd
 import warnings
 
+# Required columns
 EXPECTED_OPTION_DATA_SCHEMA = {
+    "STRIKE": "float64",
+    "EXPIRE_DATE": "datetime64[ns]",
+    "DTE": "float64",
+    "intDTE": "int64",
+    "UNDERLYING_LAST": "float64",
+    "QUOTE_READTIME": "datetime64[ns, America/New_York]",
+    "QUOTE_TIME_HOURS": "float64",
+}
+
+# Optional columns
+OPTIONAL_OPTION_DATA_SCHEMA = {
     "C_BID": "float64",
     "C_ASK": "float64",
     "C_LAST": "float64",
@@ -13,9 +25,6 @@ EXPECTED_OPTION_DATA_SCHEMA = {
     "C_VEGA": "float64",
     "C_RHO": "float64",
     "C_OI": "int64",
-    "STRIKE": "float64",
-    "EXPIRE_DATE": "datetime64[ns]",
-    "DTE": "float64",
     "C_ITM": "bool",
     "P_BID": "float64",
     "P_ASK": "float64",
@@ -29,11 +38,7 @@ EXPECTED_OPTION_DATA_SCHEMA = {
     "P_RHO": "float64",
     "P_OI": "int64",
     "P_ITM": "bool",
-    "intDTE": "int64",
-    "UNDERLYING_LAST": "float64",
     "INTEREST_RATE": "float64",
-    "QUOTE_READTIME": "datetime64[ns, America/New_York]",
-    "QUOTE_TIME_HOURS": "float64",
 }
 
 def _add_missing_columns(df: pd.DataFrame, expected_schema: dict) -> pd.DataFrame:
@@ -78,19 +83,29 @@ def validate_option_data(df: pd.DataFrame) -> pd.DataFrame:
     Raises:
         ValueError: If the DataFrame cannot be validated.
     """
-    # Check for missing columns
+    # Check for missing required columns
     missing_cols = set(EXPECTED_OPTION_DATA_SCHEMA.keys()) - set(df.columns)
     if missing_cols:
-        warnings.warn(f"Missing columns: {missing_cols}. Attempting to add them with default values.")
+        warnings.warn(f"Missing required columns: {missing_cols}. Attempting to add them with default values.")
         df = _add_missing_columns(df, EXPECTED_OPTION_DATA_SCHEMA)
 
-    # Check data types
+    # Check data types of required columns
     for col, expected_dtype in EXPECTED_OPTION_DATA_SCHEMA.items():
         if col in df.columns:
             actual_dtype = df[col].dtype
             if actual_dtype != expected_dtype:
                 warnings.warn(
-                    f"Column '{col}' has incorrect data type: expected '{expected_dtype}', found '{actual_dtype}'. Attempting to convert."
+                    f"Required column '{col}' has incorrect data type: expected '{expected_dtype}', found '{actual_dtype}'. Attempting to convert."
+                )
+                df = _convert_column_type(df, col, expected_dtype)
+
+    # Check data types of optional columns if they exist
+    for col, expected_dtype in OPTIONAL_OPTION_DATA_SCHEMA.items():
+        if col in df.columns:
+            actual_dtype = df[col].dtype
+            if actual_dtype != expected_dtype:
+                warnings.warn(
+                    f"Optional column '{col}' has incorrect data type: expected '{expected_dtype}', found '{actual_dtype}'. Attempting to convert."
                 )
                 df = _convert_column_type(df, col, expected_dtype)
 
