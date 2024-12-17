@@ -13,6 +13,7 @@
 - Add open interest to OptionLeg class
 - Add entry_dte to trade history
 - Add entry_dte to OptionStrategy creation methods
+- Add column alias handling to validate_option_data
 
 ### Fixes
 - Update example parquet file path
