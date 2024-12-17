@@ -41,7 +41,6 @@ OPTIONAL_OPTION_DATA_SCHEMA = {
     "INTEREST_RATE": "float64",
 }
 
-
 def _add_missing_columns(df: pd.DataFrame, expected_schema: dict) -> pd.DataFrame:
     """Adds missing columns to the DataFrame with default values."""
     for col, dtype in expected_schema.items():
@@ -73,12 +72,13 @@ def _convert_column_type(df: pd.DataFrame, col: str, dtype: str) -> pd.DataFrame
     return df
 
 
-def validate_option_data(df: pd.DataFrame) -> pd.DataFrame:
+def validate_option_data(df: pd.DataFrame, column_aliases: dict = None) -> pd.DataFrame:
     """
     Validates the option data DataFrame against the expected schema.
 
     Args:
         df: The option data DataFrame.
+        column_aliases: A dictionary mapping expected column names to their aliases.
 
     Returns:
         The validated DataFrame.
@@ -86,6 +86,12 @@ def validate_option_data(df: pd.DataFrame) -> pd.DataFrame:
     Raises:
         ValueError: If the DataFrame cannot be validated.
     """
+    # Rename columns using aliases if provided
+    if column_aliases:
+        # Reverse the alias mapping to rename columns from aliases to expected names
+        reverse_aliases = {v: k for k, v in column_aliases.items()}
+        df = df.rename(columns=reverse_aliases)
+
     # Check for missing required columns
     missing_cols = set(EXPECTED_OPTION_DATA_SCHEMA.keys()) - set(df.columns)
     if missing_cols:
