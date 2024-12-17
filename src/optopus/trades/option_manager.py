@@ -331,6 +331,7 @@ class OptionBacktester:
                 "entry_time": trade.entry_time,
                 "entry_dte": trade.entry_dte,
                 "exit_time": trade.exit_time,
+                "exit_dte": trade.exit_dte,
                 "contracts": trade.contracts,
                 "entry_underlying_last": trade.entry_underlying_last,
                 "exit_underlying_last": trade.exit_underlying_last,
@@ -412,7 +413,8 @@ class OptionBacktester:
             "max_drawdown_dollars": max_drawdown_dollars,
             "max_drawdown_percentage": max_drawdown_percentage,
             "average_dit": average_dit,
-            "average_dit_spread": average_dit_spread
+            "average_dit_spread": average_dit_spread,
+            "average_exit_dte": closed_trades_df["exit_dte"].mean()
         }
 
         try:
