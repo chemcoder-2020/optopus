@@ -1,5 +1,5 @@
 import pandas as pd
-from optopus.utils.option_data_validator import (
+from option_data_validator import (
     validate_option_data,
     EXPECTED_OPTION_DATA_SCHEMA,
     OPTIONAL_OPTION_DATA_SCHEMA,
