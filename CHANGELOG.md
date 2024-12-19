@@ -48,3 +48,8 @@
 ### Documentation
 
 -   Add CHANGELOG.md
+
+## v0.9.1-dev3
+
+### Features
+- Changed greeting to be more casual.
