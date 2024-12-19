@@ -53,3 +53,17 @@
 
 ### Features
 - Changed greeting to be more casual.
+
+## v0.9.1-dev4
+
+### Features
+-   Added strategies to __init__ and update __all__ list
+-   Added new modules to __init__.py
+-   Added __all__ to strategies __init__.py
+-   Imported strategy classes in strategies init file
+-   Created init file for strategies module
+-   Added VerticalSpread class and create_iron_condor method
+-   Moved strategy implementations to dedicated modules
+
+### Documentation
+-   Add column alias handling to validate_option_data to changelog
