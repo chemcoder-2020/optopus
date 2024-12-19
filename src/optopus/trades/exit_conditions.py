@@ -132,7 +132,6 @@ class MedianCalculator:
             return 0
         return (median_pl / (premium * 100 * strategy.contracts)) * 100
 
-
 class ProfitTargetCondition(ExitConditionChecker):
     """
     Exit condition based on a profit target.
@@ -302,18 +301,22 @@ class TrailingStopCondition(ExitConditionChecker):
     Attributes:
         trigger (float): The trigger percentage for the trailing stop.
         stop_loss (float): The stop loss percentage.
+        median_calculator (MedianCalculator): Median calculator for rolling window.
     """
 
-    def __init__(self, trigger: float, stop_loss: float):
+    def __init__(self, trigger: float, stop_loss: float, **kwargs):
         """
         Initialize the TrailingStopCondition.
 
         Args:
             trigger (float): The trigger percentage for the trailing stop.
             stop_loss (float): The stop loss percentage.
+            **kwargs: Additional keyword arguments.
         """
         self.trigger = trigger
         self.stop_loss = stop_loss
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5))
+        self.kwargs = kwargs
 
     def __repr__(self):
         """
@@ -322,7 +325,7 @@ class TrailingStopCondition(ExitConditionChecker):
         Returns:
             str: String representation of the trailing stop condition.
         """
-        return f"{self.__class__.__name__}(trigger={self.trigger}, stop_loss={self.stop_loss})"
+        return f"{self.__class__.__name__}(trigger={self.trigger}, stop_loss={self.stop_loss}, window_size={self.median_calculator.window_size})"
     
     def update(self, **kwargs):
         """
@@ -348,11 +351,12 @@ class TrailingStopCondition(ExitConditionChecker):
         Returns:
             bool: True if the trailing stop condition is met, False otherwise.
         """
-        current_return = strategy.return_percentage()
+        current_median_return = self.median_calculator.get_median_return_percentage(strategy)
+        strategy.median_return_percentage = current_median_return
         highest_return = strategy.highest_return
 
         if highest_return >= self.trigger:
-            return (highest_return - current_return) >= self.stop_loss
+            return (highest_return - current_median_return) >= self.stop_loss
 
         return False
 
@@ -434,7 +438,6 @@ class CompositeExitCondition(ExitConditionChecker):
         for condition in self.conditions:
             if hasattr(condition, key):
                 setattr(condition, key, value)
-
 
 class DefaultExitCondition(ExitConditionChecker):
     """
