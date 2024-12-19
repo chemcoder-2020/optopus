@@ -10,10 +10,11 @@ from .brokers.schwab.schwab_trade import SchwabTrade
 from .trades.option_leg import OptionLeg
 from .trades.option_manager import OptionBacktester
 from .trades.option_spread import OptionStrategy
-from .trades.exit_conditions import ExitConditionChecker
+from .trades.exit_conditions import ExitConditionChecker, ProfitTargetCondition, StopLossCondition, TimeBasedCondition, TrailingStopCondition, CompositeExitCondition, DefaultExitCondition
 from .utils.heapmedian import ContinuousMedian
 from .backtest.vertical_spread import BacktestVerticalSpread
 from .backtest.bidirectional_vertical_spread import BacktestBidirectionalVerticalSpread
+from .trades.option_chain_converter import OptionChainConverter
 
 __all__ = [
     "OptionBroker",
@@ -29,4 +30,11 @@ __all__ = [
     "ContinuousMedian",
     "BacktestVerticalSpread",
     "BacktestBidirectionalVerticalSpread",
+    "ProfitTargetCondition",
+    "StopLossCondition",
+    "TimeBasedCondition",
+    "TrailingStopCondition",
+    "CompositeExitCondition",
+    "DefaultExitCondition",
+    "OptionChainConverter",
 ]
