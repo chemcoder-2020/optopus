@@ -197,16 +197,20 @@ class StopLossCondition(ExitConditionChecker):
 
     Attributes:
         stop_loss (float): The stop loss percentage.
+        median_calculator (MedianCalculator): Median calculator for rolling window.
     """
 
-    def __init__(self, stop_loss: float):
+    def __init__(self, stop_loss: float, **kwargs):
         """
         Initialize the StopLossCondition.
 
         Args:
             stop_loss (float): The stop loss percentage.
+            **kwargs: Additional keyword arguments.
         """
         self.stop_loss = stop_loss
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5))
+        self.kwargs = kwargs
 
     def __repr__(self):
         """
@@ -215,7 +219,7 @@ class StopLossCondition(ExitConditionChecker):
         Returns:
             str: String representation of the stop loss condition.
         """
-        return f"{self.__class__.__name__}(stop_loss={self.stop_loss})"
+        return f"{self.__class__.__name__}(stop_loss={self.stop_loss}, window_size={self.median_calculator.window_size})"
 
     def update(self, **kwargs):
         """
@@ -239,8 +243,9 @@ class StopLossCondition(ExitConditionChecker):
         Returns:
             bool: True if the stop loss is met, False otherwise.
         """
-        current_return = strategy.return_percentage()
-        return current_return <= -self.stop_loss
+        current_median_return = self.median_calculator.get_median_return_percentage(strategy)
+        strategy.median_return_percentage = current_median_return
+        return current_median_return <= -self.stop_loss
 
 class TimeBasedCondition(ExitConditionChecker):
     """
