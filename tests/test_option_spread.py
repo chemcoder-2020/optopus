@@ -1,6 +1,12 @@
 import unittest
 import pandas as pd
 from src.optopus.trades.option_spread import OptionStrategy
+from src.optopus.trades.strategies.vertical_spread import VerticalSpread
+from src.optopus.trades.strategies.iron_condor import IronCondor
+from src.optopus.trades.strategies.straddle import Straddle
+from src.optopus.trades.strategies.iron_butterfly import IronButterfly
+from src.optopus.trades.strategies.naked_put import NakedPut
+from src.optopus.trades.strategies.naked_call import NakedCall
 from src.optopus.trades.option_leg import OptionLeg
 from src.optopus.trades.exit_conditions import (
     DefaultExitCondition,
@@ -20,7 +26,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.update_df2 = pd.read_parquet("data/SPY_2024-09-09 09-45.parquet")
 
     def test_vertical_spread_creation(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
             long_strike="ATM-1.5%",
@@ -38,7 +44,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.strategy_type, "Vertical Spread")
 
     def test_iron_condor_creation(self):
-        iron_condor = OptionStrategy.create_iron_condor(
+        iron_condor = IronCondor.create_iron_condor(
             symbol="SPY",
             put_long_strike="-5",
             put_short_strike="-0.3",
@@ -55,7 +61,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(iron_condor.strategy_type, "Iron Condor")
 
     def test_straddle_creation(self):
-        straddle = OptionStrategy.create_straddle(
+        straddle = Straddle.create_straddle(
             symbol="SPY",
             strike="ATM+1",
             expiration="2024-10-31",
@@ -70,13 +76,13 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(straddle.strategy_type, "Straddle")
 
     def test_butterfly_creation(self):
-        butterfly = OptionStrategy.create_butterfly(
+        butterfly = IronButterfly.create_iron_butterfly(
             symbol="SPY",
-            option_type="CALL",
             lower_strike=540,
             middle_strike=550,
             upper_strike=560,
             expiration="2024-10-31",
+            strategy_side="CREDIT",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
@@ -85,10 +91,10 @@ class TestOptionStrategy(unittest.TestCase):
             logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}")
         self.assertEqual(butterfly.legs[1].strike, butterfly.legs[2].strike)
         self.assertEqual(len(butterfly.legs), 4)
-        self.assertEqual(butterfly.strategy_type, "Butterfly")
+        self.assertEqual(butterfly.strategy_type, "Iron Butterfly")
 
     def test_naked_call_creation(self):
-        naked_call = OptionStrategy.create_naked_call(
+        naked_call = NakedCall.create_naked_call(
             symbol="SPY",
             strike=550,
             expiration="2024-10-31",
@@ -102,7 +108,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(naked_call.strategy_type, "Naked Call")
 
     def test_naked_put_creation(self):
-        naked_put = OptionStrategy.create_naked_put(
+        naked_put = NakedPut.create_naked_put(
             symbol="SPY",
             strike=540,
             expiration="2024-10-31",
@@ -116,7 +122,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(naked_put.strategy_type, "Naked Put")
 
     def test_strategy_update(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -154,7 +160,7 @@ class TestOptionStrategy(unittest.TestCase):
         )
 
     def test_conflict_vertical_spread_same_legs(self):
-        spread1 = OptionStrategy.create_vertical_spread(
+        spread1 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -164,7 +170,7 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        spread2 = OptionStrategy.create_vertical_spread(
+        spread2 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -177,7 +183,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertTrue(spread1.conflicts_with(spread2))
 
     def test_conflict_vertical_spread_one_same_leg(self):
-        spread1 = OptionStrategy.create_vertical_spread(
+        spread1 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -187,7 +193,7 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        spread2 = OptionStrategy.create_vertical_spread(
+        spread2 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -200,7 +206,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertTrue(spread1.conflicts_with(spread2))
 
     def test_conflict_vertical_spread_two_different_legs(self):
-        spread1 = OptionStrategy.create_vertical_spread(
+        spread1 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=561,
@@ -210,7 +216,7 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        spread2 = OptionStrategy.create_vertical_spread(
+        spread2 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -223,7 +229,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertFalse(spread1.conflicts_with(spread2))
 
     def test_conflict_vertical_spread_different_option_type(self):
-        spread1 = OptionStrategy.create_vertical_spread(
+        spread1 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
             long_strike=560,
@@ -233,7 +239,7 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        spread2 = OptionStrategy.create_vertical_spread(
+        spread2 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -246,7 +252,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertFalse(spread1.conflicts_with(spread2))
 
     def test_conflict_vertical_spread_different_expiration(self):
-        spread1 = OptionStrategy.create_vertical_spread(
+        spread1 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -256,7 +262,7 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        spread2 = OptionStrategy.create_vertical_spread(
+        spread2 = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -269,7 +275,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertFalse(spread1.conflicts_with(spread2))
 
     def test_required_capital_credit_call_spread(self):
-        credit_call_spread = OptionStrategy.create_vertical_spread(
+        credit_call_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=560,
@@ -288,7 +294,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(credit_call_capital, expected_credit_call_capital)
 
     def test_required_capital_debit_call_spread(self):
-        debit_call_spread = OptionStrategy.create_vertical_spread(
+        debit_call_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=550,
@@ -305,7 +311,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(debit_call_capital, expected_debit_call_capital)
 
     def test_required_capital_debit_put_spread(self):
-        debit_put_spread = OptionStrategy.create_vertical_spread(
+        debit_put_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
             long_strike=550,
@@ -322,7 +328,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(debit_put_capital, expected_debit_put_capital)
 
     def test_required_capital_credit_put_spread(self):
-        credit_put_spread = OptionStrategy.create_vertical_spread(
+        credit_put_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
             long_strike=540,
@@ -341,7 +347,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(credit_put_capital, expected_credit_put_capital)
 
     def test_required_capital_debit_straddle(self):
-        debit_straddle = OptionStrategy.create_straddle(
+        debit_straddle = Straddle.create_straddle(
             symbol="SPY",
             strike=550,
             expiration="2024-12-20",
@@ -357,7 +363,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(debit_straddle_capital, expected_debit_straddle_capital)
 
     def test_required_capital_debit_butterfly(self):
-        debit_butterfly = OptionStrategy.create_butterfly(
+        debit_butterfly = IronButterfly.create_iron_butterfly(
             symbol="SPY",
             lower_strike=540,
             middle_strike=550,
@@ -375,7 +381,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(debit_butterfly_capital, expected_debit_butterfly_capital)
 
     def test_required_capital_debit_iron_condor(self):
-        debit_iron_condor = OptionStrategy.create_iron_condor(
+        debit_iron_condor = IronCondor.create_iron_condor(
             symbol="SPY",
             put_long_strike=550,
             put_short_strike=540,
@@ -395,7 +401,7 @@ class TestOptionStrategy(unittest.TestCase):
         )
 
     def test_required_capital_iron_condor(self):
-        iron_condor = OptionStrategy.create_iron_condor(
+        iron_condor = IronCondor.create_iron_condor(
             symbol="SPY",
             put_long_strike=540,
             put_short_strike=550,
@@ -415,7 +421,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(iron_condor_capital, expected_iron_condor_capital)
 
     def test_required_capital_straddle(self):
-        straddle = OptionStrategy.create_straddle(
+        straddle = Straddle.create_straddle(
             symbol="SPY",
             strike=550,
             expiration="2024-12-20",
@@ -430,7 +436,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(straddle_capital, expected_straddle_capital)
 
     def test_required_capital_butterfly(self):
-        butterfly = OptionStrategy.create_butterfly(
+        butterfly = IronButterfly.create_iron_butterfly(
             symbol="SPY",
             lower_strike=540,
             middle_strike=550,
@@ -455,7 +461,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(butterfly_capital, expected_butterfly_capital)
 
     def test_required_capital_naked_call(self):
-        naked_call = OptionStrategy.create_naked_call(
+        naked_call = NakedCall.create_naked_call(
             symbol="SPY",
             strike=550,
             expiration="2024-12-20",
@@ -471,7 +477,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(naked_call_capital, expected_naked_call_capital)
 
     def test_required_capital_naked_put(self):
-        naked_put = OptionStrategy.create_naked_put(
+        naked_put = NakedPut.create_naked_put(
             symbol="SPY",
             strike=540,
             expiration="2024-12-20",
@@ -487,7 +493,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(naked_put_capital, expected_naked_put_capital)
     
     def test_required_capital_credit_naked_call(self):
-        naked_call = OptionStrategy.create_naked_call(
+        naked_call = NakedCall.create_naked_call(
             symbol="SPY",
             strike=550,
             expiration="2024-12-20",
@@ -503,7 +509,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(naked_call_capital, expected_naked_call_capital)
 
     def test_required_capital_credit_naked_put(self):
-        naked_put = OptionStrategy.create_naked_put(
+        naked_put = NakedPut.create_naked_put(
             symbol="SPY",
             strike=540,
             expiration="2024-12-20",
@@ -519,7 +525,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(naked_put_capital, expected_naked_put_capital)
 
     def test_dit_calculation(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -534,7 +540,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.DIT, 3)
     
     def test_dte_calculation1(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -547,7 +553,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.entry_dte, 0)
     
     def test_dte_calculation2(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -560,7 +566,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.entry_dte, 55)
 
     def test_close_strategy(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -574,7 +580,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.status, "CLOSED")
     
     def test_close_strategy_dte(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -589,7 +595,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.exit_dte, 55)
     
     def test_close_strategy_dit(self):
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -605,7 +611,7 @@ class TestOptionStrategy(unittest.TestCase):
 
     def test_won_attribute(self):
         profit_target_condition = ProfitTargetCondition(profit_target=1)
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -623,7 +629,7 @@ class TestOptionStrategy(unittest.TestCase):
 
     def test_stop_loss_condition(self):
         stop_loss_condition = StopLossCondition(stop_loss=10)
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike="+2",
@@ -639,7 +645,7 @@ class TestOptionStrategy(unittest.TestCase):
 
     def test_profit_target_condition(self):
         profit_target_condition = ProfitTargetCondition(profit_target=5)
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
             long_strike="-2",
@@ -655,11 +661,16 @@ class TestOptionStrategy(unittest.TestCase):
         logger.debug(vertical_spread.entry_net_premium)
         logger.debug(vertical_spread.total_pl())
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
+        vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertTrue(vertical_spread.won)
 
     def test_time_based_condition(self):
         time_based_condition = TimeBasedCondition(exit_time_before_expiration=pd.Timedelta(minutes=15))
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
             long_strike="-2",
@@ -675,7 +686,7 @@ class TestOptionStrategy(unittest.TestCase):
     
     def test_default_exit_condition(self):
         default_exit_condition = DefaultExitCondition()
-        vertical_spread = OptionStrategy.create_vertical_spread(
+        vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
             long_strike="-2",

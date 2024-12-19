@@ -6,6 +6,7 @@ from ..option_chain_converter import OptionChainConverter
 from typing import Union, Tuple, Optional
 from ..option_spread import OptionStrategy
 
+
 class VerticalSpread(OptionStrategy):
     @classmethod
     def create_vertical_spread(

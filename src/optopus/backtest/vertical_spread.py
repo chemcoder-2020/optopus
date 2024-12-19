@@ -1,4 +1,4 @@
-from ..trades.option_spread import OptionStrategy
+from ..trades.strategies.vertical_spread import VerticalSpread
 from loguru import logger
 from .base_backtest import BaseBacktest
 
@@ -52,7 +52,7 @@ class BacktestVerticalSpread(BaseBacktest):
         - OptionStrategy or None: The created vertical spread or None if an error occurs.
         """
         try:
-            new_spread = OptionStrategy.create_vertical_spread(
+            new_spread = VerticalSpread.create_vertical_spread(
                 symbol=self.symbol,
                 option_type=self.strategy_params["option_type"],
                 long_strike=self.strategy_params["long_delta"],

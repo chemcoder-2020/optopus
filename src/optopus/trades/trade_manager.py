@@ -1,7 +1,7 @@
 import pandas as pd
 from .option_manager import OptionBacktester, Config
 from .option_leg import calculate_dte
-from .option_spread import OptionStrategy  # Add this import
+from .strategies.vertical_spread import VerticalSpread
 from ..brokers.schwab.schwab_order import SchwabOptionOrder
 from ..brokers.schwab.schwab_auth import SchwabAuth
 from ..brokers.schwab.schwab_data import SchwabData
@@ -514,7 +514,7 @@ class TradingManager(OptionBacktester):
                     strike_count=20 if STRATEGY_PARAMS["short_delta"] == "ATM" else 160,
                 )
                 bar = option_chain_df["QUOTE_READTIME"].iloc[0]
-                vertical_spread = OptionStrategy.create_vertical_spread(
+                vertical_spread = VerticalSpread.create_vertical_spread(
                     symbol=self.config.ticker,
                     option_type=STRATEGY_PARAMS["option_type"],
                     long_strike=STRATEGY_PARAMS["long_delta"],

@@ -1,4 +1,4 @@
-from ..trades.option_spread import OptionStrategy
+from ..trades.strategies.naked_call import NakedCall
 from loguru import logger
 from .base_backtest import BaseBacktest
 
@@ -52,7 +52,7 @@ class BacktestNakedCall(BaseBacktest):
         - OptionStrategy or None: The created naked call or None if an error occurs.
         """
         try:
-            new_spread = OptionStrategy.create_naked_call(
+            new_spread = NakedCall.create_naked_call(
                 symbol=self.symbol,
                 strike=self.strategy_params["strike"],
                 expiration=self.strategy_params["dte"],

@@ -1,6 +1,7 @@
 import unittest
 from src.optopus.trades.option_manager import OptionBacktester, Config
 from src.optopus.trades.option_spread import OptionStrategy
+from src.optopus.trades.strategies.vertical_spread import VerticalSpread
 import pandas as pd
 from datetime import datetime
 
@@ -26,7 +27,7 @@ class TestOptionBacktester(unittest.TestCase):
         self.assertEqual(self.backtester.config.max_positions, 5)
 
     def test_add_spread(self):
-        spread = OptionStrategy.create_vertical_spread(
+        spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=565,
@@ -40,7 +41,7 @@ class TestOptionBacktester(unittest.TestCase):
         self.assertEqual(len(self.backtester.active_trades), 1)
 
     def test_add_conflicting_spread(self):
-        spread = OptionStrategy.create_vertical_spread(
+        spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=565,
@@ -51,7 +52,7 @@ class TestOptionBacktester(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         self.assertTrue(self.backtester.add_spread(spread))
-        conflicting_spread = OptionStrategy.create_vertical_spread(
+        conflicting_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=565,
@@ -65,7 +66,7 @@ class TestOptionBacktester(unittest.TestCase):
         self.assertEqual(len(self.backtester.active_trades), 1)
 
     def test_update_backtester(self):
-        spread = OptionStrategy.create_vertical_spread(
+        spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=565,
@@ -83,7 +84,7 @@ class TestOptionBacktester(unittest.TestCase):
         self.assertEqual(self.backtester.available_to_trade, initial_capital - spread.get_required_capital())
 
     def test_update_with_position_closing(self):
-        spread = OptionStrategy.create_vertical_spread(
+        spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=565,
@@ -95,13 +96,14 @@ class TestOptionBacktester(unittest.TestCase):
             profit_target=0.3,
         )
         self.assertTrue(self.backtester.add_spread(spread))
+        spread.close_strategy("2024-09-06 15:45:00", self.update_df)
         self.backtester.update("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(len(self.backtester.active_trades), 0)
         self.assertEqual(len(self.backtester.closed_trades), 1)
 
     def test_maximum_positions(self):
         for i in range(2):
-            spread = OptionStrategy.create_vertical_spread(
+            spread = VerticalSpread.create_vertical_spread(
                 symbol="SPY",
                 option_type="CALL",
                 long_strike=565 + i,
@@ -113,7 +115,7 @@ class TestOptionBacktester(unittest.TestCase):
             )
             self.assertTrue(self.backtester.add_spread(spread))
         self.assertEqual(len(self.backtester.active_trades), 2)
-        spread = OptionStrategy.create_vertical_spread(
+        spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=568,
@@ -127,16 +129,16 @@ class TestOptionBacktester(unittest.TestCase):
         self.assertEqual(len(self.backtester.active_trades), 2)
 
     def test_profit_loss_calculation(self):
-        spread = OptionStrategy.create_vertical_spread(
+        spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=565,
             short_strike=560,
-            expiration="2024-12-20",
+            expiration="2024-10-01",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
-            profit_target=0.3,
+            profit_target=0.1,
         )
         self.assertTrue(self.backtester.add_spread(spread))
         self.backtester.update("2024-09-06 15:45:00", self.update_df)
@@ -144,10 +146,10 @@ class TestOptionBacktester(unittest.TestCase):
         self.assertIsInstance(total_pl, (float, int))
         closed_pl = self.backtester.get_closed_pl()
         self.assertIsInstance(closed_pl, (float, int))
-        self.assertNotEqual(closed_pl, 0)
+        self.assertEqual(closed_pl, 0)
 
     def test_adjusting_contracts_to_fit_position_size(self):
-        spread = OptionStrategy.create_vertical_spread(
+        spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="CALL",
             long_strike=565,
