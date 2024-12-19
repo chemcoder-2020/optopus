@@ -15,6 +15,7 @@ from .utils.heapmedian import ContinuousMedian
 from .backtest.vertical_spread import BacktestVerticalSpread
 from .backtest.bidirectional_vertical_spread import BacktestBidirectionalVerticalSpread
 from .trades.option_chain_converter import OptionChainConverter
+from .trades.strategies import IronCondor, Straddle, IronButterfly, VerticalSpread, NakedPut, NakedCall
 
 __all__ = [
     "OptionBroker",
@@ -37,4 +38,10 @@ __all__ = [
     "CompositeExitCondition",
     "DefaultExitCondition",
     "OptionChainConverter",
+    "IronCondor",
+    "Straddle",
+    "IronButterfly",
+    "VerticalSpread",
+    "NakedPut",
+    "NakedCall",
 ]
