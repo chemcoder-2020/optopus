@@ -545,13 +545,15 @@ class OptionStrategy:
         else:
             raise ValueError(f"Unsupported strike input type: {type(strike_input)}")
 
+
     @classmethod
-    def create_vertical_spread(
+    def create_iron_condor(
         cls,
         symbol: str,
-        option_type: str,
-        long_strike,
-        short_strike,
+        put_long_strike,
+        put_short_strike,
+        call_short_strike,
+        call_long_strike,
         expiration,
         contracts: int,
         entry_time: str,
@@ -568,13 +570,14 @@ class OptionStrategy:
         ),
     ):
         """
-        Create a vertical spread option strategy.
+        Create an iron condor option strategy.
 
         Args:
             symbol (str): The underlying asset symbol.
-            option_type (str): The option type ('CALL' or 'PUT').
-            long_strike: The strike price, delta, or ATM offset (e.g., "+2", 0.3, or "ATM") for long leg.
-            short_strike: The strike price, delta, or ATM offset for short leg.
+            put_long_strike: The long put strike price or selector.
+            put_short_strike: The short put strike price or selector.
+            call_short_strike: The short call strike price or selector.
+            call_long_strike: The long call strike price or selector.
             expiration (str or int): The option expiration date or target DTE.
             contracts (int): The number of contracts.
             entry_time (str): The entry time for the strategy.
@@ -585,9 +588,6 @@ class OptionStrategy:
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
             commission (float, optional): Commission per contract per leg.
             exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
-                Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
-
-        Returns:
             OptionStrategy: A vertical spread strategy object.
         """
         converter = OptionChainConverter(option_chain_df)
