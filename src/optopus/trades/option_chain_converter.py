@@ -27,15 +27,6 @@ class OptionChainConverter:
         :return: Series of tz-naive datetime objects in Eastern time.
         """
         return pd.DatetimeIndex(dt_series).tz_localize(None)
-        # eastern = pytz.timezone("US/Eastern")
-        # if dt_series.dt.tz is not None:
-        #     return dt_series.dt.tz_convert(eastern).dt.tz_localize(None)
-        # else:
-        #     return (
-        #         dt_series.dt.tz_localize("UTC")
-        #         .dt.tz_convert(eastern)
-        #         .dt.tz_localize(None)
-        #     )
 
     def get_closest_expiration(
         self, target_date: int | pd.Timestamp | str | datetime

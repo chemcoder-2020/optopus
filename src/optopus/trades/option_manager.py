@@ -10,6 +10,7 @@ from scipy.stats import gaussian_kde
 import os
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
 
+
 @dataclass
 class Config:
     initial_capital: float
@@ -71,7 +72,9 @@ class OptionBacktester:
             for trade in self.active_trades:
                 trade_update_success = trade.update(current_time, option_chain_df)
                 if not trade_update_success:
-                    logger.warning(f"Trade {trade} update failed at {current_time}, due to spike in option chain.")
+                    logger.warning(
+                        f"Trade {trade} update failed at {current_time}, due to spike in option chain."
+                    )
                 else:
                     logger.debug(f"Trade {trade} updated at {current_time}")
                 if trade.status == "CLOSED":
@@ -146,11 +149,9 @@ class OptionBacktester:
         if self.capital <= 0:
             logger.warning("Cannot add spread: no capital left.")
             return False
-            
+
         return self.config.entry_condition.should_enter(
-            new_spread, 
-            self,
-            self.last_update_time
+            new_spread, self, self.last_update_time
         )
 
     def _update_trade_counts(self) -> None:
@@ -254,7 +255,7 @@ class OptionBacktester:
                 "total_pl": total_pl,
                 "closed_pl": closed_pl,
                 "underlying_last": underlying_last,
-                "active_positions": active_positions
+                "active_positions": active_positions,
             }
         )
 
@@ -274,7 +275,9 @@ class OptionBacktester:
         df["drawdown"] = df["peak"] - df["total_pl"]
 
         # Create subplots
-        fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(12, 24), sharex=True)
+        fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(
+            5, 1, figsize=(12, 24), sharex=True
+        )
 
         # Plot Total P/L
         ax1.plot(df.index, df["total_pl"], label="Total P/L")
@@ -383,15 +386,17 @@ class OptionBacktester:
 
         closed_trades_df = self.get_closed_trades_df()
         try:
-            trade_returns_per_allocation = closed_trades_df["closed_pl"] / self.allocation
+            trade_returns_per_allocation = (
+                closed_trades_df["closed_pl"] / self.allocation
+            )
         except KeyError:
             trade_returns_per_allocation = np.nan
-        
+
         try:
             average_dit = closed_trades_df["dit"].mean()
         except KeyError:
             average_dit = np.nan
-        
+
         try:
             average_dit_spread = closed_trades_df["dit"].std()
         except KeyError:
@@ -414,15 +419,19 @@ class OptionBacktester:
             "max_drawdown_percentage": max_drawdown_percentage,
             "average_dit": average_dit,
             "average_dit_spread": average_dit_spread,
-            "average_exit_dte": closed_trades_df["exit_dte"].mean()
+            "average_exit_dte": closed_trades_df["exit_dte"].mean(),
         }
 
         try:
-            metrics["sharpe_ratio"] = self._calculate_sharpe_ratio(trade_returns_per_allocation)
+            metrics["sharpe_ratio"] = self._calculate_sharpe_ratio(
+                trade_returns_per_allocation
+            )
         except Exception as e:
             logger.error(f"Error calculating Sharpe Ratio: {str(e)}")
         try:
-            metrics["profit_factor"] = self._calculate_profit_factor(trade_returns_per_allocation)
+            metrics["profit_factor"] = self._calculate_profit_factor(
+                trade_returns_per_allocation
+            )
         except Exception as e:
             logger.error(f"Error calculating Profit Factor: {str(e)}")
         try:
@@ -434,9 +443,13 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error calculating Average Monthly P/L: {str(e)}")
         try:
-            metrics["avg_monthly_pl_nonzero"] = self.calculate_avg_monthly_pl_nonzero(df)
+            metrics["avg_monthly_pl_nonzero"] = self.calculate_avg_monthly_pl_nonzero(
+                df
+            )
         except Exception as e:
-            logger.error(f"Error calculating Average Monthly P/L (Non-Zero Months): {str(e)}")
+            logger.error(
+                f"Error calculating Average Monthly P/L (Non-Zero Months): {str(e)}"
+            )
         try:
             metrics["win_rate"] = self._calculate_win_rate()
         except Exception as e:
@@ -450,14 +463,22 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error calculating Risk of Ruin: {str(e)}")
         try:
-            metrics["probability_of_positive_monthly_pl"] = self._calculate_probability_of_positive_monthly_pl(df)
+            metrics["probability_of_positive_monthly_pl"] = (
+                self._calculate_probability_of_positive_monthly_pl(df)
+            )
         except Exception as e:
-            logger.error(f"Error calculating Probability of Positive Monthly P/L: {str(e)}")
+            logger.error(
+                f"Error calculating Probability of Positive Monthly P/L: {str(e)}"
+            )
         try:
-            metrics["probability_of_positive_monthly_closed_pl"] = self._calculate_probability_of_positive_monthly_closed_pl(df)
+            metrics["probability_of_positive_monthly_closed_pl"] = (
+                self._calculate_probability_of_positive_monthly_closed_pl(df)
+            )
         except Exception as e:
-            logger.error(f"Error calculating Probability of Positive Monthly Closed P/L: {str(e)}")
-        
+            logger.error(
+                f"Error calculating Probability of Positive Monthly Closed P/L: {str(e)}"
+            )
+
         try:
             metrics["return_over_risk"] = closed_trades_df["return_over_risk"].mean()
         except KeyError:
@@ -544,7 +565,9 @@ class OptionBacktester:
         total_months = monthly_pl[monthly_pl != 0]
         return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
-    def _calculate_probability_of_positive_monthly_closed_pl(self, df: pd.DataFrame) -> float:
+    def _calculate_probability_of_positive_monthly_closed_pl(
+        self, df: pd.DataFrame
+    ) -> float:
         """
         Calculate the probability of having a positive monthly closed P/L.
 
@@ -571,7 +594,9 @@ class OptionBacktester:
         Returns:
             float: Average monthly P/L for non-zero months.
         """
-        monthly_pl = df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
+        monthly_pl = (
+            df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
+        )
         non_zero_months = monthly_pl[monthly_pl != 0]
         return non_zero_months.mean() if not non_zero_months.empty else 0
 
@@ -693,25 +718,27 @@ class OptionBacktester:
         for key, value in kwargs.items():
             if hasattr(self.config, key):
                 # Update attribute
-                if key in ['initial_capital', 'allocation', 'position_size']:
+                if key in ["initial_capital", "allocation", "position_size"]:
                     value = float(value)
                 setattr(self.config, key, value)
                 # Update related attributes that depend on config
-                if key == 'initial_capital' or key == 'allocation':
+                if key == "initial_capital" or key == "allocation":
                     new_allocation = value
                     added_allocation = new_allocation - self.allocation
                     self.allocation = value
                     self.available_to_trade += added_allocation
                     self.capital += added_allocation
-                elif key == 'position_size':
+                elif key == "position_size":
                     # Validate position size is between 0 and 1
                     if not 0 < value <= 1:
-                        logger.warning(f"Invalid position_size {value}. Must be between 0 and 1.")
+                        logger.warning(
+                            f"Invalid position_size {value}. Must be between 0 and 1."
+                        )
                         continue
                 updated = True
             else:
                 logger.warning(f"Unknown configuration parameter: {key}")
-        
+
         return updated
 
     def print_performance_summary(self):
@@ -725,7 +752,9 @@ class OptionBacktester:
             print(f"Profit Factor: {metrics['profit_factor']:.2f}")
             print(f"CAGR: {metrics['cagr']:.2%}")
             print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
-            print(f"Average Monthly P/L (Non-Zero Months): ${metrics['avg_monthly_pl_nonzero']:.2f}")
+            print(
+                f"Average Monthly P/L (Non-Zero Months): ${metrics['avg_monthly_pl_nonzero']:.2f}"
+            )
             print(f"Average Return over Risk: {metrics['return_over_risk']:.2%}")
             print(
                 f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}"
@@ -745,337 +774,8 @@ class OptionBacktester:
             if self.closed_trades:
                 first_entry_time = min(trade.entry_time for trade in self.closed_trades)
                 last_exit_time = max(trade.exit_time for trade in self.closed_trades)
-                print(f"Time Range of Closed Positions: {first_entry_time} to {last_exit_time}")
+                print(
+                    f"Time Range of Closed Positions: {first_entry_time} to {last_exit_time}"
+                )
         else:
             print("No performance data available for summary.")
-
-
-if __name__ == "__main__":
-    # Load test data
-    entry_df = pd.read_parquet(
-        "/Users/traderHuy/Downloads/SPY option backtest analysis/OptionDX/SPY/by_day/by_bar/SPY_2024-09-06 15-30.parquet"
-    )
-    update_df = pd.read_parquet(
-        "/Users/traderHuy/Downloads/SPY option backtest analysis/OptionDX/SPY/by_day/by_bar/SPY_2024-09-06 15-45.parquet"
-    )
-    update_df2 = pd.read_parquet(
-        "/Users/traderHuy/Downloads/SPY option backtest analysis/Tradier Option Data/schwab_chains/SPY/2024/SPY_2024-09-09 09-45.parquet"
-    )
-
-    print("\nRunning OptionBacktester tests:")
-
-    # Test 1: Initialization
-    print("\nTest 1: Initialization")
-    config = Config(
-        initial_capital=10000,
-        max_positions=5,
-        max_positions_per_day=2,
-        max_positions_per_week=5,
-        position_size=0.1,
-        ror_threshold=0.05,
-        gain_reinvesting=False,  # Set this to True to test reinvesting gains
-    )
-    backtester = OptionBacktester(config)
-    assert backtester.capital == 10000, "Initial capital not set correctly"
-    assert backtester.config.max_positions == 5, "Max positions not set correctly"
-    print("Test 1 passed: OptionBacktester initialized correctly")
-
-    # Test 2: Adding a spread
-    print("\nTest 2: Adding a spread")
-    spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="CALL",
-        long_strike=560,
-        short_strike=550,
-        expiration="2024-12-20",
-        contracts=1,
-        entry_time="2024-09-06 15:30:00",
-        option_chain_df=entry_df,
-    )
-    assert backtester.add_spread(spread), "Failed to add valid spread"
-    assert len(backtester.active_trades) == 1, "Active trades not updated correctly"
-    print("Test 2 passed: Spread added successfully")
-
-    # Test 3: Adding conflicting spread
-    print("\nTest 3: Adding conflicting spread")
-    conflicting_spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="CALL",
-        long_strike=560,
-        short_strike=550,
-        expiration="2024-12-20",
-        contracts=1,
-        entry_time="2024-09-06 15:30:00",
-        option_chain_df=entry_df,
-    )
-    assert not backtester.add_spread(conflicting_spread), "Added conflicting spread"
-    assert len(backtester.active_trades) == 1, "Active trades incorrectly updated"
-    print("Test 3 passed: Conflicting spread not added")
-
-    # Test 4: Updating backtester
-    print("\nTest 4: Updating backtester")
-    initial_capital = backtester.allocation
-    print(f"Initial capital: {initial_capital}")
-    initial_pl = backtester.active_trades[0].total_pl()
-    print(f"Initial P/L of the trade: {initial_pl}")
-    backtester.update("2024-09-06 15:45:00", update_df)
-    final_pl = backtester.active_trades[0].total_pl()
-    print(f"Final P/L of the trade: {final_pl}")
-    print(f"Capital after update: {backtester.capital}")
-    assert (
-        backtester.trades_entered_today == 1
-    ), "Trades entered today not updated correctly"
-    assert (
-        backtester.trades_entered_this_week == 1
-    ), "Trades entered this week not updated correctly"
-
-    assert (
-        backtester.capital + backtester.active_trades[0].get_required_capital()
-        == initial_capital
-    ), f"Capital should reduce by the required capital of the trade. Initial: {initial_capital}, After: {backtester.capital}"
-    print("Test 4 passed: Backtester updated successfully")
-
-    # Test 5: Update with position closing
-    print("\nTest 5: Update with position closing. Reinitialize backtester.")
-    backtester = OptionBacktester(config)
-    assert backtester.capital == 10000, "Initial capital not set correctly"
-    assert backtester.config.max_positions == 5, "Max positions not set correctly"
-    spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="CALL",
-        long_strike=560,
-        short_strike=550,
-        expiration="2024-12-20",
-        contracts=1,
-        entry_time="2024-09-06 15:30:00",
-        option_chain_df=entry_df,
-        profit_target=1,
-    )
-    assert backtester.add_spread(spread), "Failed to add valid spread"
-    assert len(backtester.active_trades) == 1, "Active trades not updated correctly"
-    backtester.update("2024-09-06 15:45:00", update_df)
-    assert len(backtester.active_trades) == 0, "Active trades not closed correctly"
-    print("Test 5 passed: Position closed successfully")
-    print(f"Capital after update: {backtester.capital}")
-    print(f"Closed trades: {backtester.closed_trades}")
-    print(f"Active trades: {backtester.active_trades}")
-    assert (
-        backtester.capital == initial_capital + spread.total_pl()
-    ), f"Capital not updated correctly. Initial: {initial_capital}, PL: {initial_pl}, After: {backtester.capital}"
-
-    # Test 6: Maximum positions
-    print("\nTest 6: Maximum positions. Reinitialize backtester.")
-    backtester = OptionBacktester(config)
-    assert backtester.capital == 10000, "Initial capital not set correctly"
-    assert backtester.config.max_positions == 5, "Max positions not set correctly"
-    assert (
-        backtester.config.max_positions_per_day == 2
-    ), "Max positions per day not set correctly"
-    assert (
-        backtester.config.max_positions_per_week == 5
-    ), "Max positions per week not set correctly"
-    assert backtester.config.position_size == 0.1, "Position size not set correctly"
-    assert backtester.config.ror_threshold == 0.05, "ROR threshold not set correctly"
-
-    new_spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="PUT",
-        long_strike=540,
-        short_strike=550,
-        expiration="2024-12-20",
-        contracts=1,
-        entry_time="2024-09-06 15:30:00",
-        option_chain_df=entry_df,
-    )
-    backtester.add_spread(new_spread)
-    assert len(backtester.active_trades) == 1, "Active trades not updated correctly"
-    assert (
-        backtester.trades_entered_today == 1
-    ), "Trades entered today not updated correctly"
-    assert (
-        backtester.trades_entered_this_week == 1
-    ), "Trades entered this week not updated correctly"
-    new_spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="PUT",
-        long_strike=541,
-        short_strike=551,
-        expiration="2024-12-20",
-        contracts=1,
-        entry_time="2024-09-06 15:30:00",
-        option_chain_df=entry_df,
-    )
-    backtester.add_spread(new_spread)
-    assert len(backtester.active_trades) == 2, "Active trades not updated correctly"
-    assert (
-        backtester.trades_entered_today == 2
-    ), "Trades entered today not updated correctly"
-    assert (
-        backtester.trades_entered_this_week == 2
-    ), "Trades entered this week not updated correctly"
-    new_spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="PUT",
-        long_strike=543,
-        short_strike=553,
-        expiration="2024-12-20",
-        contracts=1,
-        entry_time="2024-09-06 15:30:00",
-        option_chain_df=entry_df,
-    )
-    backtester.add_spread(new_spread)
-    assert (
-        backtester.trades_entered_today == 2
-    ), "Trades entered today not updated correctly"
-    assert (
-        backtester.trades_entered_this_week == 2
-    ), "Trades entered this week not updated correctly"
-
-    print(f"Active trades: {backtester.active_trades}")
-
-    assert len(backtester.active_trades) == 2, "Max positions not enforced correctly"
-    print("Test 6 passed: Maximum positions enforced correctly")
-
-    # Test 7: Profit/Loss calculation
-    print("\nTest 7: Profit/Loss calculation")
-    backtester.update("2024-09-06 15:45:00", update_df)
-    total_pl = backtester.get_total_pl()
-    assert isinstance(total_pl, (float, int)), "Total P/L not calculated as float"
-    print(f"Total P/L: {total_pl}")
-    closed_pl = backtester.get_closed_pl()
-    assert isinstance(closed_pl, (float, int)), "Closed P/L not calculated as float"
-    print(f"Closed P/L: {closed_pl}")
-    assert closed_pl == 0, "Closed P/L should be 0 because the trade is not closed"
-    print("Test 7 passed: Total P/L calculated successfully")
-
-    # Test 8: Adjusting contracts to fit position size
-    print("\nTest 8: Adjusting contracts to fit position size")
-    backtester = OptionBacktester(config)
-    spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="CALL",
-        long_strike=560,
-        short_strike=550,
-        expiration="2024-12-20",
-        contracts=1000,
-        entry_time="2024-09-06 15:30:00",
-        option_chain_df=entry_df,
-    )
-    max_capital = backtester.allocation * backtester.config.position_size
-    expected_contracts = int(max_capital // spread.get_required_capital_per_contract())
-    expected_required_capital = (
-        spread.get_required_capital_per_contract() * expected_contracts
-    )
-
-    print(f"Max capital: {max_capital}")
-    print(
-        f"Required capital per contract: {spread.get_required_capital_per_contract()}"
-    )
-    print(f"Expected contracts: {expected_contracts}")
-    print(f"Expected required capital: {expected_required_capital}")
-
-    assert backtester.add_spread(spread), "Failed to add spread"
-    assert (
-        spread.contracts == expected_contracts
-    ), f"Contracts not adjusted correctly. Expected: {expected_contracts}, Actual: {spread.contracts}"
-    assert (
-        spread.get_required_capital() == expected_required_capital
-    ), f"Required capital not adjusted correctly. Expected: {expected_required_capital}, Actual: {spread.get_required_capital()}"
-    # New test: Check total P/L after adjusting contracts
-    initial_capital = backtester.capital
-    backtester.update("2024-09-06 15:45:00", update_df)
-    total_pl = backtester.get_total_pl()
-    expected_pl = spread.total_pl()
-    assert (
-        abs(total_pl - expected_pl) < 0.01
-    ), f"Total P/L not calculated correctly after adjusting contracts. Expected: {expected_pl}, Actual: {total_pl}"
-
-    print(
-        "Test 8 passed: Contracts adjusted correctly to fit position size and P/L calculated correctly"
-    )
-
-    print("\n--- Performance Visualization Test ---")
-
-    # Create a backtester with some sample data
-    config = Config(
-        initial_capital=10000,
-        max_positions=5,
-        max_positions_per_day=2,
-        max_positions_per_week=5,
-        position_size=0.1,
-        ror_threshold=0.05,
-    )
-    backtester = OptionBacktester(config)
-
-    # Add some sample trades
-    for i in range(10):
-        spread = OptionStrategy.create_vertical_spread(
-            symbol="SPY",
-            option_type="CALL",
-            long_strike=560 + i,
-            short_strike=550 + i,
-            expiration="2024-12-20",
-            contracts=1,
-            entry_time="2024-09-06 15:30:00",
-            option_chain_df=entry_df,
-        )
-
-        backtester.add_spread(spread)
-
-        # Simulate some updates and closures
-        backtester.update("2024-09-06 15:45:00", update_df)
-        if i % 2 == 0:
-            spread.close_strategy("2024-09-09 09:45:00", update_df2)
-            backtester.update("2024-09-09 09:45:00", update_df2)
-
-    # Generate and display the performance plots
-    backtester.plot_performance()
-
-    print("Performance visualization test completed")
-
-    # Test 9: Get closed trades dataframe
-    print("\nTest 9: Get closed trades dataframe")
-    closed_trades_df = backtester.get_closed_trades_df()
-    print(closed_trades_df)
-    closed_trades_df.to_csv("closed_trades.csv", index=False)
-    print("Test 9 passed: Closed trades dataframe generated successfully")
-
-    print("\n--- Performance Metrics Test ---")
-
-    # Create a backtester with some sample data
-    config = Config(
-        initial_capital=10000,
-        max_positions=5,
-        max_positions_per_day=2,
-        max_positions_per_week=5,
-        position_size=0.1,
-        ror_threshold=0.05,
-    )
-    backtester = OptionBacktester(config)
-
-    # Add some sample trades and updates (similar to previous test)
-    for i in range(10):
-        spread = OptionStrategy.create_vertical_spread(
-            symbol="SPY",
-            option_type="CALL",
-            long_strike=560 + i,
-            short_strike=550 + i,
-            expiration="2024-12-20",
-            contracts=1,
-            entry_time="2024-09-06 15:30:00",
-            option_chain_df=entry_df,
-        )
-
-        backtester.add_spread(spread)
-
-        backtester.update("2024-09-06 15:45:00", update_df)
-        if i % 2 == 0:
-            spread.close_strategy("2024-09-09 09:45:00", update_df2)
-            backtester.update("2024-09-09 09:45:00", update_df2)
-
-    # Print performance summary
-    backtester.print_performance_summary()
-
-    print("Performance metrics test completed")
-
-    print("\nAll OptionBacktester tests completed!")
