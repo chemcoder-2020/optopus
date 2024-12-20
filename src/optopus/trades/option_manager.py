@@ -9,7 +9,9 @@ import numpy as np
 from scipy.stats import gaussian_kde
 import os
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
-
+import cProfile
+import pstats
+from io import StringIO
 
 @dataclass
 class Config:
@@ -33,7 +35,6 @@ class Config:
     def get(self, key, default=None):
         """Get an attribute with a default value if it does not exist."""
         return getattr(self, key, default)
-
 
 class OptionBacktester:
     """Backtests option trading strategies."""
@@ -64,6 +65,9 @@ class OptionBacktester:
             current_time (datetime): Current time for the update.
             option_chain_df (pd.DataFrame): DataFrame containing the option chain data.
         """
+        pr = cProfile.Profile()
+        pr.enable()
+
         try:
             current_time = pd.to_datetime(current_time)
 
@@ -109,6 +113,13 @@ class OptionBacktester:
             self._record_performance_data(current_time, option_chain_df)
         except Exception as e:
             logger.error(f"Error updating backtester: {str(e)}")
+
+        pr.disable()
+        s = StringIO()
+        sortby = "cumulative"
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
 
     def add_spread(self, new_spread: OptionStrategy) -> bool:
         """
