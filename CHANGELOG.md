@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.1-dev4
+
+### Performance
+-   Improved performance of option chain processing
+
 ## v0.9.1-dev3
 
 ### Features
