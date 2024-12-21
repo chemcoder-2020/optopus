@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from typing import Union
 
-
 class OptionLeg:
     """
     Represents a single option leg in an options trading strategy.
@@ -167,41 +166,17 @@ class OptionLeg:
             oi_key = f"{prefix}OI"
             itm_key = f"{prefix}ITM"
 
-            if bid_key in option_data.columns:
-                self.current_bid = option_data[bid_key].iloc[0]
-            else:
-                self.current_bid = np.nan
+            # Cache option_data for reuse
+            option_row = option_data.iloc[0]
 
-            if ask_key in option_data.columns:
-                self.current_ask = option_data[ask_key].iloc[0]
-            else:
-                self.current_ask = np.nan
-
+            self.current_bid = option_row.get(bid_key, np.nan)
+            self.current_ask = option_row.get(ask_key, np.nan)
             self.current_mark = (self.current_bid + self.current_ask) / 2
-
-            self.current_last = (
-                option_data[last_key].iloc[0]
-                if last_key in option_data.columns
-                else np.nan
-            )
-            self.current_delta = (
-                option_data[delta_key].iloc[0]
-                if delta_key in option_data.columns
-                else np.nan
-            )
-            self.open_interest = (
-                option_data[oi_key].iloc[0]
-                if oi_key in option_data.columns
-                else np.nan
-            )
-            self.underlying_last = (
-                option_data["UNDERLYING_LAST"].iloc[0]
-                if "UNDERLYING_LAST" in option_data.columns
-                else np.nan
-            )
-            self.is_itm = (
-                option_data[itm_key].iloc[0] if itm_key in option_data.columns else None
-            )
+            self.current_last = option_row.get(last_key, np.nan)
+            self.current_delta = option_row.get(delta_key, np.nan)
+            self.open_interest = option_row.get(oi_key, np.nan)
+            self.underlying_last = option_row.get("UNDERLYING_LAST", np.nan)
+            self.is_itm = option_row.get(itm_key, None)
 
             self.current_price = (
                 self.current_mark if pd.notna(self.current_mark) else np.nan
@@ -470,7 +445,6 @@ class OptionLeg:
                 expiration = pd.Timestamp(self.expiration).strftime("%y%m%d")
         option_symbol = f"{self.symbol.ljust(6)}{expiration}{self.option_type[0]}{str(int(self.strike * 1000)).zfill(8)}"
         return option_symbol
-
 
 def calculate_dte(
     expiration_date: Union[str, pd.Timestamp, datetime.datetime],
