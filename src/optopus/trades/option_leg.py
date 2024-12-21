@@ -107,6 +107,7 @@ class OptionLeg:
 
         self.update(entry_time, option_chain_df, is_entry=True)
 
+    @profile
     def update(
         self,
         current_time: Union[str, pd.Timestamp, datetime.datetime],
