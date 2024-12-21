@@ -12,4 +12,5 @@ src/optopus/__pycache__/*
 src/optopus/trades/__pycache__/*
 src/optopus/brokers/schwab/__pycache__/*
 src/optopus/.DS_Store
+src/optopus/trades/update_leg_profile.py
 testing_stuff_before_build.py

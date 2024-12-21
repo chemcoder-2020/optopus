@@ -9,9 +9,6 @@ import numpy as np
 from scipy.stats import gaussian_kde
 import os
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
-import cProfile
-import pstats
-from io import StringIO
 
 @dataclass
 class Config:
@@ -65,8 +62,6 @@ class OptionBacktester:
             current_time (datetime): Current time for the update.
             option_chain_df (pd.DataFrame): DataFrame containing the option chain data.
         """
-        pr = cProfile.Profile()
-        pr.enable()
 
         try:
             current_time = pd.to_datetime(current_time)
@@ -80,7 +75,7 @@ class OptionBacktester:
                         f"Trade {trade} update failed at {current_time}, due to spike in option chain."
                     )
                 else:
-                    logger.debug(f"Trade {trade} updated at {current_time}")
+                    pass
                 if trade.status == "CLOSED":
                     trades_to_close.append(trade)
 
@@ -114,12 +109,6 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error updating backtester: {str(e)}")
 
-        pr.disable()
-        s = StringIO()
-        sortby = "cumulative"
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
 
     def add_spread(self, new_spread: OptionStrategy) -> bool:
         """

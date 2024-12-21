@@ -145,22 +145,7 @@ class OptionLeg:
 
         self.current_time = current_datetime
 
-        # Ensure QUOTE_READTIME is timezone-naive and rounded to 15 minutes
-        quote_readtime = (
-            option_chain_df["QUOTE_READTIME"].iloc[0].round("15min").tz_localize(None)
-        )
-        rounded_current_time = current_datetime.round("15min")
-
-        if quote_readtime != rounded_current_time:
-            raise ValueError(
-                f"QUOTE_READTIME ({quote_readtime}) does not match rounded current_time ({rounded_current_time})"
-            )
-
-        # Filter the option chain for the specific option
-        option_data = option_chain_df[
-            (option_chain_df["STRIKE"] == self.strike)
-            & (option_chain_df["EXPIRE_DATE"] == self.expiration)
-        ]
+        option_data = option_chain_df.loc[(option_chain_df["STRIKE"] == self.strike) & (option_chain_df["EXPIRE_DATE"] == self.expiration)]
 
         if not option_data.empty:
             prefix = "C_" if self.option_type.upper() == "CALL" else "P_"

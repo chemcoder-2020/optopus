@@ -5,6 +5,7 @@ from src.optopus.trades.strategies.vertical_spread import VerticalSpread
 import pandas as pd
 from datetime import datetime
 
+
 class TestOptionBacktester(unittest.TestCase):
 
     def setUp(self):
@@ -81,7 +82,10 @@ class TestOptionBacktester(unittest.TestCase):
         self.backtester.update("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(self.backtester.trades_entered_today, 1)
         self.assertEqual(self.backtester.trades_entered_this_week, 1)
-        self.assertEqual(self.backtester.available_to_trade, initial_capital - spread.get_required_capital())
+        self.assertEqual(
+            self.backtester.available_to_trade,
+            initial_capital - spread.get_required_capital(),
+        )
 
     def test_update_with_position_closing(self):
         spread = VerticalSpread.create_vertical_spread(
@@ -160,13 +164,16 @@ class TestOptionBacktester(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         max_capital = self.backtester.allocation * self.backtester.config.position_size
-        expected_contracts = int(max_capital // spread.get_required_capital_per_contract())
+        expected_contracts = int(
+            max_capital // spread.get_required_capital_per_contract()
+        )
         expected_required_capital = (
             spread.get_required_capital_per_contract() * expected_contracts
         )
         self.assertTrue(self.backtester.add_spread(spread))
         self.assertEqual(spread.contracts, expected_contracts)
         self.assertEqual(spread.get_required_capital(), expected_required_capital)
+
 
 if __name__ == "__main__":
     unittest.main()

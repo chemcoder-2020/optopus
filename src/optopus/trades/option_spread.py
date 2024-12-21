@@ -212,8 +212,6 @@ class OptionStrategy:
             current_time (Union[str, Timestamp, datetime.datetime]): The current time for evaluation.
             option_chain_df (pd.DataFrame): The updated option chain data.
         """
-        pr = cProfile.Profile()
-        pr.enable()
         if self.status == "CLOSED":
             return  # Do nothing if the strategy is already closed
 
@@ -242,12 +240,6 @@ class OptionStrategy:
 
         # Calculate and store the strategy's bid-ask spread
         self.current_bid, self.current_ask = self.calculate_bid_ask()
-        pr.disable()
-        s = StringIO()
-        sortby = SortKey.CUMULATIVE
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
 
         return True
 

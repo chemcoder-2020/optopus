@@ -132,7 +132,7 @@ class TestOptionStrategy(unittest.TestCase):
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
-        print(vertical_spread.strategy_side)
+        # print(vertical_spread.strategy_side)
         vertical_spread.update("2024-09-06 15:30:00", self.entry_df)
         self.assertTrue(
             vertical_spread.total_pl()
@@ -142,7 +142,7 @@ class TestOptionStrategy(unittest.TestCase):
             vertical_spread.current_time, pd.Timestamp("2024-09-06 15:30:00")
         )
         vertical_spread.update("2024-09-06 15:45:00", self.update_df)
-        print(vertical_spread.total_pl())
+        # print(vertical_spread.total_pl())
         self.assertTrue(
             vertical_spread.total_pl() + vertical_spread.calculate_total_commission()
             > 0
