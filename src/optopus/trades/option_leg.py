@@ -4,6 +4,14 @@ import pandas as pd
 import numpy as np
 from typing import Union
 
+# Attempt to import the 'profile' decorator from 'line_profiler'
+try:
+    from line_profiler import profile
+except ImportError:
+    # If 'line_profiler' is not installed, create a dummy 'profile' decorator
+    def profile(func):
+        return func
+
 class OptionLeg:
     """
     Represents a single option leg in an options trading strategy.
@@ -106,7 +114,6 @@ class OptionLeg:
 
         self.update(entry_time, option_chain_df, is_entry=True)
 
-    @profile
     def update(
         self,
         current_time: Union[str, pd.Timestamp, datetime.datetime],
