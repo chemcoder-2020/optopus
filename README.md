@@ -156,7 +156,7 @@ This project is designed to be modular and extensible, making it easy to add new
 
 5. Alternatively, you can install the library using the binary distribution:
    ```bash
-   pip install dist/optopus-0.9.1-dev5-py3-none-any.whl
+   pip install optopus-0.9.1-dev5-py3-none-any.whl
    ```
 
 ## Usage

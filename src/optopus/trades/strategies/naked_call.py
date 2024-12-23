@@ -92,5 +92,9 @@ class NakedCall(OptionStrategy):
             - strategy.entry_time.date()
         ).days
         strategy.current_bid, strategy.current_ask = strategy.calculate_bid_ask()
+        strategy.entry_bid, strategy.entry_ask = (
+            strategy.current_bid,
+            strategy.current_ask,
+        )
 
         return strategy

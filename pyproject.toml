@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.scripts]
-optopus = "optopus.main:main"
+setup-optopus-backtest = "optopus.cli.setup_backtest:main"
 
 [tool.black]
 line-length = 88
