@@ -102,21 +102,51 @@ def copy_optopus_files(project_name):
         shutil.copy2(source_path, dest_path)
 
 def main():
-    parser = argparse.ArgumentParser(description="Set up a backtesting project.")
-    parser.add_argument("project_name", help="Name of the backtesting project directory")
-    parser.add_argument("--symbol", help="Underlying symbol for the strategy")
-    parser.add_argument("--dte", type=int, help="Days to expiration")
-    parser.add_argument("--strike", help="Strike selection method (e.g., 'ATM', 'ATM+1%')")
-    parser.add_argument("--contracts", type=int, help="Number of contracts to trade")
-    parser.add_argument("--commission", type=float, help="Commission per contract")
-    parser.add_argument(
-        "--initial_capital", type=float, help="Initial capital for the backtest"
+    parser = argparse.ArgumentParser(
+        description="Set up a backtesting project for options trading.",
+        formatter_class=argparse.RawTextHelpFormatter,  # Use RawTextHelpFormatter
     )
     parser.add_argument(
-        "--max_positions", type=int, help="Maximum number of open positions"
+        "project_name",
+        help="Name of the backtesting project directory. This will be the name of the new folder created for your project.",
     )
     parser.add_argument(
-        "--position_size", type=float, help="Position size as a fraction of capital"
+        "--symbol",
+        help="Underlying symbol for the options strategy (e.g., 'SPY'). This sets the stock or ETF ticker for which the backtest will be run.",
+    )
+    parser.add_argument(
+        "--dte",
+        type=int,
+        help="Days to expiration for the options. This specifies the number of days until the options contracts expire.",
+    )
+    parser.add_argument(
+        "--strike",
+        help="Strike selection method (e.g., 'ATM', 'ATM+1%%'). This determines how the strike price for the options is chosen, either at-the-money or a certain percentage away.",
+    )
+    parser.add_argument(
+        "--contracts",
+        type=int,
+        help="Number of contracts to trade in each position. This sets the size of each trade in terms of the number of option contracts.",
+    )
+    parser.add_argument(
+        "--commission",
+        type=float,
+        help="Commission per contract in dollars. This is the cost associated with each contract traded.",
+    )
+    parser.add_argument(
+        "--initial_capital",
+        type=float,
+        help="Initial capital for the backtest in dollars. This is the starting amount of money used for the backtesting.",
+    )
+    parser.add_argument(
+        "--max_positions",
+        type=int,
+        help="Maximum number of open positions allowed at any given time. This limits the number of trades that can be active simultaneously.",
+    )
+    parser.add_argument(
+        "--position_size",
+        type=float,
+        help="Position size as a fraction of the total capital (e.g., 0.1 for 10%%). This determines how much of the available capital is allocated to each new position.",
     )
 
     args = parser.parse_args()
