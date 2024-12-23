@@ -12,10 +12,18 @@ def create_directory(project_name):
 
 def generate_config_file(project_name, args):
     """Generates the config.py file."""
-    template_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "templates", "0dte-IB", "config.py"
+    templates_base_dir = os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "templates"
     )
+    template_path = os.path.join(templates_base_dir, args.strategy, "config.py")
     config_path = os.path.join(project_name, "config.py")
+
+    # Check if the template file exists
+    if not os.path.isfile(template_path):
+        raise FileNotFoundError(
+            f"Template file not found: {template_path}. "
+            f"Please ensure that the strategy '{args.strategy}' exists under the 'templates' directory."
+        )
 
     # Read the template file
     with open(template_path, "r") as f:
@@ -69,16 +77,30 @@ def generate_config_file(project_name, args):
     with open(config_path, "w") as f:
         f.write(config_content)
 
-def copy_template_files(project_name):
+def copy_template_files(project_name, strategy):
     """Copies template files to the project directory."""
-    templates_dir = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "templates", "0dte-IB"
+    templates_base_dir = os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "templates"
     )
-    files_to_copy = ["backtest.py", "entry_condition.py", "exit_condition.py", "backtest_cross_validate.py"]
+    templates_dir = os.path.join(templates_base_dir, strategy)
+    files_to_copy = [
+        "backtest.py",
+        "entry_condition.py",
+        "exit_condition.py",
+        "backtest_cross_validate.py",
+    ]
 
     for file_name in files_to_copy:
         source_path = os.path.join(templates_dir, file_name)
         dest_path = os.path.join(project_name, file_name)
+
+        # Check if the template file exists
+        if not os.path.isfile(source_path):
+            raise FileNotFoundError(
+                f"Template file not found: {source_path}. "
+                f"Please ensure that the file exists for the strategy '{strategy}'."
+            )
+
         shutil.copy2(source_path, dest_path)
 
 def copy_optopus_files(project_name):
@@ -86,6 +108,8 @@ def copy_optopus_files(project_name):
     optopus_dir = os.path.join(os.path.dirname(__file__), "..")
     files_to_copy = [
         "backtest/base_backtest.py",
+        "backtest/naked_call.py",
+        "backtest/naked_put.py",
         "trades/exit_conditions.py",
         "trades/option_manager.py",
         "trades/option_spread.py",
@@ -104,11 +128,17 @@ def copy_optopus_files(project_name):
 def main():
     parser = argparse.ArgumentParser(
         description="Set up a backtesting project for options trading.",
-        formatter_class=argparse.RawTextHelpFormatter,  # Use RawTextHelpFormatter
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "project_name",
         help="Name of the backtesting project directory. This will be the name of the new folder created for your project.",
+    )
+    parser.add_argument(
+        "--strategy",
+        choices=["0dte-IB"],
+        default="0dte-IB",
+        help="The strategy to use for the backtest. Currently supports: '0dte-IB'.",
     )
     parser.add_argument(
         "--symbol",
@@ -153,7 +183,7 @@ def main():
 
     create_directory(args.project_name)
     generate_config_file(args.project_name, args)
-    copy_template_files(args.project_name)
+    copy_template_files(args.project_name, args.strategy)
     copy_optopus_files(args.project_name)
 
     print(f"Backtesting project '{args.project_name}' created successfully!")
