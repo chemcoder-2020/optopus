@@ -63,7 +63,7 @@ class BacktestIronButterfly(BaseBacktest):
                 option_chain_df=option_chain_df,
                 profit_target=self.strategy_params.get("profit_target"),
                 stop_loss=self.strategy_params.get("stop_loss"),
-                commission=self.strategy_params.get("commission", 0),
+                commission=self.strategy_params.get("commission", 0.5),
                 exit_scheme=self.strategy_params.get("exit_scheme"),
             )
             return new_spread
