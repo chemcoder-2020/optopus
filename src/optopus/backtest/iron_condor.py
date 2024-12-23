@@ -54,11 +54,10 @@ class BacktestIronCondor(BaseBacktest):
         try:
             new_spread = IronCondor.create_iron_condor(
                 symbol=self.symbol,
-                option_type=self.strategy_params["option_type"],
-                long_call_strike=self.strategy_params["long_call_strike"],
-                short_call_strike=self.strategy_params["short_call_strike"],
-                long_put_strike=self.strategy_params["long_put_strike"],
-                short_put_strike=self.strategy_params["short_put_strike"],
+                put_long_strike=self.strategy_params["put_long_strike"],
+                put_short_strike=self.strategy_params["put_short_strike"],
+                call_short_strike=self.strategy_params["call_short_strike"],
+                call_long_strike=self.strategy_params["call_long_strike"],
                 expiration=self.strategy_params["dte"],
                 contracts=self.strategy_params["contracts"],
                 entry_time=time.strftime("%Y-%m-%d %H:%M:%S"),
