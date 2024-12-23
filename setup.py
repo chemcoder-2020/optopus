@@ -5,6 +5,9 @@ setup(
     version='0.9.1-dev4',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
+    package_data={
+        "optopus": ["../templates/*/*"],
+    },
     author='Huy Nguyen',
     author_email='huynguyen2406@gmail.com',
     description='A Python project for options trading and backtesting.',
@@ -29,6 +32,12 @@ setup(
         "scipy>=1.7.0",
         "setuptools>=58.0.0",
         "tqdm>=4.62.0",
-        "dill>=0.3.4"
+        "dill>=0.3.4",
+        "configparser>=5.3.0",
     ],
+    entry_points={
+        'console_scripts': [
+            'setup-optopus-backtest=optopus.cli.setup_backtest:main',
+        ],
+    },
 )
