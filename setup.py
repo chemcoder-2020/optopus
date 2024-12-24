@@ -6,7 +6,7 @@ setup(
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data={
-        "optopus": ["../templates/*/*"],
+        "optopus": ["templates/*/*"],
     },
     author='Huy Nguyen',
     author_email='huynguyen2406@gmail.com',
