@@ -10,6 +10,9 @@
 -   Included `setup-optopus-backtest` in package installation using `entry_points` in `setup.py`.
 -   Added `argparse` to `setup_backtest.py` to handle command-line arguments for project configuration.
 -   Added help descriptions for each command-line argument in `setup_backtest.py`.
+-   Added `MedianCalculator` class to `entry_condition.py` to calculate the median of a rolling window of premiums and check if the current mark is close to the median.
+-   Added `aggregate` function to `entry_condition.py` to calculate indicators based on historical data.
+-   Added `Median100` and `Median200` indicators to `entry_condition.py` to check if the current price is above or below the median of the last 100 and 200 days.
 
 ### Enhancements
 
@@ -17,6 +20,9 @@
 -   Updated `setup.py` and `pyproject.toml` to version `0.9.1-dev5`.
 -   Updated `config.py` template to use `CompositeEntryCondition` and remove `MedianCalculator` from entry conditions.
 -   Updated `exit_condition.py` template to use `CompositeExitCondition`.
+-   Updated `entry_condition.py` template to use `CompositeEntryCondition` and added `MedianCalculator` to the list of entry conditions.
+-   Updated `entry_condition.py` template to read OHLC data from a CSV file and calculate daily data.
+-   Updated `entry_condition.py` template to check if the current price is above or below the median of the last 100 and 200 days.
 
 ### Refactors
 
