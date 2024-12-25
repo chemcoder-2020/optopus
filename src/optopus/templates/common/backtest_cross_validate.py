@@ -1,4 +1,4 @@
-from optopus.backtest.naked_call import BacktestNakedCall
+from strategy_selection import BacktestStrategy
 from loguru import logger
 from config import (
     DATA_FOLDER,
@@ -27,7 +27,7 @@ logger.add(
 
 logger.disable("optopus")
 
-backtest = BacktestNakedCall(
+backtest = BacktestStrategy(
     config=BACKTESTER_CONFIG,
     data_folder=DATA_FOLDER,
     start_date=START_DATE,

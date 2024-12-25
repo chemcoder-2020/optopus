@@ -63,6 +63,7 @@ class BacktestNakedCall(BaseBacktest):
                 stop_loss=self.strategy_params.get("stop_loss"),
                 commission=self.strategy_params.get("commission", 0.5),
                 exit_scheme=self.strategy_params.get("exit_scheme"),
+                strategy_side=self.strategy_params.get("strategy_side", "DEBIT"),
             )
             return new_spread
         except Exception as e:

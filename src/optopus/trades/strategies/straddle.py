@@ -22,12 +22,12 @@ class Straddle(OptionStrategy):
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
-        position_side="BUY",
         exit_scheme: ExitConditionChecker = DefaultExitCondition(
             profit_target=40,
             exit_time_before_expiration=Timedelta(minutes=15),
             window_size=5,
         ),
+        strategy_side: str = "DEBIT",
     ):
         """
         Create a straddle option strategy.
@@ -44,9 +44,9 @@ class Straddle(OptionStrategy):
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
             commission (float, optional): Commission per contract per leg.
-            position_side (str, optional): Position side ('BUY' or 'SELL'). Defaults to 'BUY'.
             exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
                 Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
+            strategy_side (str, optional): The strategy side ('DEBIT' or 'CREDIT'). Defaults to 'DEBIT'.
 
         Returns:
             OptionStrategy: A straddle strategy object.
@@ -82,7 +82,7 @@ class Straddle(OptionStrategy):
             contracts,
             entry_time,
             option_chain_df,
-            position_side,
+            "BUY" if strategy_side == "DEBIT" else "SELL",
             commission=commission,
         )
         put_leg = OptionLeg(
@@ -93,11 +93,11 @@ class Straddle(OptionStrategy):
             contracts,
             entry_time,
             option_chain_df,
-            position_side,
+            "BUY" if strategy_side == "DEBIT" else "SELL",
             commission=commission,
         )
 
-        strategy.strategy_side = "DEBIT" if position_side == "BUY" else "CREDIT"
+        strategy.strategy_side = strategy_side
 
         strategy.add_leg(call_leg, leg_ratio)
         strategy.add_leg(put_leg, leg_ratio)
