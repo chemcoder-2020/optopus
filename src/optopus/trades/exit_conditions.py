@@ -109,28 +109,11 @@ class MedianCalculator:
         Returns:
             float: The median return percentage.
         """
-        bid = strategy.current_bid
-        ask = strategy.current_ask
-        mark = (ask + bid) / 2
-        self.add_premium(mark)
-        median_net_premium = self.get_median()
+        current_return = strategy.return_percentage()
+        self.add_premium(current_return)
+        median_return = self.get_median()
         strategy.premium_log = self.premiums.copy()
-
-        if hasattr(strategy, "strategy_side") and strategy.strategy_side == "CREDIT":
-            median_pl = (
-                (strategy.entry_net_premium - median_net_premium) * 100 * strategy.contracts
-            ) - strategy.calculate_total_commission()
-        elif hasattr(strategy, "strategy_side") and strategy.strategy_side == "DEBIT":
-            median_pl = (
-                (median_net_premium - strategy.entry_net_premium) * 100 * strategy.contracts
-            ) - strategy.calculate_total_commission()
-        else:
-            raise ValueError(f"Unsupported strategy side: {strategy.strategy_side}")
-
-        premium = abs(strategy.entry_net_premium)
-        if premium == 0:
-            return 0
-        return (median_pl / (premium * 100 * strategy.contracts)) * 100
+        return median_return
 
 class ProfitTargetCondition(ExitConditionChecker):
     """
