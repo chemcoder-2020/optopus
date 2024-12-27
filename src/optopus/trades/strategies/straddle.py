@@ -30,6 +30,7 @@ class Straddle(OptionStrategy):
                 'window_size': 5
             }
         },
+        **kwargs,
         strategy_side: str = "DEBIT",
     ):
         """
@@ -71,6 +72,7 @@ class Straddle(OptionStrategy):
             contracts,
             commission,
             exit_scheme,
+            **kwargs,
         )
 
         expiration_date = converter.get_closest_expiration(expiration)

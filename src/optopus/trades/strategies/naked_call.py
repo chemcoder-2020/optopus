@@ -30,6 +30,7 @@ class NakedCall(OptionStrategy):
                 'window_size': 5
             }
         },
+        **kwargs,
     ):
         """
         Create a naked call option strategy.
@@ -69,6 +70,7 @@ class NakedCall(OptionStrategy):
             contracts,
             commission,
             exit_scheme,
+            **kwargs,
         )
 
         expiration_date = converter.get_closest_expiration(expiration)

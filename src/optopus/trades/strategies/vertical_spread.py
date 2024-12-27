@@ -32,6 +32,7 @@ class VerticalSpread(OptionStrategy):
                 'window_size': 5
             }
         },
+        **kwargs,
     ):
         """
         Create a vertical spread option strategy.
@@ -73,6 +74,7 @@ class VerticalSpread(OptionStrategy):
             contracts,
             commission,
             exit_scheme,
+            **kwargs,
         )
 
         expiration_date = converter.get_closest_expiration(expiration)

@@ -29,6 +29,7 @@ class NakedPut(OptionStrategy):
                 'window_size': 5
             }
         },
+        **kwargs,
         strategy_side: str = "DEBIT",
     ):
         """
@@ -69,6 +70,7 @@ class NakedPut(OptionStrategy):
             contracts,
             commission,
             exit_scheme,
+            **kwargs,
         )
 
         expiration_date = converter.get_closest_expiration(expiration)
