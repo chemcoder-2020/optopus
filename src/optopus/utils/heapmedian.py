@@ -49,7 +49,7 @@ class ContinuousMedian:
 def test_rolling_performance(window_size=7):
     import numpy as np
 
-    data = np.random.randint(0, 10000, 1000000).astype(float)
+    data = (np.random.randint(-10000, 10000, 1000000) / 1231).astype(float)
     # Introduce some NaN values
     data[np.random.choice(data.size, size=int(data.size * 0.01), replace=False)] = np.nan
 
