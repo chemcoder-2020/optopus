@@ -63,11 +63,14 @@ class OptionStrategy:
         trailing_stop: Optional[float] = None,
         contracts: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(
-            profit_target=40,
-            exit_time_before_expiration=Timedelta(minutes=15),
-            window_size=5,
-        ),
+        exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
+            'class': DefaultExitCondition,
+            'params': {
+                'profit_target': 40,
+                'exit_time_before_expiration': Timedelta(minutes=15),
+                'window_size': 5
+            }
+        },
         **kwargs,
     ):
         """
@@ -90,10 +93,20 @@ class OptionStrategy:
         Raises:
             ValueError: If the exit_scheme is not an instance of ExitConditionChecker.
         """
-        if exit_scheme is not None and not isinstance(
-            exit_scheme, ExitConditionChecker
-        ):
-            raise ValueError("exit_scheme must be an instance of ExitConditionChecker")
+        # Handle exit_scheme initialization
+        if isinstance(exit_scheme, dict):
+            # Case 1: Dictionary with class and parameters
+            exit_class = exit_scheme.get('class', DefaultExitCondition)
+            exit_params = exit_scheme.get('params', {})
+            self.exit_scheme = exit_class(**exit_params)
+        elif isinstance(exit_scheme, type) and issubclass(exit_scheme, ExitConditionChecker):
+            # Case 2: Just the class provided
+            self.exit_scheme = exit_scheme()
+        elif isinstance(exit_scheme, ExitConditionChecker):
+            # Case 3: Already an instance
+            self.exit_scheme = exit_scheme
+        else:
+            raise ValueError("Invalid exit_scheme format. Must be an instance, class, or dict with class and params")
 
         self.symbol = symbol
         self.strategy_type = strategy_type
