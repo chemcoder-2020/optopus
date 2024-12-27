@@ -33,6 +33,7 @@ class IronButterfly(OptionStrategy):
                 'window_size': 5
             }
         },
+        **kwargs,
     ):
         """
         Create an iron butterfly option strategy.
