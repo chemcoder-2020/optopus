@@ -123,6 +123,10 @@ class OptionStrategy:
         self.exit_dit = None
         self.exit_dte = None
         self.exit_scheme = exit_scheme
+        # Add median tracking attributes
+        self.median_window_size = kwargs.get("median_window_size", 5)
+        self.recent_returns = []  # List to store recent return percentages
+        self.median_return_percentage = 0.0
 
     @staticmethod
     def _standardize_time(time_value):
@@ -200,6 +204,25 @@ class OptionStrategy:
         self.leg_ratios.append(ratio)
         leg.contracts = self._contracts * ratio
 
+    def _calculate_median_return(self) -> float:
+        """
+        Calculate the median of recent return percentages.
+        
+        Returns:
+            float: The median return percentage
+        """
+        if not self.recent_returns:
+            return 0.0
+            
+        sorted_returns = sorted(self.recent_returns)
+        n = len(sorted_returns)
+        mid = n // 2
+        
+        if n % 2 == 0:
+            return (sorted_returns[mid - 1] + sorted_returns[mid]) / 2
+        else:
+            return sorted_returns[mid]
+
     def update(
         self,
         current_time: Union[str, Timestamp, datetime.datetime],
@@ -220,6 +243,17 @@ class OptionStrategy:
         # Update DIT
         if self.entry_time:
             self.DIT = (self.current_time.date() - self.entry_time.date()).days
+
+        # Update recent returns list
+        current_return = self.return_percentage()
+        self.recent_returns.append(current_return)
+        
+        # Maintain window size
+        if len(self.recent_returns) > self.median_window_size:
+            self.recent_returns.pop(0)
+            
+        # Calculate and store median return
+        self.median_return_percentage = self._calculate_median_return()
 
         # Update the current attributes of each leg
         for leg in self.legs:
@@ -701,7 +735,8 @@ class OptionStrategy:
             f"  Strategy Ask: {self.current_ask:.2f},\n"
             f"  Legs:\n    {legs_repr}\n"
             f"  Total Commission: {self.calculate_total_commission():.2f},\n"
-            f"  Exit Scheme:{self.exit_scheme.__repr__() if hasattr(self, 'exit_scheme') and self.exit_scheme is not None else None}\n"
+            f"  Exit Scheme:{self.exit_scheme.__repr__() if hasattr(self, 'exit_scheme') and self.exit_scheme is not None else None},\n"
+            f"  Median Return Percentage: {self.median_return_percentage:.2f}%\n"
             f")"
         )
 
