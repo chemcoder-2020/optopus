@@ -33,6 +33,7 @@ class IronCondor(OptionStrategy):
                 'window_size': 5
             }
         },
+        **kwargs,
     ):
         """
         Create an iron condor option strategy.
