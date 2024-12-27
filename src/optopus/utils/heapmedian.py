@@ -83,7 +83,28 @@ def test_rolling_performance(window_size=7):
     end_time = time.time()
     print(f"NumPy: Time = {end_time - start_time:.2f} seconds")
 
+    # Test sorting method
+    start_time = time.time()
+    rolling_medians_sort = []
+    window = []
+    for i, num in enumerate(data):
+        window.append(num)
+        if i >= window_size:
+            window.pop(0)
+        if i >= window_size - 1:
+            if not any(pd.isna(window)):
+                sorted_window = sorted(window)
+                mid = len(sorted_window) // 2
+                if len(sorted_window) % 2 == 0:
+                    rolling_medians_sort.append((sorted_window[mid - 1] + sorted_window[mid]) / 2)
+                else:
+                    rolling_medians_sort.append(sorted_window[mid])
+    end_time = time.time()
+    print(f"Sorting: Time = {end_time - start_time:.2f} seconds")
+
     # Assert that the results are the same
+    assert np.allclose(rolling_medians_cm, rolling_medians_np), "ContinuousMedian and NumPy results do not match"
+    assert np.allclose(rolling_medians_cm, rolling_medians_sort), "ContinuousMedian and Sorting results do not match"
     assert np.allclose(rolling_medians_cm, rolling_medians_np), "Results do not match"
 
 
