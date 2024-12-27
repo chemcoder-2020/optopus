@@ -50,7 +50,13 @@ class VerticalSpread(OptionStrategy):
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
             commission (float, optional): Commission per contract per leg.
-            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+                The exit condition scheme to use. Can be:
+                - An instance of ExitConditionChecker
+                - A ExitConditionChecker class (will be instantiated with default params)
+                - A dict containing:
+                    - 'class': The ExitConditionChecker class
+                    - 'params': Dict of parameters to pass to the constructor
                 Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
