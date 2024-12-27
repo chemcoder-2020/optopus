@@ -125,7 +125,7 @@ class OptionStrategy:
         self.exit_dte = None
         self.exit_scheme = exit_scheme
         # Add median tracking attributes
-        self.median_window_size = kwargs.get("median_window_size", 5)
+        self.median_window_size = kwargs.get("median_window_size", 3)
         self.recent_returns = []  # List to store recent return percentages
         self.median_return_percentage = 0.0
 
