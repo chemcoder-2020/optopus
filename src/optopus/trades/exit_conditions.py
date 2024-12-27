@@ -176,6 +176,8 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         profit_target = float(kwargs.get("profit_target", self.profit_target))
         self.profit_target = profit_target
+        if 'window_size' in kwargs:
+            self.median_calculator.update(window_size=kwargs['window_size'])
 
     def should_exit(
         self,
@@ -246,6 +248,8 @@ class StopLossCondition(ExitConditionChecker):
         """
         stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
         self.stop_loss = stop_loss
+        if 'window_size' in kwargs:
+            self.median_calculator.update(window_size=kwargs['window_size'])
 
     def should_exit(
         self,
@@ -378,6 +382,8 @@ class TrailingStopCondition(ExitConditionChecker):
         stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
         self.trigger = trigger
         self.stop_loss = stop_loss
+        if 'window_size' in kwargs:
+            self.median_calculator.update(window_size=kwargs['window_size'])
 
     def should_exit(
         self,
