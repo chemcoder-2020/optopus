@@ -3,7 +3,7 @@ from pandas import Timestamp, Timedelta
 from ..option_leg import OptionLeg
 from ..exit_conditions import DefaultExitCondition, ExitConditionChecker
 from ..option_chain_converter import OptionChainConverter
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, Type
 from ..option_spread import OptionStrategy
 
 
@@ -22,11 +22,14 @@ class NakedCall(OptionStrategy):
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
         strategy_side: str = "DEBIT",
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(
-            profit_target=40,
-            exit_time_before_expiration=Timedelta(minutes=15),
-            window_size=5,
-        ),
+        exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
+            'class': DefaultExitCondition,
+            'params': {
+                'profit_target': 40,
+                'exit_time_before_expiration': Timedelta(minutes=15),
+                'window_size': 5
+            }
+        },
     ):
         """
         Create a naked call option strategy.
@@ -43,7 +46,13 @@ class NakedCall(OptionStrategy):
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
             strategy_side (str, optional): The strategy side ('DEBIT' or 'CREDIT'). Defaults to 'DEBIT'.
-            exit_scheme (ExitConditionChecker, optional): Exit condition checker that determines when to close the position.
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+                The exit condition scheme to use. Can be:
+                - An instance of ExitConditionChecker
+                - A ExitConditionChecker class (will be instantiated with default params)
+                - A dict containing:
+                    - 'class': The ExitConditionChecker class
+                    - 'params': Dict of parameters to pass to the constructor
                 Defaults to DefaultExitCondition with 40% profit target, 15-minute buffer before expiration, and 5-minute window size.
 
         Returns:
