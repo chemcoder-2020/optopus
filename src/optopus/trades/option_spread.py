@@ -69,10 +69,6 @@ class OptionStrategy:
             window_size=5,
         ),
         **kwargs,
-            profit_target=40,
-            exit_time_before_expiration=Timedelta(minutes=15),
-            window_size=5,
-        ),
     ):
         """
         Initialize an OptionStrategy object.
