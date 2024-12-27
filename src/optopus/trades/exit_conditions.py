@@ -8,10 +8,10 @@ for different exit conditions, such as profit targets, stop losses, and time-bas
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
-import numpy as np
 from typing import Union, List
 from loguru import logger
 from ..utils.heapmedian import ContinuousMedian
+
 
 class ExitConditionChecker(ABC):
     """
@@ -43,7 +43,12 @@ class ExitConditionChecker(ABC):
                 setattr(self, key, value)
 
     @abstractmethod
-    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
         """
         Check if the exit conditions are met for the option strategy.
 
@@ -56,6 +61,7 @@ class ExitConditionChecker(ABC):
             bool: True if the exit conditions are met, False otherwise.
         """
         pass
+
 
 class MedianCalculator:
     """
@@ -98,7 +104,7 @@ class MedianCalculator:
             float: The current median.
         """
         return self.median_calculator.get_median()
-    
+
     def get_median_return_percentage(self, strategy):
         """
         Calculate the median return percentage for the given strategy.
@@ -114,6 +120,7 @@ class MedianCalculator:
         median_return = self.get_median()
         strategy.premium_log = self.premiums.copy()
         return median_return
+
 
 class ProfitTargetCondition(ExitConditionChecker):
     """
@@ -133,7 +140,7 @@ class ProfitTargetCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments.
         """
         self.profit_target = profit_target
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5))
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 3))
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -144,7 +151,7 @@ class ProfitTargetCondition(ExitConditionChecker):
             str: String representation of the profit target condition.
         """
         return f"{self.__class__.__name__}(profit_target={self.profit_target})"
-    
+
     def update(self, **kwargs):
         """
         Update the attributes of the profit target condition.
@@ -155,7 +162,12 @@ class ProfitTargetCondition(ExitConditionChecker):
         profit_target = float(kwargs.get("profit_target", self.profit_target))
         self.profit_target = profit_target
 
-    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
         """
         Check if the profit target is met.
 
@@ -168,12 +180,18 @@ class ProfitTargetCondition(ExitConditionChecker):
             bool: True if the profit target is met, False otherwise.
         """
         current_return = strategy.return_percentage()
-        logger.debug(f"Current return: {current_return}")
-        current_median_return = self.median_calculator.get_median_return_percentage(strategy)
-        strategy.median_return_percentage = current_median_return
+        current_median_return = self.median_calculator.get_median_return_percentage(
+            strategy
+        )
+        # strategy.median_return_percentage = current_median_return
+        # current_median_return = strategy.median_return_percentage
         logger.debug(f"Current median return: {current_median_return}")
-        return current_return >= self.profit_target and current_median_return >= self.profit_target
-    
+        return (
+            current_return >= self.profit_target
+            and current_median_return >= self.profit_target
+        )
+
+
 class StopLossCondition(ExitConditionChecker):
     """
     Exit condition based on a stop loss.
@@ -192,7 +210,7 @@ class StopLossCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments.
         """
         self.stop_loss = stop_loss
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5))
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 3))
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -214,7 +232,12 @@ class StopLossCondition(ExitConditionChecker):
         stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
         self.stop_loss = stop_loss
 
-    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
         """
         Check if the stop loss is met.
 
@@ -226,9 +249,11 @@ class StopLossCondition(ExitConditionChecker):
         Returns:
             bool: True if the stop loss is met, False otherwise.
         """
-        current_median_return = self.median_calculator.get_median_return_percentage(strategy)
-        strategy.median_return_percentage = current_median_return
+        current_median_return = self.median_calculator.get_median_return_percentage(
+            strategy
+        )
         return current_median_return <= -self.stop_loss
+
 
 class TimeBasedCondition(ExitConditionChecker):
     """
@@ -255,7 +280,7 @@ class TimeBasedCondition(ExitConditionChecker):
             str: String representation of the time-based condition.
         """
         return f"{self.__class__.__name__}(exit_time_before_expiration={self.exit_time_before_expiration})"
-    
+
     def update(self, **kwargs):
         """
         Update the attributes of the time-based condition.
@@ -263,10 +288,17 @@ class TimeBasedCondition(ExitConditionChecker):
         Args:
             **kwargs: Keyword arguments for the attributes to update.
         """
-        exit_time_before_expiration = pd.Timedelta(kwargs.get("exit_time_before_expiration", self.exit_time_before_expiration))
+        exit_time_before_expiration = pd.Timedelta(
+            kwargs.get("exit_time_before_expiration", self.exit_time_before_expiration)
+        )
         self.exit_time_before_expiration = exit_time_before_expiration
 
-    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
         """
         Check if the current time is within the specified time before expiration.
 
@@ -279,8 +311,11 @@ class TimeBasedCondition(ExitConditionChecker):
             bool: True if the current time is within the specified time before expiration, False otherwise.
         """
         current_time = pd.Timestamp(current_time)
-        expiration_time = pd.Timestamp(strategy.legs[0].expiration).replace(hour=16, minute=0, second=0, microsecond=0)
+        expiration_time = pd.Timestamp(strategy.legs[0].expiration).replace(
+            hour=16, minute=0, second=0, microsecond=0
+        )
         return current_time >= (expiration_time - self.exit_time_before_expiration)
+
 
 class TrailingStopCondition(ExitConditionChecker):
     """
@@ -303,7 +338,9 @@ class TrailingStopCondition(ExitConditionChecker):
         """
         self.trigger = trigger
         self.stop_loss = stop_loss
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 5))
+        self.median_window = kwargs.get("window_size", 3)
+        self.median_calculator = MedianCalculator(self.median_window)
+        self.highest_return = 0
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -313,8 +350,8 @@ class TrailingStopCondition(ExitConditionChecker):
         Returns:
             str: String representation of the trailing stop condition.
         """
-        return f"{self.__class__.__name__}(trigger={self.trigger}, stop_loss={self.stop_loss}, window_size={self.median_calculator.window_size})"
-    
+        return f"{self.__class__.__name__}(trigger={self.trigger}, stop_loss={self.stop_loss})"
+
     def update(self, **kwargs):
         """
         Update the attributes of the trailing stop condition.
@@ -327,7 +364,12 @@ class TrailingStopCondition(ExitConditionChecker):
         self.trigger = trigger
         self.stop_loss = stop_loss
 
-    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
         """
         Check if the trailing stop condition is met.
 
@@ -339,14 +381,20 @@ class TrailingStopCondition(ExitConditionChecker):
         Returns:
             bool: True if the trailing stop condition is met, False otherwise.
         """
-        current_median_return = self.median_calculator.get_median_return_percentage(strategy)
-        strategy.median_return_percentage = current_median_return
-        highest_return = strategy.highest_return
 
-        if highest_return >= self.trigger:
-            return (highest_return - current_median_return) >= self.stop_loss
+        current_median_return = self.median_calculator.get_median_return_percentage(
+            strategy
+        )
+        current_return = strategy.return_percentage()
+        self.highest_return = max(self.highest_return, current_median_return)
+
+        if self.highest_return >= self.trigger:
+            return (self.highest_return - current_return) >= self.stop_loss and (
+                self.highest_return - current_median_return
+            ) >= self.stop_loss
 
         return False
+
 
 class CompositeExitCondition(ExitConditionChecker):
     """
@@ -357,7 +405,11 @@ class CompositeExitCondition(ExitConditionChecker):
         logical_operations (List[str]): List of logical operations to combine the conditions ('AND' or 'OR').
     """
 
-    def __init__(self, conditions: List[ExitConditionChecker], logical_operations: List[str] = ['AND']):
+    def __init__(
+        self,
+        conditions: List[ExitConditionChecker],
+        logical_operations: List[str] = ["AND"],
+    ):
         """
         Initialize the CompositeExitCondition.
 
@@ -379,7 +431,12 @@ class CompositeExitCondition(ExitConditionChecker):
         """
         return f"{self.__class__.__name__}(conditions={self.conditions}, logical_operations='{self.logical_operations}')"
 
-    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
         """
         Check if the composite exit condition is met.
 
@@ -392,15 +449,20 @@ class CompositeExitCondition(ExitConditionChecker):
             bool: True if the composite exit condition is met, False otherwise.
         """
         if len(self.conditions) != len(self.logical_operations) + 1:
-            raise ValueError("The number of logical operations must be one less than the number of conditions.")
+            raise ValueError(
+                "The number of logical operations must be one less than the number of conditions."
+            )
 
-        results = [condition.should_exit(strategy, current_time, option_chain_df) for condition in self.conditions]
+        results = [
+            condition.should_exit(strategy, current_time, option_chain_df)
+            for condition in self.conditions
+        ]
         combined_result = results[0]
 
         for i, operation in enumerate(self.logical_operations):
-            if operation == 'AND':
+            if operation == "AND":
                 combined_result = combined_result and results[i + 1]
-            elif operation == 'OR':
+            elif operation == "OR":
                 combined_result = combined_result or results[i + 1]
             else:
                 raise ValueError("Logical operation must be 'AND' or 'OR'")
@@ -427,6 +489,7 @@ class CompositeExitCondition(ExitConditionChecker):
             if hasattr(condition, key):
                 setattr(condition, key, value)
 
+
 class DefaultExitCondition(ExitConditionChecker):
     """
     Default exit condition that combines a profit target and a time-based condition.
@@ -437,7 +500,12 @@ class DefaultExitCondition(ExitConditionChecker):
         composite_condition (CompositeExitCondition): Composite exit condition combining profit target and time-based conditions.
     """
 
-    def __init__(self, profit_target: float=40, exit_time_before_expiration: pd.Timedelta=pd.Timedelta(minutes=15), **kwargs):
+    def __init__(
+        self,
+        profit_target: float = 40,
+        exit_time_before_expiration: pd.Timedelta = pd.Timedelta(minutes=15),
+        **kwargs,
+    ):
         """
         Initialize the DefaultExitCondition.
 
@@ -446,11 +514,15 @@ class DefaultExitCondition(ExitConditionChecker):
             exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
             **kwargs: Additional keyword arguments.
         """
-        profit_target_condition = ProfitTargetCondition(profit_target=profit_target, window_size=kwargs.get("window_size", 5))
-        time_based_condition = TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration)
+        profit_target_condition = ProfitTargetCondition(
+            profit_target=profit_target, window_size=kwargs.get("window_size", 5)
+        )
+        time_based_condition = TimeBasedCondition(
+            exit_time_before_expiration=exit_time_before_expiration
+        )
         self.composite_condition = CompositeExitCondition(
             conditions=[profit_target_condition, time_based_condition],
-            logical_operations=['OR']
+            logical_operations=["OR"],
         )
         self.__dict__.update(self.composite_condition.__dict__)
 
@@ -461,9 +533,16 @@ class DefaultExitCondition(ExitConditionChecker):
         Returns:
             str: String representation of the default exit condition.
         """
-        return f"{self.__class__.__name__}(composite_condition={self.composite_condition})"
+        return (
+            f"{self.__class__.__name__}(composite_condition={self.composite_condition})"
+        )
 
-    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
         """
         Check if the default exit condition is met.
 
@@ -475,8 +554,10 @@ class DefaultExitCondition(ExitConditionChecker):
         Returns:
             bool: True if the default exit condition is met, False otherwise.
         """
-        return self.composite_condition.should_exit(strategy, current_time, option_chain_df)
-    
+        return self.composite_condition.should_exit(
+            strategy, current_time, option_chain_df
+        )
+
     def update(self, **kwargs):
         """
         Update the attributes of the default exit condition.
