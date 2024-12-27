@@ -3,7 +3,7 @@ from pandas import Timestamp, Timedelta
 from ..option_leg import OptionLeg
 from ..exit_conditions import DefaultExitCondition, ExitConditionChecker
 from ..option_chain_converter import OptionChainConverter
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, Type
 from ..option_spread import OptionStrategy
 
 
@@ -24,11 +24,14 @@ class VerticalSpread(OptionStrategy):
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
-        exit_scheme: ExitConditionChecker = DefaultExitCondition(
-            profit_target=40,
-            exit_time_before_expiration=Timedelta(minutes=15),
-            window_size=5,
-        ),
+        exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
+            'class': DefaultExitCondition,
+            'params': {
+                'profit_target': 40,
+                'exit_time_before_expiration': Timedelta(minutes=15),
+                'window_size': 5
+            }
+        },
     ):
         """
         Create a vertical spread option strategy.
