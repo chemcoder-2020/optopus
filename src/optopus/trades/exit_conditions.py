@@ -105,6 +105,21 @@ class MedianCalculator:
         """
         return self.median_calculator.get_median()
 
+    def update(self, **kwargs):
+        """
+        Update the attributes of the MedianCalculator.
+
+        Args:
+            **kwargs: Keyword arguments for the attributes to update.
+        """
+        if 'window_size' in kwargs:
+            new_window_size = kwargs['window_size']
+            # Adjust the window size while maintaining existing data
+            if new_window_size < self.window_size:
+                # Remove oldest entries if new window is smaller
+                self.premiums = self.premiums[-new_window_size:]
+            self.window_size = new_window_size
+
     def get_median_return_percentage(self, strategy):
         """
         Calculate the median return percentage for the given strategy.
