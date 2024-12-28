@@ -33,14 +33,14 @@ STRATEGY_PARAMS = {
     "contracts": config.getint("STRATEGY_PARAMS", "contracts"),
     "commission": config.getfloat("STRATEGY_PARAMS", "commission", fallback=0.5),
     "exit_scheme": {
-        "class": config.get("EXIT_CONDITION", "class"),
+        "class": eval(config.get("EXIT_CONDITION", "class")),
         "params": {
             "profit_target": config.getfloat("EXIT_CONDITION", "profit_target", fallback=50),
             "exit_time_before_expiration": pd.Timedelta(
                 config.get("EXIT_CONDITION", "exit_time_before_expiration", fallback="15 minutes")
             ),
             "window_size": config.getint("EXIT_CONDITION", "window_size", fallback=5),
-        },
+        }
     },
     "strategy_side": config.get("STRATEGY_PARAMS", "strategy_side", fallback="DEBIT"),
 }
