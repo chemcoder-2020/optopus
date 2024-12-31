@@ -1,8 +1,8 @@
-import heapq
 import time
 import pandas as pd
 
-class SortingMedian:
+
+class ContinuousMedian:
     def __init__(self):
         self.window = []
 
@@ -26,18 +26,18 @@ class SortingMedian:
         self.window.remove(num)
 
 
-
-
 def test_rolling_performance(window_size=7):
     import numpy as np
 
     data = (np.random.randint(-10000, 10000, 1000000) / 1231).astype(float)
     # Introduce some NaN values
-    data[np.random.choice(data.size, size=int(data.size * 0.01), replace=False)] = np.nan
+    data[np.random.choice(data.size, size=int(data.size * 0.01), replace=False)] = (
+        np.nan
+    )
 
-    # Test SortingMedian
+    # Test ContinuousMedian
     start_time = time.time()
-    cm = SortingMedian()
+    cm = ContinuousMedian()
     rolling_medians_cm = []
     window = []
     for i, num in enumerate(data):
@@ -49,7 +49,7 @@ def test_rolling_performance(window_size=7):
             if not any(pd.isna(window)):
                 rolling_medians_cm.append(cm.get_median())
     end_time = time.time()
-    print(f"SortingMedian: Time = {end_time - start_time:.2f} seconds")
+    print(f"ContinuousMedian: Time = {end_time - start_time:.2f} seconds")
 
     # Test numpy
     start_time = time.time()
@@ -78,15 +78,21 @@ def test_rolling_performance(window_size=7):
                 sorted_window = sorted(window)
                 mid = len(sorted_window) // 2
                 if len(sorted_window) % 2 == 0:
-                    rolling_medians_sort.append((sorted_window[mid - 1] + sorted_window[mid]) / 2)
+                    rolling_medians_sort.append(
+                        (sorted_window[mid - 1] + sorted_window[mid]) / 2
+                    )
                 else:
                     rolling_medians_sort.append(sorted_window[mid])
     end_time = time.time()
     print(f"Sorting: Time = {end_time - start_time:.2f} seconds")
 
     # Assert that the results are the same
-    assert np.allclose(rolling_medians_cm, rolling_medians_np), "SortingMedian and NumPy results do not match"
-    assert np.allclose(rolling_medians_cm, rolling_medians_sort), "SortingMedian and Sorting results do not match"
+    assert np.allclose(
+        rolling_medians_cm, rolling_medians_np
+    ), "ContinuousMedian and NumPy results do not match"
+    assert np.allclose(
+        rolling_medians_cm, rolling_medians_sort
+    ), "ContinuousMedian and Sorting results do not match"
 
 
 if __name__ == "__main__":

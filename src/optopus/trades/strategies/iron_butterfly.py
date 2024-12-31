@@ -83,6 +83,7 @@ class IronButterfly(OptionStrategy):
                 trailing_stop=trailing_stop,
                 commission=commission,
                 exit_scheme=exit_scheme,
+                **kwargs,
             )
         else:
             strategy = IronCondor.create_iron_condor(
@@ -100,6 +101,7 @@ class IronButterfly(OptionStrategy):
                 trailing_stop=trailing_stop,
                 commission=commission,
                 exit_scheme=exit_scheme,
+                **kwargs,
             )
         strategy.strategy_type = "Iron Butterfly"
         return strategy

@@ -22,6 +22,7 @@ class Straddle(OptionStrategy):
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
         commission: float = 0.5,
+        strategy_side: str = "DEBIT",
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
             'class': DefaultExitCondition,
             'params': {
@@ -31,7 +32,6 @@ class Straddle(OptionStrategy):
             }
         },
         **kwargs,
-        strategy_side: str = "DEBIT",
     ):
         """
         Create a straddle option strategy.

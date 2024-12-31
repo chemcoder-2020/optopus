@@ -76,6 +76,7 @@ class IronCondor(OptionStrategy):
             contracts,
             commission,
             exit_scheme,
+            **kwargs,
         )
 
         expiration_date = converter.get_closest_expiration(expiration)

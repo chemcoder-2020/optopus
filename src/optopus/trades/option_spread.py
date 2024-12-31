@@ -136,7 +136,6 @@ class OptionStrategy:
         self.exit_underlying_last = None
         self.exit_dit = None
         self.exit_dte = None
-        self.exit_scheme = exit_scheme
         # Add median tracking attributes
         self.median_window_size = kwargs.get("median_window_size", 3)
         self.recent_returns = []  # List to store recent return percentages
@@ -283,7 +282,7 @@ class OptionStrategy:
         # Update exit_dte
         if self.status == "OPEN":
             self.exit_dte = (
-                pd.to_datetime(self.legs[0].expiration) - self.current_time
+                pd.to_datetime(self.legs[0].expiration).date() - self.current_time.date()
             ).days
 
         # Calculate and store the strategy's bid-ask spread

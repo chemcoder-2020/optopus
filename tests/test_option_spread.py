@@ -354,7 +354,7 @@ class TestOptionStrategy(unittest.TestCase):
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
-            position_side="BUY",
+            strategy_side="DEBIT",
         )
         debit_straddle_capital = debit_straddle.get_required_capital()
         expected_debit_straddle_capital = (

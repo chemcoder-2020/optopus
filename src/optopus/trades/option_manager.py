@@ -7,7 +7,6 @@ from loguru import logger
 from dataclasses import dataclass
 import numpy as np
 from scipy.stats import gaussian_kde
-import os
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
 
 @dataclass
@@ -348,7 +347,6 @@ class OptionBacktester:
                 "return_percentage": trade.return_percentage(),
                 "return_over_risk": pl / trade.get_required_capital(),
                 "dit": trade.DIT,
-                "exit_dte": trade.exit_dte,
                 "won": trade.won,
             }
 
@@ -401,6 +399,11 @@ class OptionBacktester:
             average_dit_spread = closed_trades_df["dit"].std()
         except KeyError:
             average_dit_spread = np.nan
+        
+        try:
+            average_exit_dte = closed_trades_df["exit_dte"].mean()
+        except KeyError:
+            average_exit_dte = np.nan
 
         max_drawdown_dollars, max_drawdown_percentage = self._calculate_max_drawdown(df)
 
@@ -419,7 +422,7 @@ class OptionBacktester:
             "max_drawdown_percentage": max_drawdown_percentage,
             "average_dit": average_dit,
             "average_dit_spread": average_dit_spread,
-            "average_exit_dte": closed_trades_df["exit_dte"].mean(),
+            "average_exit_dte": average_exit_dte,
         }
 
         try:

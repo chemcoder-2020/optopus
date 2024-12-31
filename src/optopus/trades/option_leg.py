@@ -12,6 +12,7 @@ except ImportError:
     def profile(func):
         return func
 
+
 class OptionLeg:
     """
     Represents a single option leg in an options trading strategy.
@@ -145,7 +146,10 @@ class OptionLeg:
 
         self.current_time = current_datetime
 
-        option_data = option_chain_df.loc[(option_chain_df["STRIKE"] == self.strike) & (option_chain_df["EXPIRE_DATE"] == self.expiration)]
+        option_data = option_chain_df.loc[
+            (option_chain_df["STRIKE"] == self.strike)
+            & (option_chain_df["EXPIRE_DATE"] == self.expiration)
+        ]
 
         if not option_data.empty:
             prefix = "C_" if self.option_type.upper() == "CALL" else "P_"
@@ -437,6 +441,7 @@ class OptionLeg:
                 expiration = pd.Timestamp(self.expiration).strftime("%y%m%d")
         option_symbol = f"{self.symbol.ljust(6)}{expiration}{self.option_type[0]}{str(int(self.strike * 1000)).zfill(8)}"
         return option_symbol
+
 
 def calculate_dte(
     expiration_date: Union[str, pd.Timestamp, datetime.datetime],

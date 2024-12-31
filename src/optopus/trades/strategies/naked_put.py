@@ -21,6 +21,7 @@ class NakedPut(OptionStrategy):
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
+        strategy_side: str = "DEBIT",
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
             'class': DefaultExitCondition,
             'params': {
@@ -30,7 +31,7 @@ class NakedPut(OptionStrategy):
             }
         },
         **kwargs,
-        strategy_side: str = "DEBIT",
+        
     ):
         """
         Create a naked put option strategy.

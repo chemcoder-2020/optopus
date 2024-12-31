@@ -1,0 +1,1 @@
+from optopus.backtest.iron_condor import BacktestIronCondor as BacktestStrategy
