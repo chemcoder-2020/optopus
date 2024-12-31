@@ -1,11 +1,13 @@
 # Changelog
 
-## v0.9.1-dev5
+## v0.9.1-dev6-7
 
 ### Refactors
 
 -   Updated all strategy templates to use `eval()` for exit condition class conversion
     while maintaining dictionary structure for parameters
+
+## v0.9.1-dev5
 
 ### Features
 
