@@ -2,6 +2,11 @@
 
 ## v0.9.1-dev5
 
+### Refactors
+
+-   Updated all strategy templates to use `eval()` for exit condition class conversion
+    while maintaining dictionary structure for parameters
+
 ### Features
 
 -   Added command-line tool `setup-optopus-backtest` for creating backtesting projects.
