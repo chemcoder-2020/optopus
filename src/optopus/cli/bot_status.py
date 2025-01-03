@@ -6,7 +6,6 @@ from loguru import logger
 import glob
 from pathlib import Path
 
-logger.enable("optopus")
 
 # Set up paths relative to the package
 package_dir = Path(__file__).parent.parent.parent
