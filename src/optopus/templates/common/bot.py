@@ -1,30 +1,25 @@
 import os
 import dill
 from optopus.trades.trade_manager import TradingManager
-
 from optopus.trades.option_manager import Config
-from optopus.trades.entry_conditions import (
-    EntryConditionChecker,
-    CompositeEntryCondition,
-    CapitalRequirementCondition,
-    PositionLimitCondition,
-    RORThresholdCondition,
-    ConflictCondition,
-)
-
+from optopus.trades.entry_conditions import EntryConditionChecker
 from optopus.brokers.schwab.schwab_data import SchwabData
-from optopus.trades.exit_conditions import (
-    DefaultExitCondition,
-    # ExitConditionChecker,
-    # ProfitTargetCondition,
-    # TimeBasedCondition,
-    # CompositeExitCondition,
-)
+from optopus.trades.exit_conditions import DefaultExitCondition
 import pandas as pd
 import numpy as np
 import pandas_ta as pt
 import dotenv
 from loguru import logger
+from config import (
+    DATA_FOLDER,
+    START_DATE,
+    END_DATE,
+    TRADING_START_TIME,
+    TRADING_END_TIME,
+    DEBUG,
+    STRATEGY_PARAMS,
+    BACKTESTER_CONFIG
+)
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -43,7 +38,7 @@ dotenv.load_dotenv(os.path.join(basename, ".env"))
 
 logger.enable("optopus")
 
-ticker = "$XSP"
+ticker = STRATEGY_PARAMS["symbol"]
 
 
 class EntryCondition(EntryConditionChecker):
@@ -114,50 +109,19 @@ class EntryCondition(EntryConditionChecker):
         return Median100 > Median200 and price_condition and basic_condition
 
 
-exit_condition = {
-    "class": DefaultExitCondition,
-    "params": {
-        "profit_target": 40,
-        "exit_time_before_expiration": pd.Timedelta("1 day"),
-        "window_size": 5,
-    },
-}
-
-STRATEGY_PARAMS = {
-    "symbol": ticker,
-    "option_type": "PUT",
-    "dte": 45,
-    "short_delta": "ATM+1%",
-    "long_delta": "ATM",
-    "contracts": 1000,
-    "commission": 0.5,
-    # "exit_scheme": exit_condition,
-    "exit_scheme": exit_condition,
-}
-
-
 # Initialize the trading manager
 if os.path.exists(f"{cwd}/trading_manager60dte.pkl"):
     trading_manager = dill.load(open(f"{cwd}/trading_manager60dte.pkl", "rb"))
 else:
-    config = Config(
-        initial_capital=20000,
-        max_positions=10,
-        max_positions_per_day=1,
-        max_positions_per_week=None,
-        position_size=0.05,
-        ror_threshold=0.2,
-        gain_reinvesting=False,  # Set this to True to test reinvesting gains
-        verbose=False,
-        ticker=ticker,
-        broker="Schwab",
-        client_id=os.getenv("SCHWAB_CLIENT_ID"),
-        client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
-        redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
-        token_file=os.path.join(basename, "token.json"),
-        entry_condition=EntryCondition(),
-        trade_type="Vertical Spread",
-    )
+    config = BACKTESTER_CONFIG
+    config.ticker = ticker
+    config.broker = "Schwab"
+    config.client_id = os.getenv("SCHWAB_CLIENT_ID")
+    config.client_secret = os.getenv("SCHWAB_CLIENT_SECRET")
+    config.redirect_uri = os.getenv("SCHWAB_REDIRECT_URI")
+    config.token_file = os.path.join(basename, "token.json")
+    config.entry_condition = EntryCondition()
+    config.trade_type = "Vertical Spread"
     trading_manager = TradingManager(config)
 
 trading_manager.auth_refresh()
