@@ -7,10 +7,7 @@ import glob
 from pathlib import Path
 
 
-# Set up paths relative to the package
-package_dir = Path(__file__).parent.parent.parent
-os.chdir(package_dir)
-
+# Set up logging
 logger.add("bot_status.log", rotation="10 MB", retention="60 days", compression="zip")
 
 pd.options.display.max_columns = 50
