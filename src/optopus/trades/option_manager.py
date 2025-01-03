@@ -73,32 +73,8 @@ class OptionBacktester:
                     logger.warning(
                         f"Trade {trade} update failed at {current_time}, due to spike in option chain."
                     )
-                else:
-                    pass
-                if trade.status == "CLOSED":
-                    trades_to_close.append(trade)
-
-            # Move closed trades
-            if trades_to_close:
-                for trade in trades_to_close:
-                    self.active_trades.remove(trade)
-                self.closed_trades.extend(trades_to_close)
-                pl_change = sum(trade.total_pl() for trade in trades_to_close)
-                recovered_capital = sum(
-                    trade.get_required_capital() for trade in trades_to_close
-                )
-                self.capital += pl_change
-                self.available_to_trade += recovered_capital
-                assert (
-                    np.isnan(self.capital) == False
-                ), f"Capital is NaN: {self.capital} at {current_time}"
-
-                # Update allocation if gain_reinvesting is True
-                if self.config.gain_reinvesting:
-                    new_allocation = max(self.capital, self.allocation)
-                    added_allocation = new_allocation - self.allocation
-                    self.allocation = new_allocation
-                    self.available_to_trade += added_allocation
+                elif trade.status == "CLOSED":
+                    self.close_trade(trade)
 
             self._update_trade_counts()
             self.last_update_time = current_time
@@ -152,6 +128,33 @@ class OptionBacktester:
         return self.config.entry_condition.should_enter(
             new_spread, self, self.last_update_time
         )
+
+    def close_trade(self, trade: OptionStrategy) -> None:
+        """
+        Close a trade and update capital and allocation.
+
+        Args:
+            trade (OptionStrategy): The trade to close.
+        """
+        self.active_trades.remove(trade)
+        self.closed_trades.append(trade)
+        
+        pl_change = trade.total_pl()
+        recovered_capital = trade.get_required_capital()
+        
+        self.capital += pl_change
+        self.available_to_trade += recovered_capital
+        
+        assert not np.isnan(self.capital), f"Capital is NaN: {self.capital} at {trade.exit_time}"
+
+        # Update allocation if gain_reinvesting is True
+        if self.config.gain_reinvesting:
+            new_allocation = max(self.capital, self.allocation)
+            added_allocation = new_allocation - self.allocation
+            self.allocation = new_allocation
+            self.available_to_trade += added_allocation
+
+        self._update_trade_counts()
 
     def _update_trade_counts(self) -> None:
         """
