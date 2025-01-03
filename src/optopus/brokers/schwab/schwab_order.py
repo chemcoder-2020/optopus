@@ -117,6 +117,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def generate_entry_payload(self, price=None):
         if price is None:
             price = (self.current_bid + self.current_ask) / 2
+            
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating entry payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -130,6 +131,44 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 price=abs(price),
                 duration="GOOD_TILL_CANCEL",
                 is_entry=True,
+            )
+        elif self.strategy_type == "Iron Condor":
+            logger.info("Generating entry payload for iron condor.")
+            payload = self.generate_iron_condor_json(
+                symbol=self.symbol,
+                expiration=self.legs[0].expiration,
+                long_call_strike_price=self.legs[0].strike,
+                short_call_strike_price=self.legs[1].strike,
+                short_put_strike_price=self.legs[2].strike,
+                long_put_strike_price=self.legs[3].strike,
+                quantity=self.contracts,
+                price=abs(price),
+                duration="GOOD_TILL_CANCEL",
+                is_entry=True
+            )
+        elif self.strategy_type == "Iron Butterfly":
+            logger.info("Generating entry payload for iron butterfly.")
+            payload = self.generate_iron_butterfly_json(
+                symbol=self.symbol,
+                expiration=self.legs[0].expiration,
+                long_call_strike_price=self.legs[0].strike,
+                strike_price=self.legs[1].strike,
+                long_put_strike_price=self.legs[2].strike,
+                quantity=self.contracts,
+                price=abs(price),
+                duration="GOOD_TILL_CANCEL",
+                is_entry=True
+            )
+        elif self.strategy_type == "Straddle":
+            logger.info("Generating entry payload for straddle.")
+            payload = self.generate_straddle_json(
+                symbol=self.symbol,
+                expiration=self.legs[0].expiration,
+                strike_price=self.legs[0].strike,
+                quantity=self.contracts,
+                price=abs(price),
+                duration="GOOD_TILL_CANCEL",
+                is_entry=True
             )
         elif self.strategy_type in ["Naked Put", "Naked Call"]:
             logger.info("Generating entry payload for naked option.")
