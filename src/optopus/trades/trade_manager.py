@@ -511,7 +511,7 @@ class TradingManager(OptionBacktester):
             if self.trade_type == "Vertical Spread":
                 option_chain_df = self.option_broker.data.get_option_chain(
                     self.config.ticker,
-                    strike_count=20 if STRATEGY_PARAMS["short_delta"] == "ATM" else 160,
+                    strike_count=20 if STRATEGY_PARAMS["short_delta"] == "ATM" else STRATEGY_PARAMS.get("chain_strike_count", 50),
                 )
                 bar = option_chain_df["QUOTE_READTIME"].iloc[0]
                 vertical_spread = VerticalSpread.create_vertical_spread(
