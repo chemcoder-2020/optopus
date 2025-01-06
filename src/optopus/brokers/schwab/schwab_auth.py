@@ -44,7 +44,9 @@ class SchwabAuth:
                 logger.info(f"Loaded token data from {self.token_file}")
                 return self.token_data
         else:
-            raise FileNotFoundError(f"Token file {self.token_file} not found.")
+            logger.info(f"Token file {self.token_file} not found. Trying to authenticate...")
+            self.authenticate()
+            
 
     def get_authorization_url(self):
         return f"https://api.schwabapi.com/v1/oauth/authorize?client_id={self.client_id}&redirect_uri={self.redirect_uri}"

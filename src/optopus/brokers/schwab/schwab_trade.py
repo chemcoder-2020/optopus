@@ -141,6 +141,8 @@ class SchwabTrade(Schwab):
         Returns:
             dict: The JSON payload for the trade.
         """
+        if symbol[0] == "$":  # Index
+            symbol = symbol[1:]
         if option_type not in ["C", "P"]:
             raise ValueError(
                 f"Invalid option type: {option_type}. Only 'C' (call) and 'P' (put) are supported."
@@ -202,6 +204,8 @@ class SchwabTrade(Schwab):
         Returns:
             dict: The JSON payload for the trade.
         """
+        if symbol[0] == "$":  # Index
+            symbol = symbol[1:]
         if long_option_type not in ["C", "P"]:
             raise ValueError(
                 f"Invalid long option type: {long_option_type}. Only 'C' (call) and 'P' (put) are supported."
@@ -317,6 +321,8 @@ class SchwabTrade(Schwab):
         Returns:
             dict: The JSON payload for the trade.
         """
+        if symbol[0] == "$":  # Index
+            symbol = symbol[1:]
         if isinstance(expiration, pd.Timestamp):
             expiration = expiration.strftime("%y%m%d")
         elif isinstance(expiration, str):
@@ -409,6 +415,8 @@ class SchwabTrade(Schwab):
         Returns:
             dict: The JSON payload for the trade.
         """
+        if symbol[0] == "$":  # Index
+            symbol = symbol[1:]
         if isinstance(expiration, pd.Timestamp):
             expiration = expiration.strftime("%y%m%d")
         elif isinstance(expiration, str):
@@ -483,6 +491,8 @@ class SchwabTrade(Schwab):
         Returns:
             dict: The JSON payload for the trade.
         """
+        if symbol[0] == "$":  # Index
+            symbol = symbol[1:]
         if isinstance(expiration, pd.Timestamp):
             expiration = expiration.strftime("%y%m%d")
         elif isinstance(expiration, str):

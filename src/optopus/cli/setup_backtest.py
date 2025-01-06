@@ -15,6 +15,7 @@ def copy_template_files(project_name, strategy):
     strategy_template_dir = os.path.join(templates_base_dir, strategy)
     common_files_to_copy = [
         "backtest.py",
+        "bot.py",
         "entry_condition.py",
         "exit_condition.py",
         "backtest_cross_validate.py",
@@ -52,7 +53,6 @@ def copy_template_files(project_name, strategy):
         shutil.copy2(source_path, dest_path)
 
 
-
 def main():
     parser = argparse.ArgumentParser(
         description="Set up a backtesting project for options trading.",
@@ -64,7 +64,14 @@ def main():
     )
     parser.add_argument(
         "--strategy",
-        choices=["NakedCall", "NakedPut", "VerticalSpread", "IronCondor", "Straddle", "IronButterfly"],
+        choices=[
+            "NakedCall",
+            "NakedPut",
+            "VerticalSpread",
+            "IronCondor",
+            "Straddle",
+            "IronButterfly",
+        ],
         default="VerticalSpread",
         help="The strategy to use for the backtest. Currently supports: NakedCall, NakedPut, VerticalSpread, IronCondor, Straddle, IronButterfly.",
     )

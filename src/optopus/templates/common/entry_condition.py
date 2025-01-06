@@ -10,6 +10,10 @@ from optopus.trades.entry_conditions import (
 import pandas as pd
 import numpy as np
 from optopus.utils.heapmedian import ContinuousMedian
+import os
+from loguru import logger
+from optopus.brokers.schwab.schwab_data import SchwabData
+
 
 class MedianCalculator(EntryConditionChecker):
     def __init__(self, window_size=7, fluctuation=0.1):
@@ -136,3 +140,75 @@ class EntryCondition(EntryConditionChecker):
             )
         except KeyError:
             return False
+
+
+class BotEntryCondition(EntryConditionChecker):
+    def __init__(self, **kwargs):
+        self.composite = CompositeEntryCondition(
+            [
+                CapitalRequirementCondition(),
+                PositionLimitCondition(),
+                RORThresholdCondition(),
+                ConflictCondition(check_closed_trades=True),
+            ]
+        )
+        self.ticker = kwargs.get("ticker")
+        self.basename = kwargs.get("basename")
+
+    def should_enter(self, strategy, manager, time):
+        ticker = self.ticker
+        basename = self.basename
+
+        self.schwab_data = SchwabData(
+            client_id=os.getenv("SCHWAB_CLIENT_ID"),
+            client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+            redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
+            token_file=os.path.join(basename, "token.json"),
+        )
+        self.schwab_data.refresh_token()
+        time = pd.Timestamp(time)
+        equity_price = self.schwab_data.get_price_history(
+            ticker, "year", 2, frequency_type="daily", frequency=1
+        )
+        current_quote = self.schwab_data.get_quote(ticker)
+        indicator_prices = pd.concat(
+            [
+                equity_price,
+                pd.concat(
+                    [current_quote["MARK"], current_quote["QUOTE_TIME"].dt.date], axis=1
+                ).rename(columns={"MARK": "close", "QUOTE_TIME": "datetime"}),
+            ],
+            axis=0,
+            ignore_index=True,
+        ).set_index("datetime")["close"]
+
+        SMA100 = indicator_prices.rolling(100).mean().iloc[-1]
+        SMA200 = indicator_prices.rolling(200).mean().iloc[-1]
+        Median100 = indicator_prices.rolling(100).median().iloc[-1]
+        Median200 = indicator_prices.rolling(200).median().iloc[-1]
+        logger.info(
+            f"SMA100: {SMA100}; SMA200: {SMA200}; Median100: {Median100}; Median200: {Median200}"
+        )
+
+        logger.info(strategy)
+        bid = strategy.current_bid
+        ask = strategy.current_ask
+        mark = (bid + ask) / 2
+        logger.info(f"Mark price at {mark}")
+        if hasattr(manager, "premiums"):
+            manager.premiums.append(mark)
+            if len(manager.premiums) > 25:
+                manager.premiums.pop(0)
+        else:
+            manager.premiums = []
+
+        median_mark = np.median(manager.premiums)
+        price_condition = np.isclose(mark, median_mark, rtol=0.1) and np.isclose(
+            bid, mark, rtol=0.1
+        )
+        basic_condition = self.composite.should_enter(strategy, manager, time)
+        logger.info(
+            f"Price Entry Condition: {price_condition}; Median mark: {median_mark}; Mark: {mark}; Bid: {bid}, Ask: {ask}"
+        )
+        logger.info(f"Basic Entry Condition: {basic_condition}")
+        return Median100 > Median200 and price_condition and basic_condition

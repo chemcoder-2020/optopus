@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='optopus',
-    version='0.9.1-dev7',
+    version='0.9.2-dev3',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data={
@@ -38,6 +38,7 @@ setup(
     entry_points={
         'console_scripts': [
             'setup-optopus-backtest=optopus.cli.setup_backtest:main',
+            'bot-status=optopus.cli.bot_status:main',
         ],
     },
 )

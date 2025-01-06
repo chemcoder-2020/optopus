@@ -77,4 +77,5 @@ BACKTESTER_CONFIG = Config(
             ),
         ]
     ),
+    trade_type=config.get("BACKTESTER_CONFIG", "trade_type", fallback="Iron Condor"),
 )

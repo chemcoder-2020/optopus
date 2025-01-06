@@ -38,14 +38,18 @@ STRATEGY_PARAMS = {
     "exit_scheme": {
         "class": eval(config.get("EXIT_CONDITION", "class")),
         "params": {
-            "profit_target": config.getfloat("EXIT_CONDITION", "profit_target", fallback=50),
+            "profit_target": config.getfloat(
+                "EXIT_CONDITION", "profit_target", fallback=50
+            ),
             "exit_time_before_expiration": pd.Timedelta(
                 config.get(
-                    "EXIT_CONDITION", "exit_time_before_expiration", fallback="15 minutes"
+                    "EXIT_CONDITION",
+                    "exit_time_before_expiration",
+                    fallback="15 minutes",
                 )
             ),
             "window_size": config.getint("EXIT_CONDITION", "window_size", fallback=5),
-        }
+        },
     },
 }
 
@@ -77,4 +81,5 @@ BACKTESTER_CONFIG = Config(
             ),
         ]
     ),
+    trade_type=config.get("BACKTESTER_CONFIG", "trade_type", fallback="Iron Butterfly"),
 )

@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 from ..trades.option_manager import OptionBacktester
-from ..trades.option_spread import OptionStrategy
 import numpy as np
 import scipy.stats
 from loguru import logger
@@ -12,7 +11,6 @@ import joblib
 from tqdm import tqdm
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from abc import ABC, abstractmethod
 
 

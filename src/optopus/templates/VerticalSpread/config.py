@@ -68,4 +68,5 @@ BACKTESTER_CONFIG = Config(
             ConflictCondition(check_closed_trades=config.getboolean("BACKTESTER_CONFIG", "check_closed_trades", fallback=True)),
         ]
     ),
+    trade_type=config.get("BACKTESTER_CONFIG", "trade_type", fallback="Vertical Spread"),
 )

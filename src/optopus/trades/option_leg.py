@@ -439,7 +439,10 @@ class OptionLeg:
         elif isinstance(self.expiration, str):
             if len(self.expiration) != 6:
                 expiration = pd.Timestamp(self.expiration).strftime("%y%m%d")
-        option_symbol = f"{self.symbol.ljust(6)}{expiration}{self.option_type[0]}{str(int(self.strike * 1000)).zfill(8)}"
+        symbol = self.symbol
+        if symbol[0] == "$":  # Index
+            symbol = symbol[1:]
+        option_symbol = f"{symbol.ljust(6)}{expiration}{self.option_type[0]}{str(int(self.strike * 1000)).zfill(8)}"
         return option_symbol
 
 
