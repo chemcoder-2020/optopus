@@ -142,9 +142,9 @@ class SchwabData(Schwab):
             raise ValueError(f"Invalid market_id: {market_id}")
         return market_hours[market_id][last_key]["isOpen"]
 
-    def get_quote(self, symbols, fields="all", indicative=False):
+    def get_raw_quote(self, symbols, fields="all", indicative=False):
         """
-        Get quote for a symbol or list of symbols.
+        Get raw quote data for a symbol or list of symbols.
 
         Parameters:
             symbols (str): Comma separated list of symbol(s) to look up a quote.
@@ -152,7 +152,7 @@ class SchwabData(Schwab):
             indicative (bool, optional): Include indicative symbol quotes for all ETF symbols in request. Default value: false.
 
         Returns:
-            dict: The response data.
+            dict: The raw quote data from the API.
         """
         url = f"{self.marketdata_base_url}/quotes"
         params = {
@@ -162,11 +162,24 @@ class SchwabData(Schwab):
         }
         response = self._get(url, params=params)
         response.raise_for_status()
-        raw_quote = response.json()
+        return response.json()
+
+    def get_quote(self, symbols, fields="all", indicative=False):
+        """
+        Get formatted quote for a symbol or list of symbols.
+
+        Parameters:
+            symbols (str): Comma separated list of symbol(s) to look up a quote.
+            fields (str, optional): Request for subset of data by passing comma separated list of root nodes. Possible root nodes are quote, fundamental, extended, reference, regular. Default value: all.
+            indicative (bool, optional): Include indicative symbol quotes for all ETF symbols in request. Default value: false.
+
+        Returns:
+            pd.DataFrame: The formatted quote data.
+        """
+        raw_quote = self.get_raw_quote(symbols, fields, indicative)
         if all(len(sym) <= 5 for sym in symbols.split(",")):
             return self.format_equity_quote(raw_quote)
-        else:
-            return self.format_quote(raw_quote)
+        return self.format_quote(raw_quote)
 
     def format_quote(self, raw_quote):
         """
