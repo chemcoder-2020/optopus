@@ -21,7 +21,7 @@ class SchwabData(Schwab):
         self,
         symbol,
         contract_type="ALL",
-        strike_count=160,
+        strike_count=50,
         include_underlying_quote=None,
         strategy="SINGLE",
         interval=None,
