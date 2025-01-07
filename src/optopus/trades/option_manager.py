@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Union, Type
 from .option_spread import OptionStrategy
 from datetime import datetime
 from loguru import logger
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 from scipy.stats import gaussian_kde
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
@@ -25,10 +25,12 @@ class Config:
     client_secret: str = None
     redirect_uri: str = None
     token_file: str = None
-    entry_condition: Union[EntryConditionChecker, Type[EntryConditionChecker], dict] = {
-        'class': DefaultEntryCondition,
-        'params': {}
-    }
+    entry_condition: Union[EntryConditionChecker, Type[EntryConditionChecker], dict] = field(
+        default_factory=lambda: {
+            'class': DefaultEntryCondition,
+            'params': {}
+        }
+    )
     trade_type: str = None
 
     def __post_init__(self):
