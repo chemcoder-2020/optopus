@@ -22,16 +22,36 @@ def load_bot(pkl_path: str):
     """Load a bot from a pickle file.
 
     Args:
-        pkl_path (str): Path to the pickle file.
+        pkl_path (str): Path to the pickle file or directory containing trading_manager.pkl.
 
     Returns:
         The loaded bot instance.
     """
+    # If it's a directory, look for trading_manager.pkl inside it
+    if os.path.isdir(pkl_path):
+        pkl_path = os.path.join(pkl_path, "trading_manager.pkl")
+    
     if not os.path.exists(pkl_path):
         raise FileNotFoundError(f"Pickle file not found at: {pkl_path}")
-    with open(pkl_path, "rb") as file:
-        bot = dill.load(file)
-    return bot
+    
+    # Get the directory containing the pickle file
+    pkl_dir = os.path.dirname(pkl_path)
+    
+    # Store current directory
+    original_dir = os.getcwd()
+    
+    try:
+        # Change to the pickle file's directory
+        os.chdir(pkl_dir)
+        
+        # Load the bot
+        with open(os.path.basename(pkl_path), "rb") as file:
+            bot = dill.load(file)
+            
+        return bot
+    finally:
+        # Always change back to original directory
+        os.chdir(original_dir)
 
 def update_exit(bot, **kwargs):
     """Update the exit scheme for each active order.
