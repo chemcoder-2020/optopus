@@ -215,9 +215,9 @@ def main():
         for bot_name in available_bots:
             name = bot_name.split("Bot")[0]
             logger.info(f"Loading bot: {name}")
-            bot = load_bot(f"{name}Bot/trading_manager{name}.pkl")
+            bot = load_bot(f"{name}/trading_manager{name}.pkl")
             status = check_bot_status(bot)
-            bot.freeze(f"{name}Bot/trading_manager{name}.pkl")
+            bot.freeze(f"{name}/trading_manager{name}.pkl")
             logger.info(f"Froze bot: {name}")
             total_allocation += status["Allocation"]
             total_risk += status["Risk"]
@@ -264,7 +264,7 @@ def main():
 
     else:
         logger.info(f"Loading bot: {args.bot}")
-        bot = load_bot(f"{args.bot}Bot/trading_manager{args.bot}.pkl")
+        bot = load_bot(f"{args.bot}/trading_manager{args.bot}.pkl")
 
         if args.update_config:
             logger.info(f"Updating configuration for bot: {args.bot}")
@@ -350,7 +350,7 @@ def main():
             print("\nActive Orders:\n")
             print(status["Active Orders"])
             print("\n")
-        bot.freeze(f"{args.bot}Bot/trading_manager{args.bot}.pkl")
+        bot.freeze(f"{args.bot}/trading_manager{args.bot}.pkl")
         logger.info(f"Froze bot: {args.bot}")
 
     logger.info("Done.\n\n")
