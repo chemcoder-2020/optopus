@@ -25,7 +25,10 @@ class Config:
     client_secret: str = None
     redirect_uri: str = None
     token_file: str = None
-    entry_condition: EntryConditionChecker = DefaultEntryCondition()
+    entry_condition: Union[EntryConditionChecker, Type[EntryConditionChecker], dict] = {
+        'class': DefaultEntryCondition,
+        'params': {}
+    }
     trade_type: str = None
 
     def get(self, key, default=None):
@@ -41,7 +44,22 @@ class OptionBacktester:
 
         Args:
             config (Config): Configuration parameters for the backtester.
+
+        Raises:
+            ValueError: If the entry_condition is not an instance, class, or dict with class and params.
         """
+        # Handle entry_condition initialization
+        if isinstance(config.entry_condition, dict):
+            # Case 1: Dictionary with class and parameters
+            entry_class = config.entry_condition.get('class', DefaultEntryCondition)
+            entry_params = config.entry_condition.get('params', {})
+            config.entry_condition = entry_class(**entry_params)
+        elif isinstance(config.entry_condition, type) and issubclass(config.entry_condition, EntryConditionChecker):
+            # Case 2: Just the class provided
+            config.entry_condition = config.entry_condition()
+        elif not isinstance(config.entry_condition, EntryConditionChecker):
+            raise ValueError("Invalid entry_condition format. Must be an instance, class, or dict with class and params")
+
         self.config = config
         self.capital = config.initial_capital
         self.allocation = config.initial_capital
