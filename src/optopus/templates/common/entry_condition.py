@@ -13,6 +13,8 @@ from optopus.utils.heapmedian import ContinuousMedian
 import os
 from loguru import logger
 from optopus.brokers.schwab.schwab_data import SchwabData
+from statsforecast.models import ARIMA
+from statsforecast import StatsForecast
 
 
 class MedianCalculator(EntryConditionChecker):
@@ -149,21 +151,24 @@ class BotEntryCondition(EntryConditionChecker):
                 CapitalRequirementCondition(),
                 PositionLimitCondition(),
                 RORThresholdCondition(),
-                ConflictCondition(check_closed_trades=True),
+                ConflictCondition(check_closed_trades=kwargs.get("check_closed_trades", True)),
             ]
         )
         self.ticker = kwargs.get("ticker")
-        self.basename = kwargs.get("basename")
+        self.window_size = kwargs.get("window_size", 25)
 
     def should_enter(self, strategy, manager, time):
+        basic_condition = self.composite.should_enter(strategy, manager, time)
+        if not basic_condition:
+            return False
+
         ticker = self.ticker
-        basename = self.basename
 
         self.schwab_data = SchwabData(
             client_id=os.getenv("SCHWAB_CLIENT_ID"),
             client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
             redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
-            token_file=os.path.join(basename, "token.json"),
+            token_file=os.getenv("SCHWAB_TOKEN_FILE", "token.json"),
         )
         self.schwab_data.refresh_token()
         time = pd.Timestamp(time)
@@ -174,9 +179,12 @@ class BotEntryCondition(EntryConditionChecker):
         indicator_prices = pd.concat(
             [
                 equity_price,
-                pd.concat(
-                    [current_quote["MARK"], current_quote["QUOTE_TIME"].dt.date], axis=1
-                ).rename(columns={"MARK": "close", "QUOTE_TIME": "datetime"}),
+                pd.DataFrame(
+                    {
+                        "close": [current_quote["LAST_PRICE"].iloc[-1]],
+                        "datetime": [time.date()],
+                    }
+                ),
             ],
             axis=0,
             ignore_index=True,
@@ -186,6 +194,24 @@ class BotEntryCondition(EntryConditionChecker):
         SMA200 = indicator_prices.rolling(200).mean().iloc[-1]
         Median100 = indicator_prices.rolling(100).median().iloc[-1]
         Median200 = indicator_prices.rolling(200).median().iloc[-1]
+        indicator_prices.index = pd.DatetimeIndex(indicator_prices.index)
+        arima_data = indicator_prices[-200:].resample("ME").last()
+        arima_data = pd.DataFrame(
+            {
+                "ds": pd.DatetimeIndex(arima_data.index),
+                "y": arima_data.values,
+                "unique_id": 1,
+            }
+        )
+        forecaster = StatsForecast(
+            models=[ARIMA(order=(0,1,1), seasonal_order=(0,1,1))],
+            freq="M",
+            n_jobs=-1,
+        )
+        forecaster.fit(arima_data)
+        forecast = forecaster.predict(
+            h=1
+        )['ARIMA'].iloc[0]
         logger.info(
             f"SMA100: {SMA100}; SMA200: {SMA200}; Median100: {Median100}; Median200: {Median200}"
         )
@@ -197,18 +223,18 @@ class BotEntryCondition(EntryConditionChecker):
         logger.info(f"Mark price at {mark}")
         if hasattr(manager, "premiums"):
             manager.premiums.append(mark)
-            if len(manager.premiums) > 25:
+            if len(manager.premiums) > self.window_size:
                 manager.premiums.pop(0)
         else:
             manager.premiums = []
 
         median_mark = np.median(manager.premiums)
-        price_condition = np.isclose(mark, median_mark, rtol=0.1) and np.isclose(
-            bid, mark, rtol=0.1
+        price_condition = np.isclose(mark, median_mark, rtol=0.15) and np.isclose(
+            bid, mark, rtol=0.15
         )
-        basic_condition = self.composite.should_enter(strategy, manager, time)
+        
         logger.info(
-            f"Price Entry Condition: {price_condition}; Median mark: {median_mark}; Mark: {mark}; Bid: {bid}, Ask: {ask}"
+            f"Price Entry Condition: {price_condition}; Median mark: {median_mark}; Mark: {mark}; Bid: {bid}, Ask: {ask}; Next month's forecast: {forecast}"
         )
         logger.info(f"Basic Entry Condition: {basic_condition}")
-        return Median100 > Median200 and price_condition and basic_condition
+        return Median100 > Median200 and price_condition and basic_condition and forecast > mark

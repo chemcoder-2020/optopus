@@ -12,11 +12,13 @@ logger.add("bot_status.log", rotation="10 MB", retention="60 days", compression=
 
 pd.options.display.max_columns = 50
 
+
 def check_available_bots():
     """Recursively check for any pkl files and report the name of their immediate parent folder."""
     pkl_files = glob.glob("**/*.pkl", recursive=True)
     available_bots = set(os.path.basename(os.path.dirname(pkl)) for pkl in pkl_files)
     return available_bots
+
 
 def load_bot(pkl_path: str):
     """Load a bot from a pickle file.
@@ -27,37 +29,35 @@ def load_bot(pkl_path: str):
     Returns:
         The loaded bot instance.
     """
-    # If it's a directory, look for trading_manager.pkl inside it
-    if os.path.isdir(pkl_path):
-        pkl_path = os.path.join(pkl_path, "trading_manager.pkl")
-    
+
     if not os.path.exists(pkl_path):
         raise FileNotFoundError(f"Pickle file not found at: {pkl_path}")
-    
+
     # Get the directory containing the pickle file
     pkl_dir = os.path.dirname(os.path.abspath(pkl_path))
-    
+
     # Store current directory and sys.path
     original_dir = os.getcwd()
     original_sys_path = sys.path.copy()
-    
+
     try:
         # Change to the pickle file's directory
         os.chdir(pkl_dir)
-        
+
         # Add the directory to Python path
         if pkl_dir not in sys.path:
             sys.path.insert(0, pkl_dir)
-        
+
         # Load the bot
         with open(os.path.basename(pkl_path), "rb") as file:
             bot = dill.load(file)
-            
+
         return bot
     finally:
         # Always change back to original directory and restore sys.path
         os.chdir(original_dir)
         sys.path = original_sys_path
+
 
 def update_exit(bot, **kwargs):
     """Update the exit scheme for each active order.
@@ -67,8 +67,11 @@ def update_exit(bot, **kwargs):
         **kwargs: Keyword arguments to pass to the exit scheme update method.
     """
     for order in bot.active_orders:
-        if hasattr(order, 'exit_scheme') and callable(getattr(order.exit_scheme, 'update', None)):
+        if hasattr(order, "exit_scheme") and callable(
+            getattr(order.exit_scheme, "update", None)
+        ):
             order.exit_scheme.update(**kwargs)
+
 
 def check_bot_status(bot):
     """Check the status of a bot.
@@ -84,7 +87,7 @@ def check_bot_status(bot):
     except Exception as e:
         bot.auth_refresh()
         bot.update_orders()
-        
+
     orders_df = bot.get_active_orders_dataframe()
     orders_df.sort_values(by="Entry Time", inplace=True)
     all_orders_df = bot.get_orders_dataframe()
@@ -96,15 +99,27 @@ def check_bot_status(bot):
     closed_pl = all_orders_df[all_orders_df["Status"] == "CLOSED"]["Total P/L"].sum()
 
     # Daily performance
-    perf_data = pd.DataFrame(bot.performance_data).set_index("time").resample("D").last()
-    total_pl_change_today = perf_data['total_pl'].dropna().diff().iloc[-1]
-    closed_pl_change_today = perf_data['closed_pl'].dropna().diff().iloc[-1]
+    perf_data = (
+        pd.DataFrame(bot.performance_data).set_index("time").resample("D").last()
+    )
+    total_pl_change_today = perf_data["total_pl"].dropna().diff().iloc[-1]
+    closed_pl_change_today = perf_data["closed_pl"].dropna().diff().iloc[-1]
 
     # Monthly Performance
-    monthly_perf_data_last = pd.DataFrame(bot.performance_data).set_index("time").resample("ME").last()
-    monthly_perf_data_first = pd.DataFrame(bot.performance_data).set_index("time").resample("MS").first()
-    total_pl_change_MTD = (monthly_perf_data_last['total_pl'].reset_index(drop=True) - monthly_perf_data_first['total_pl'].reset_index(drop=True)).iloc[-1]
-    closed_pl_change_MTD = (monthly_perf_data_last['closed_pl'].reset_index(drop=True) - monthly_perf_data_first['closed_pl'].reset_index(drop=True)).iloc[-1]
+    monthly_perf_data_last = (
+        pd.DataFrame(bot.performance_data).set_index("time").resample("ME").last()
+    )
+    monthly_perf_data_first = (
+        pd.DataFrame(bot.performance_data).set_index("time").resample("MS").first()
+    )
+    total_pl_change_MTD = (
+        monthly_perf_data_last["total_pl"].reset_index(drop=True)
+        - monthly_perf_data_first["total_pl"].reset_index(drop=True)
+    ).iloc[-1]
+    closed_pl_change_MTD = (
+        monthly_perf_data_last["closed_pl"].reset_index(drop=True)
+        - monthly_perf_data_first["closed_pl"].reset_index(drop=True)
+    ).iloc[-1]
 
     performance_metrics = bot.calculate_performance_metrics()
     n_active_orders = len(orders_df)
@@ -127,6 +142,7 @@ def check_bot_status(bot):
         "Number of Active Orders": n_active_orders,
         "Number of Orders": n_all_orders,
     }
+
 
 def ask_about_today(
     bot_name: str,
@@ -172,6 +188,7 @@ def ask_about_today(
     reply = response["message"]["content"]
     print(f"Answer:\n{reply}")
 
+
 def main():
     """Main function to check the status of a trading bot.
 
@@ -186,9 +203,7 @@ def main():
         "--liquidate_all", action="store_true", help="Liquidate all orders"
     )
     parser.add_argument("--list_bots", action="store_true", help="List available bots")
-    parser.add_argument(
-        "--ask_today", help="Ask about today"
-    )
+    parser.add_argument("--ask_today", help="Ask about today")
     parser.add_argument("--api_key", help="API key for the LLM")
     parser.add_argument("--base_url", help="Base URL for the LLM")
     parser.add_argument(
@@ -197,10 +212,16 @@ def main():
         default="qwen2.5-coder:1.5b-instruct",
     )
     parser.add_argument(
-        "--update_config", nargs="*", metavar="KEY=VALUE", help="Update bot configuration"
+        "--update_config",
+        nargs="*",
+        metavar="KEY=VALUE",
+        help="Update bot configuration",
     )
     parser.add_argument(
-        "--update_exit", nargs="*", metavar="KEY=VALUE", help="Update exit scheme for active orders"
+        "--update_exit",
+        nargs="*",
+        metavar="KEY=VALUE",
+        help="Update exit scheme for active orders",
     )
     args = parser.parse_args()
 
@@ -239,7 +260,7 @@ def main():
         all_orders = []
 
         for bot_name in available_bots:
-            name = bot_name.split("Bot")[0]
+            name = bot_name
             logger.info(f"Loading bot: {name}")
             bot = load_bot(f"{name}/trading_manager{name}.pkl")
             status = check_bot_status(bot)
@@ -269,7 +290,7 @@ def main():
         print(f"Total P/L Change MTD: ${total_pl_change_mtd:.2f}")
         print(f"Total Closed P/L Change MTD: ${total_closed_pl_change_mtd:.2f}")
         print("=" * 50)
-        
+
         print("\n")
 
         print("\nAll Orders:\n")
@@ -290,17 +311,25 @@ def main():
 
     else:
         logger.info(f"Loading bot: {args.bot}")
-        bot = load_bot(f"trading_manager{args.bot}.pkl")
+        original_dir = os.getcwd()
+        if args.bot == os.path.split(original_dir)[-1]:
+            bot = load_bot(f"trading_manager{args.bot}.pkl")
+        else:
+            bot = load_bot(f"{args.bot}/trading_manager{args.bot}.pkl")
 
         if args.update_config:
             logger.info(f"Updating configuration for bot: {args.bot}")
-            config_updates = {k: v for k, v in (item.split("=") for item in args.update_config)}
+            config_updates = {
+                k: v for k, v in (item.split("=") for item in args.update_config)
+            }
             bot.update_config(**config_updates)
             logger.info(f"Configuration updated: {config_updates}")
 
         if args.update_exit:
             logger.info(f"Updating exit scheme for bot: {args.bot}")
-            exit_updates = {k: v for k, v in (item.split("=") for item in args.update_exit)}
+            exit_updates = {
+                k: v for k, v in (item.split("=") for item in args.update_exit)
+            }
             update_exit(bot, **exit_updates)
             logger.info(f"Exit scheme updated: {exit_updates}")
 
@@ -331,12 +360,16 @@ def main():
             logger.info(f"Allocation: {status['Allocation']}")
             logger.info(f"Risk: {status['Risk']}")
             logger.info(f"Available to Trade: {status['Available to Trade']}")
-            logger.info(f"Number of Active Orders Today: {status['Number of Active Orders Today']}")
+            logger.info(
+                f"Number of Active Orders Today: {status['Number of Active Orders Today']}"
+            )
             logger.info(f"Number of Active Orders: {status['Number of Active Orders']}")
             logger.info(f"Total number of Orders: {status['Number of Orders']}")
             logger.info(f"Performance Metrics: {status['Performance Metrics']}")
             logger.info(f"Total P/L (commission included): ${status['Total P/L']:.2f}")
-            logger.info(f"Closed P/L (commission included): ${status['Closed P/L']:.2f}")
+            logger.info(
+                f"Closed P/L (commission included): ${status['Closed P/L']:.2f}"
+            )
             logger.info(f"P/L Change Today: ${status["Total P/L Today"]:.2f}")
             logger.info(f"Closed P/L Change Today: ${status["Closed P/L Today"]:.2f}")
             logger.info(f"P/L Change MTD: ${status["Total P/L MTD"]:.2f}")
@@ -354,7 +387,9 @@ def main():
             print(f"Allocation: {status['Allocation']}")
             print(f"Risk: {status['Risk']}")
             print(f"Available to Trade: {status['Available to Trade']}")
-            print(f"Number of Active Orders Today: {status['Number of Active Orders Today']}")
+            print(
+                f"Number of Active Orders Today: {status['Number of Active Orders Today']}"
+            )
             print(f"Number of Active Orders: {status['Number of Active Orders']}")
             print(f"Total number of Orders: {status['Number of Orders']}")
             if status["Performance Metrics"] is not None:
@@ -376,10 +411,15 @@ def main():
             print("\nActive Orders:\n")
             print(status["Active Orders"])
             print("\n")
-        bot.freeze(f"trading_manager{args.bot}.pkl")
+
+        if args.bot == os.path.split(original_dir)[-1]:
+            bot.freeze(f"trading_manager{args.bot}.pkl")
+        else:
+            bot.freeze(f"{args.bot}/trading_manager{args.bot}.pkl")
         logger.info(f"Froze bot: {args.bot}")
 
     logger.info("Done.\n\n")
+
 
 if __name__ == "__main__":
     main()

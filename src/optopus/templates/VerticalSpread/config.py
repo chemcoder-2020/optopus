@@ -3,6 +3,8 @@ from optopus.trades.option_manager import Config
 from optopus.trades.exit_conditions import (
     DefaultExitCondition,
 )
+from exit_condition import ExitCondition
+from entry_condition import BotEntryCondition, EntryCondition
 from optopus.trades.entry_conditions import (
     CapitalRequirementCondition,
     PositionLimitCondition,
@@ -37,12 +39,18 @@ STRATEGY_PARAMS = {
     "exit_scheme": {
         "class": eval(config.get("EXIT_CONDITION", "class")),
         "params": {
-            "profit_target": config.getfloat("EXIT_CONDITION", "profit_target", fallback=50),
+            "profit_target": config.getfloat(
+                "EXIT_CONDITION", "profit_target", fallback=50
+            ),
             "exit_time_before_expiration": pd.Timedelta(
-                config.get("EXIT_CONDITION", "exit_time_before_expiration", fallback="15 minutes")
+                config.get(
+                    "EXIT_CONDITION",
+                    "exit_time_before_expiration",
+                    fallback="15 minutes",
+                )
             ),
             "window_size": config.getint("EXIT_CONDITION", "window_size", fallback=5),
-        }
+        },
     },
 }
 
@@ -58,15 +66,21 @@ BACKTESTER_CONFIG = Config(
     ),
     position_size=config.getfloat("BACKTESTER_CONFIG", "position_size", fallback=0.05),
     ror_threshold=config.getfloat("BACKTESTER_CONFIG", "ror_threshold", fallback=0),
-    gain_reinvesting=config.getboolean("BACKTESTER_CONFIG", "gain_reinvesting", fallback=False),
-    verbose=config.getboolean("BACKTESTER_CONFIG", "verbose", fallback=False),
-    entry_condition=CompositeEntryCondition(
-        [
-            CapitalRequirementCondition(),
-            PositionLimitCondition(),
-            RORThresholdCondition(),
-            ConflictCondition(check_closed_trades=config.getboolean("BACKTESTER_CONFIG", "check_closed_trades", fallback=True)),
-        ]
+    gain_reinvesting=config.getboolean(
+        "BACKTESTER_CONFIG", "gain_reinvesting", fallback=False
     ),
-    trade_type=config.get("BACKTESTER_CONFIG", "trade_type", fallback="Vertical Spread"),
+    verbose=config.getboolean("BACKTESTER_CONFIG", "verbose", fallback=False),
+    entry_condition={
+        "class": eval(config.get("ENTRY_CONDITION", "class")),
+        "params": {
+            "ticker": config.get("ENTRY_CONDITION", "ticker"),
+            "window_size": config.getint("ENTRY_CONDITION", "window_size", fallback=25),
+            "check_closed_trades": config.getboolean(
+                "ENTRY_CONDITION", "check_closed_trades", fallback=True
+            ),
+        },
+    },
+    trade_type=config.get(
+        "BACKTESTER_CONFIG", "trade_type", fallback="Vertical Spread"
+    ),
 )

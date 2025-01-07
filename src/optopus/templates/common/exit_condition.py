@@ -3,6 +3,7 @@ from optopus.trades.exit_conditions import (
     TimeBasedCondition,
     CompositeExitCondition,
     TrailingStopCondition,
+    ProfitTargetCondition,
 )
 from datetime import datetime
 import pandas as pd
@@ -12,11 +13,15 @@ class ExitCondition(ExitConditionChecker):
 
     def __init__(
         self,
+        profit_target: float = 80,
         trigger: float = 40,
         stop_loss: float = 15,
         exit_time_before_expiration: pd.Timedelta = pd.Timedelta("1 day"),
         **kwargs,
     ):
+        profit_target_condition = ProfitTargetCondition(
+            profit_target=profit_target, window_size=kwargs.get("window_size", 3)
+        )
 
         tsl_condition = TrailingStopCondition(
             trigger=trigger,
@@ -29,8 +34,8 @@ class ExitCondition(ExitConditionChecker):
         )
 
         self.composite_condition = CompositeExitCondition(
-            conditions=[tsl_condition, time_based_condition],
-            logical_operations=["OR"],
+            conditions=[profit_target_condition, tsl_condition, time_based_condition],
+            logical_operations=["OR", "OR"],
         )
         self.__dict__.update(self.composite_condition.__dict__)
 
