@@ -6,7 +6,6 @@ from loguru import logger
 import glob
 from pathlib import Path
 
-
 # Set up logging
 logger.add("bot_status.log", rotation="10 MB", retention="60 days", compression="zip")
 
@@ -27,31 +26,15 @@ def load_bot(pkl_path: str):
     Returns:
         The loaded bot instance.
     """
-    # If it's a directory, look for trading_manager.pkl inside it
-    if os.path.isdir(pkl_path):
-        pkl_path = os.path.join(pkl_path, "trading_manager.pkl")
     
     if not os.path.exists(pkl_path):
         raise FileNotFoundError(f"Pickle file not found at: {pkl_path}")
     
-    # Get the directory containing the pickle file
-    pkl_dir = os.path.dirname(pkl_path)
-    
-    # Store current directory
-    original_dir = os.getcwd()
-    
-    try:
-        # Change to the pickle file's directory
-        os.chdir(pkl_dir)
-        
-        # Load the bot
-        with open(os.path.basename(pkl_path), "rb") as file:
-            bot = dill.load(file)
+    # Load the bot
+    with open(os.path.basename(pkl_path), "rb") as file:
+        bot = dill.load(file)
             
-        return bot
-    finally:
-        # Always change back to original directory
-        os.chdir(original_dir)
+    return bot
 
 def update_exit(bot, **kwargs):
     """Update the exit scheme for each active order.
@@ -284,7 +267,7 @@ def main():
 
     else:
         logger.info(f"Loading bot: {args.bot}")
-        bot = load_bot(f"{args.bot}/trading_manager{args.bot}.pkl")
+        bot = load_bot(f"trading_manager{args.bot}.pkl")
 
         if args.update_config:
             logger.info(f"Updating configuration for bot: {args.bot}")
@@ -370,7 +353,7 @@ def main():
             print("\nActive Orders:\n")
             print(status["Active Orders"])
             print("\n")
-        bot.freeze(f"{args.bot}/trading_manager{args.bot}.pkl")
+        bot.freeze(f"trading_manager{args.bot}.pkl")
         logger.info(f"Froze bot: {args.bot}")
 
     logger.info("Done.\n\n")
