@@ -454,8 +454,11 @@ class OptionBacktester:
         }
 
         try:
+            # Calculate daily P/L changes from performance data
+            daily_pl = df.set_index("time")["total_pl"].resample("B").last().ffill()
+            daily_returns = daily_pl.diff().dropna()
             metrics["sharpe_ratio"] = self._calculate_sharpe_ratio(
-                trade_returns_per_allocation
+                daily_returns
             )
         except Exception as e:
             logger.error(f"Error calculating Sharpe Ratio: {str(e)}")
@@ -521,20 +524,23 @@ class OptionBacktester:
 
         return metrics
 
-    def _calculate_sharpe_ratio(self, daily_returns: pd.Series) -> float:
+    def _calculate_sharpe_ratio(self, daily_pl_changes: pd.Series) -> float:
         """
-        Calculate the Sharpe Ratio.
+        Calculate the Sharpe Ratio based on daily P/L changes.
 
         Args:
-            daily_returns (pd.Series): Series of daily returns.
+            daily_pl_changes (pd.Series): Series of daily P/L changes.
 
         Returns:
             float: Sharpe Ratio.
         """
+        if len(daily_pl_changes) < 2:
+            return 0.0
+            
+        # Convert daily P/L changes to returns relative to allocation
+        daily_returns = daily_pl_changes / self.allocation
         risk_free_rate = 0.02  # Assume 2% risk-free rate
-        excess_returns = (
-            daily_returns - risk_free_rate / 252
-        )  # Assuming 252 trading days
+        excess_returns = daily_returns - risk_free_rate / 252
         return np.sqrt(252) * excess_returns.mean() / excess_returns.std()
 
     def _calculate_profit_factor(self, daily_returns: pd.Series) -> float:
