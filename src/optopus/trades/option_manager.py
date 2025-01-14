@@ -455,7 +455,7 @@ class OptionBacktester:
 
         try:
             # Calculate daily P/L changes from performance data
-            daily_pl = df.set_index("time")["total_pl"].resample("B").last().ffill()
+            daily_pl = df["total_pl"].resample("B").last().ffill()
             daily_returns = daily_pl.diff().dropna()
             metrics["sharpe_ratio"] = self._calculate_sharpe_ratio(
                 daily_returns
@@ -490,7 +490,7 @@ class OptionBacktester:
             logger.error(f"Error calculating Win Rate: {str(e)}")
         try:
             # Calculate daily P/L changes from performance data
-            daily_pl = df.set_index("time")["total_pl"].resample("B").last().ffill()
+            daily_pl = df["total_pl"].resample("B").last().ffill()
             daily_returns = daily_pl.diff().dropna()
             
             metrics["risk_of_ruin"] = self.monte_carlo_risk_of_ruin(

@@ -141,16 +141,19 @@ class BaseBacktest(ABC):
                     )
                 prev_active_positions = len(backtester.active_trades)
                 prev_capital = backtester.capital
+        
+        try:
+            print("\nBacktest completed!")
+            print(f"Final capital: ${backtester.capital:.2f}")
+            print(f"Total P&L: ${backtester.get_total_pl():.2f}")
+            print(f"Closed P&L: ${backtester.get_closed_pl():.2f}")
+            print(f"Number of closed positions: {backtester.get_closed_positions()}")
 
-        print("\nBacktest completed!")
-        print(f"Final capital: ${backtester.capital:.2f}")
-        print(f"Total P&L: ${backtester.get_total_pl():.2f}")
-        print(f"Closed P&L: ${backtester.get_closed_pl():.2f}")
-        print(f"Number of closed positions: {backtester.get_closed_positions()}")
-
-        if plot_performance:
-            backtester.plot_performance()
-        backtester.print_performance_summary()
+            if plot_performance:
+                backtester.plot_performance()
+            backtester.print_performance_summary()
+        except Exception:
+            pass
         return backtester
 
     @classmethod
