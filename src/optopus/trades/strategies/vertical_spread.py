@@ -153,6 +153,7 @@ class VerticalSpread(OptionStrategy):
             strategy.current_bid,
             strategy.current_ask,
         )
+        strategy.underlying_last = long_leg.underlying_last
 
         if strategy.entry_net_premium > spread_width:
             raise ValueError(

@@ -150,6 +150,41 @@ class ConflictCondition(EntryConditionChecker):
             
         return True
 
+
+class TrailingStopEntry(EntryConditionChecker):
+    def __init__(self, **kwargs):
+        
+        self.trailing_entry_direction = kwargs.get("trailing_entry_direction", "bullish").lower()
+        self.trailing_entry_threshold = kwargs.get("trailing_entry_threshold", 1.0)  # Percentage threshold
+        self.current_date = None
+        self.cum_min = None  # Track cumulative min price
+        self.cum_max = None  # Track cumulative max price
+        
+    def should_enter(self, strategy, manager, time) -> bool:
+        time = pd.Timestamp(time)
+        current_price = strategy.underlying_last
+        
+        if self.cum_max is None:
+            self.cum_max = current_price
+        
+        if self.cum_min is None:
+            self.cum_min = current_price
+            
+        # Update cumulative min/max
+        self.cum_min = min(self.cum_min, current_price)
+        self.cum_max = max(self.cum_max, current_price)
+        
+        # Calculate price movement from extreme
+        if self.trailing_entry_direction == "bullish":
+            price_change = ((current_price - self.cum_min) / self.cum_min) * 100
+        else:
+            price_change = ((current_price - self.cum_max) / self.cum_max) * 100
+        
+        if self.trailing_entry_direction == "bullish":
+            return price_change >= self.trailing_entry_threshold
+        else:
+            return price_change <= -self.trailing_entry_threshold
+
 class CompositeEntryCondition(EntryConditionChecker):
     """
     Combines multiple entry conditions.

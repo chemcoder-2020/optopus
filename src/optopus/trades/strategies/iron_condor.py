@@ -205,5 +205,6 @@ class IronCondor(OptionStrategy):
             strategy.current_bid,
             strategy.current_ask,
         )
+        strategy.underlying_last = put_long_leg.underlying_last
 
         return strategy

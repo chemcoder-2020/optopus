@@ -107,5 +107,6 @@ class NakedCall(OptionStrategy):
             strategy.current_bid,
             strategy.current_ask,
         )
+        strategy.underlying_last = call_leg.underlying_last
 
         return strategy

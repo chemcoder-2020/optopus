@@ -134,6 +134,7 @@ class OptionStrategy:
         self.exit_ror = None
         self.entry_underlying_last = None
         self.exit_underlying_last = None
+        self.underlying_last = None
         self.exit_dit = None
         self.exit_dte = None
         # Add median tracking attributes
@@ -287,6 +288,7 @@ class OptionStrategy:
 
         # Calculate and store the strategy's bid-ask spread
         self.current_bid, self.current_ask = self.calculate_bid_ask()
+        self.underlying_last = self.legs[0].underlying_last
 
         return True
 
