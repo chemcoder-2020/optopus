@@ -186,10 +186,13 @@ class OptionBacktester:
                 strategy=new_spread,
                 manager=self
             )
-            if not external_conditions_met:
-                logger.info("External entry conditions not met")
-                return False
+            if external_conditions_met:
+                logger.info("External entry conditions met")
+                return True
+            logger.info("External entry conditions not met")
+            return False
 
+        # Only check standard conditions if no external condition configured
         return standard_conditions_met
 
     def close_trade(self, trade: OptionStrategy) -> None:
