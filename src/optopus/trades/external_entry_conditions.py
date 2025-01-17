@@ -18,14 +18,14 @@ class ExternalEntryConditionChecker(ABC):
             Check if the external entry conditions are met for the option strategy.
     """
     @abstractmethod
-    def should_enter(self, strategy, manager: 'OptionBacktester', time: Union[datetime, str, pd.Timestamp]) -> bool:
+    def should_enter(self, time: Union[datetime, str, pd.Timestamp], strategy=None, manager: 'OptionBacktester' = None) -> bool:
         """
         Check if the external entry conditions are met.
 
         Args:
-            strategy: The option strategy being evaluated
-            manager: The option backtester/manager instance
-            time: The current time of evaluation
+            time: The current time of evaluation (required)
+            strategy: The option strategy being evaluated (optional)
+            manager: The option backtester/manager instance (optional)
 
         Returns:
             bool: True if external conditions are met, False otherwise
