@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from scipy.stats import gaussian_kde
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
+from .external_entry_conditions import ExternalEntryConditionChecker
 
 @dataclass
 class Config:
@@ -31,11 +32,18 @@ class Config:
             'params': {}
         }
     )
+    external_entry_condition: Union[ExternalEntryConditionChecker, Type[ExternalEntryConditionChecker], dict, None] = field(
+        default_factory=lambda: {
+            'class': None,
+            'params': {}
+        }
+    )
     trade_type: str = None
 
     def __post_init__(self):
         """Initialize the config after dataclass creation."""
         self._initialize_entry_condition()
+        self._initialize_external_entry_condition()
 
     def get(self, key, default=None):
         """Get an attribute with a default value if it does not exist."""
@@ -53,6 +61,23 @@ class Config:
             self.entry_condition = self.entry_condition()
         elif not isinstance(self.entry_condition, EntryConditionChecker):
             raise ValueError("Invalid entry_condition format. Must be an instance, class, or dict with class and params")
+
+    def _initialize_external_entry_condition(self):
+        """Handle external_entry_condition initialization."""
+        if isinstance(self.external_entry_condition, dict):
+            # Case 1: Dictionary with class and parameters
+            ext_class = self.external_entry_condition.get('class')
+            if ext_class is None:
+                self.external_entry_condition = None
+                return
+                
+            ext_params = self.external_entry_condition.get('params', {})
+            self.external_entry_condition = ext_class(**ext_params)
+        elif isinstance(self.external_entry_condition, type) and issubclass(self.external_entry_condition, ExternalEntryConditionChecker):
+            # Case 2: Just the class provided
+            self.external_entry_condition = self.external_entry_condition()
+        elif not isinstance(self.external_entry_condition, (ExternalEntryConditionChecker, type(None))):
+            raise ValueError("Invalid external_entry_condition format. Must be an instance, class, dict with class and params, or None")
 
 class OptionBacktester:
     """Backtests option trading strategies."""
