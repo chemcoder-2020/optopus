@@ -174,9 +174,23 @@ class OptionBacktester:
             logger.warning("Cannot add spread: no capital left.")
             return False
 
-        return self.config.entry_condition.should_enter(
+        # Check standard entry conditions
+        standard_conditions_met = self.config.entry_condition.should_enter(
             new_spread, self, self.last_update_time
         )
+        
+        # Check external entry conditions if configured
+        if self.config.external_entry_condition is not None:
+            external_conditions_met = self.config.external_entry_condition.should_enter(
+                time=self.last_update_time,
+                strategy=new_spread,
+                manager=self
+            )
+            if not external_conditions_met:
+                logger.info("External entry conditions not met")
+                return False
+
+        return standard_conditions_met
 
     def close_trade(self, trade: OptionStrategy) -> None:
         """
