@@ -261,19 +261,30 @@ class ConflictCondition(EntryConditionChecker):
 
 class TrailingStopEntry(EntryConditionChecker):
     def __init__(self, **kwargs):
+        """
+        Trailing stop entry condition checker.
 
+        Args:
+            trailing_entry_direction (str): 'bullish' or 'bearish' direction for trailing stop
+            trailing_entry_threshold (float): Threshold value for entry trigger
+            method (str): Calculation method ('percent', 'dollar', or 'atr')
+            trailing_entry_reset_period (str): Reset period for trailing stop ('D', 'W', 'M', 'Y')
+        """
         self.trailing_entry_direction = kwargs.get(
             "trailing_entry_direction", "bullish"
         ).lower()
-        self.trailing_entry_threshold = kwargs.get(
-            "trailing_entry_threshold", 1.0
-        )  # Percentage threshold
-        self.method = kwargs.get("method", "percent")
+        if self.trailing_entry_direction not in ("bullish", "bearish"):
+            raise ValueError("trailing_entry_direction must be 'bullish' or 'bearish'")
+
+        self.trailing_entry_threshold = abs(kwargs.get("trailing_entry_threshold", 1.0))
+        self.method = kwargs.get("method", "percent").lower()
+        self.trailing_entry_reset_period = kwargs.get("trailing_entry_reset_period", None)
+        
+        # State tracking variables
         self.current_date = None
         self.current_week = None
         self.current_month = None
         self.current_year = None
-        self.trailing_entry_reset_period = kwargs.get("trailing_entry_reset_period", None)
         self.cum_min = None  # Track cumulative min price
         self.cum_max = None  # Track cumulative max price
 
@@ -287,11 +298,11 @@ class TrailingStopEntry(EntryConditionChecker):
                     self.cum_max = None
                     return False
             elif self.trailing_entry_reset_period == "W":
-                if self.current_week != time.isocalendar().week:
-                    self.current_week = time.isocalendar().week
+                current_week = time.isocalendar()[1]  # Get ISO week number
+                if self.current_week != current_week:
+                    self.current_week = current_week
                     self.cum_min = None
                     self.cum_max = None
-                    return False
             elif self.trailing_entry_reset_period == "M":
                 if self.current_month != time.month:
                     self.current_month = time.month
@@ -324,22 +335,22 @@ class TrailingStopEntry(EntryConditionChecker):
             elif self.method == "percent":
                 price_change = ((current_price - self.cum_min) / self.cum_min) * 100
             elif self.method == "atr":
-                if hasattr(manager, "atr"):
+                if hasattr(manager, "atr") and manager.atr > 0:
                     price_change = ((current_price - self.cum_min) / manager.atr)
                 else:
-                    logger.warning("ATR not found in manager. Setting price change to NaN.")
-                    price_change = np.nan
+                    logger.error("ATR not available or invalid for trailing stop calculation")
+                    return False
         else:
             if self.method == "dollar":
                 price_change = (current_price - self.cum_max)
             elif self.method == "percent":
                 price_change = ((current_price - self.cum_max) / self.cum_max) * 100
             elif self.method == "atr":
-                if hasattr(manager, "atr"):
+                if hasattr(manager, "atr") and manager.atr > 0:
                     price_change = ((current_price - self.cum_max) / manager.atr)
                 else:
-                    logger.warning("ATR not found in manager. Setting price change to NaN.")
-                    price_change = np.nan
+                    logger.error("ATR not available or invalid for trailing stop calculation")
+                    return False
 
         if self.trailing_entry_direction == "bullish":
             return price_change >= self.trailing_entry_threshold
