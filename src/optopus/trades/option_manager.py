@@ -174,31 +174,29 @@ class OptionBacktester:
             logger.warning("Cannot add spread: no capital left.")
             return False
 
-        # Check standard entry conditions
-        standard_conditions_met = self.config.entry_condition.should_enter(
-            new_spread, self, self.last_update_time
-        )
-        
-        # Check external entry conditions if configured
+        # Check external entry conditions first if configured
         if self.config.external_entry_condition is not None:
-            external_conditions_met = self.config.external_entry_condition.should_enter(
+            external_met = self.config.external_entry_condition.should_enter(
                 time=self.last_update_time,
                 strategy=new_spread,
                 manager=self
             )
-            if external_conditions_met:
-                logger.info("External entry conditions met")
-                if not standard_conditions_met:
-                    logger.info("Standard entry conditions not met")
-                    return False
-                else:
-                    logger.info("Standard entry conditions met")
-                    return True
-            logger.info("External entry conditions not met")
-            return False
+            if not external_met:
+                logger.info("External entry conditions not met")
+                return False
+            logger.info("External entry conditions met")
 
-        # Only check standard conditions if no external condition configured
-        return standard_conditions_met
+        # Check standard entry conditions (required for both cases)
+        standard_met = self.config.entry_condition.should_enter(
+            new_spread, self, self.last_update_time
+        )
+        
+        if not standard_met:
+            logger.info("Standard entry conditions not met")
+            return False
+            
+        logger.info("All entry conditions met")
+        return True
 
     def close_trade(self, trade: OptionStrategy) -> None:
         """
