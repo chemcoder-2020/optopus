@@ -178,6 +178,10 @@ class OptionBacktester:
         standard_conditions_met = self.config.entry_condition.should_enter(
             new_spread, self, self.last_update_time
         )
+
+        # if not standard_conditions_met:
+        #     logger.info("Standard entry conditions not met")
+        #     return False
         
         # Check external entry conditions if configured
         if self.config.external_entry_condition is not None:
@@ -188,7 +192,12 @@ class OptionBacktester:
             )
             if external_conditions_met:
                 logger.info("External entry conditions met")
-                return True
+                if not standard_conditions_met:
+                    logger.info("Standard entry conditions not met")
+                    return False
+                else:
+                    logger.info("Standard entry conditions met")
+                    return True
             logger.info("External entry conditions not met")
             return False
 
