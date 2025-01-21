@@ -1,11 +1,55 @@
+import os
 import pandas as pd
+from pathlib import Path
+from src.optopus.brokers.schwab.schwab_data import SchwabData
 
 
 class DataProcessor:
-    def __init__(self, ohlc):
+    def __init__(self, ohlc, ticker=None):
+        self.ticker = ticker
         self.ohlc = ohlc
-        if type(self.ohlc) is str:
-            self.ohlc = pd.read_csv(self.ohlc, parse_dates=["date"]).set_index("date")
+        
+        if isinstance(self.ohlc, str):
+            # Check if it's a file path
+            if Path(self.ohlc).exists():
+                self.ohlc = pd.read_csv(self.ohlc, parse_dates=["date"]).set_index("date")
+            else:
+                # Check if it's a brokerage name
+                if self.ohlc.lower() == "schwab":
+                    if not self.ticker:
+                        raise ValueError("Ticker symbol is required for Schwab data")
+                        
+                    self.schwab_data = SchwabData(
+                        client_id=os.getenv("SCHWAB_CLIENT_ID"),
+                        client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+                        redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
+                        token_file=os.getenv("SCHWAB_TOKEN_FILE", "token.json"),
+                    )
+                    self.schwab_data.refresh_token()
+                    
+                    # Get historical data
+                    equity_price = self.schwab_data.get_price_history(
+                        self.ticker, "year", 3, frequency_type="daily", frequency=1
+                    )
+                    current_quote = self.schwab_data.get_quote(self.ticker)
+                    
+                    # Create OHLC DataFrame
+                    self.ohlc = pd.concat(
+                        [
+                            equity_price,
+                            pd.DataFrame({
+                                "close": [current_quote["LAST_PRICE"].iloc[-1]],
+                                "datetime": [pd.Timestamp.now().date()]
+                            })
+                        ],
+                        axis=0,
+                        ignore_index=True
+                    ).set_index("datetime")
+                    self.ohlc.index.name = "date"
+                else:
+                    raise ValueError(f"Unsupported brokerage: {self.ohlc}")
+            else:
+                raise FileNotFoundError(f"OHLC data file not found: {self.ohlc}")
 
         self.daily_data = (
             self.ohlc.resample("D")
