@@ -48,8 +48,8 @@ class DataProcessor:
                     self.ohlc.index.name = "date"
                 else:
                     raise ValueError(f"Unsupported brokerage: {self.ohlc}")
-            else:
-                raise FileNotFoundError(f"OHLC data file not found: {self.ohlc}")
+        else:
+            raise FileNotFoundError(f"OHLC data file not found: {self.ohlc}")
 
         self.daily_data = (
             self.ohlc.resample("D")
