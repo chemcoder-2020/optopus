@@ -1,21 +1,59 @@
 from .option_leg import OptionLeg
-from .option_manager import OptionBacktester
+from .option_manager import OptionBacktester, Config
 from .option_spread import OptionStrategy
-from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
-from .exit_conditions import ExitConditionChecker, DefaultExitCondition
+from .option_chain_converter import OptionChainConverter
+from .entry_conditions import (
+    EntryConditionChecker,
+    MedianCalculator,
+    CapitalRequirementCondition,
+    PositionLimitCondition,
+    RORThresholdCondition,
+    ConflictCondition,
+    TrailingStopEntry,
+    CompositeEntryCondition,
+    DefaultEntryCondition
+)
+from .exit_conditions import (
+    ExitConditionChecker,
+    ProfitTargetCondition,
+    StopLossCondition,
+    TimeBasedCondition,
+    TrailingStopCondition,
+    CompositeExitCondition,
+    DefaultExitCondition
+)
 from .external_entry_conditions import ExternalEntryConditionChecker
-# from .trade_manager import TradingManager
-# from .portfolio_manager import PortfolioManager
+from .trade_manager import TradingManager
+from .strategies import IronCondor, Straddle, IronButterfly, VerticalSpread, NakedPut, NakedCall
 
 __all__ = [
     "OptionLeg",
     "OptionBacktester",
+    "Config",
     "OptionStrategy",
+    "OptionChainConverter",
     "EntryConditionChecker",
+    "MedianCalculator",
+    "CapitalRequirementCondition",
+    "PositionLimitCondition",
+    "RORThresholdCondition",
+    "ConflictCondition",
+    "TrailingStopEntry",
+    "CompositeEntryCondition",
     "DefaultEntryCondition",
-    "ExitConditionChecker", 
+    "ExitConditionChecker",
+    "ProfitTargetCondition",
+    "StopLossCondition",
+    "TimeBasedCondition",
+    "TrailingStopCondition",
+    "CompositeExitCondition",
     "DefaultExitCondition",
     "ExternalEntryConditionChecker",
-    # "TradingManager",
-    # "PortfolioManager"
+    "TradingManager",
+    "IronCondor",
+    "Straddle",
+    "IronButterfly",
+    "VerticalSpread",
+    "NakedPut",
+    "NakedCall"
 ]
