@@ -22,7 +22,7 @@ from .exit_conditions import (
     CompositeExitCondition,
     DefaultExitCondition
 )
-from .external_entry_conditions import ExternalEntryConditionChecker
+from .external_entry_conditions import ExternalEntryConditionChecker, EntryOnForecast
 from .trade_manager import TradingManager
 from .strategies import IronCondor, Straddle, IronButterfly, VerticalSpread, NakedPut, NakedCall
 
@@ -49,6 +49,7 @@ __all__ = [
     "CompositeExitCondition",
     "DefaultExitCondition",
     "ExternalEntryConditionChecker",
+    "EntryOnForecast",
     "TradingManager",
     "IronCondor",
     "Straddle",

@@ -34,6 +34,8 @@ setup(
         "tqdm>=4.62.0",
         "dill>=0.3.4",
         "configparser>=5.3.0",
+        "statsforecast>=1.0.0",
+        "neuralforecast>=1.0.0",
     ],
     entry_points={
         'console_scripts': [

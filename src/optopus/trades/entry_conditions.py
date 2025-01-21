@@ -6,6 +6,7 @@ from loguru import logger
 import numpy as np
 from ..utils.heapmedian import ContinuousMedian
 
+
 if TYPE_CHECKING:
     from .option_manager import OptionBacktester
 
@@ -296,7 +297,6 @@ class TrailingStopEntry(EntryConditionChecker):
                     self.current_date = time.date()
                     self.cum_min = None
                     self.cum_max = None
-                    return False
             elif self.trailing_entry_reset_period == "W":
                 current_week = time.isocalendar()[1]  # Get ISO week number
                 if self.current_week != current_week:
@@ -308,13 +308,11 @@ class TrailingStopEntry(EntryConditionChecker):
                     self.current_month = time.month
                     self.cum_min = None
                     self.cum_max = None
-                    return False
             elif self.trailing_entry_reset_period == "Y":
                 if self.current_year != time.year:
                     self.current_year = time.year
                     self.cum_min = None
                     self.cum_max = None
-                    return False
 
         current_price = strategy.underlying_last
 
