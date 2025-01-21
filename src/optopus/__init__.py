@@ -1,6 +1,4 @@
 from loguru import logger
-logger.disable("optopus")
-
 from .brokers.broker import OptionBroker
 from .brokers.schwab.schwab import Schwab
 from .brokers.schwab.schwab_auth import SchwabAuth
@@ -41,6 +39,8 @@ from .backtest.vertical_spread import BacktestVerticalSpread
 from .backtest.bidirectional_vertical_spread import BacktestBidirectionalVerticalSpread
 from .decisions.technical_indicators import TechnicalIndicators
 from .decisions.forecast_models import ForecastModels
+
+logger.disable("optopus")
 
 __all__ = [
     "OptionBroker",

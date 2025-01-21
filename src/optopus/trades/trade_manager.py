@@ -2,9 +2,6 @@ import pandas as pd
 from .option_manager import OptionBacktester, Config
 from .option_leg import calculate_dte
 from .strategies.vertical_spread import VerticalSpread
-from ..brokers.schwab.schwab_order import SchwabOptionOrder
-from ..brokers.schwab.schwab_auth import SchwabAuth
-from ..brokers.schwab.schwab_data import SchwabData
 from ..brokers.broker import OptionBroker
 from ..brokers.order import Order
 from typing import List

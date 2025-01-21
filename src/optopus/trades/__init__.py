@@ -23,7 +23,6 @@ from .exit_conditions import (
     DefaultExitCondition
 )
 from .external_entry_conditions import ExternalEntryConditionChecker, EntryOnForecast
-from .trade_manager import TradingManager
 from .strategies import IronCondor, Straddle, IronButterfly, VerticalSpread, NakedPut, NakedCall
 
 __all__ = [
@@ -50,7 +49,6 @@ __all__ = [
     "DefaultExitCondition",
     "ExternalEntryConditionChecker",
     "EntryOnForecast",
-    "TradingManager",
     "IronCondor",
     "Straddle",
     "IronButterfly",

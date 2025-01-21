@@ -1,6 +1,6 @@
 import abc
-from ..trades.option_spread import OptionStrategy
 import pandas as pd
+from ..trades.option_spread import OptionStrategy
 
 
 class Order(abc.ABC, OptionStrategy):

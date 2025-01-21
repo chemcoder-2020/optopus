@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optopus"
-version = "0.9.2-dev7"
+version = "0.9.2-dev8"
 authors = [
     { name = "Huy Nguyen", email = "huynguyen2406@gmail.com" }
 ]

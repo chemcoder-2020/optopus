@@ -1,8 +1,7 @@
 import os
 import pandas as pd
 from pathlib import Path
-from src.optopus.brokers.schwab.schwab_data import SchwabData
-
+from ..brokers.schwab.schwab_data import SchwabData
 
 class DataProcessor:
     def __init__(self, ohlc, ticker=None):
@@ -23,7 +22,7 @@ class DataProcessor:
                         client_id=os.getenv("SCHWAB_CLIENT_ID"),
                         client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
                         redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
-                        token_file=os.getenv("SCHWAB_TOKEN_FILE", "token.json"),
+                        token_file=os.getenv("SCHWAB_TOKEN_FILE"),
                     )
                     self.schwab_data.refresh_token()
                     
