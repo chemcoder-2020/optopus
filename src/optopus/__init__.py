@@ -12,10 +12,13 @@ from .trades.option_manager import OptionBacktester
 from .trades.option_spread import OptionStrategy
 from .trades.exit_conditions import ExitConditionChecker, ProfitTargetCondition, StopLossCondition, TimeBasedCondition, TrailingStopCondition, CompositeExitCondition, DefaultExitCondition
 from .utils.heapmedian import ContinuousMedian
+from .utils.ohlc_data_processor import DataProcessor
 from .backtest.vertical_spread import BacktestVerticalSpread
 from .backtest.bidirectional_vertical_spread import BacktestBidirectionalVerticalSpread
 from .trades.option_chain_converter import OptionChainConverter
 from .trades.strategies import IronCondor, Straddle, IronButterfly, VerticalSpread, NakedPut, NakedCall
+from .decisions.technical_indicators import TechnicalIndicators
+from .decisions.forecast_models import ForecastModels
 
 __all__ = [
     "OptionBroker",
@@ -29,6 +32,7 @@ __all__ = [
     "OptionStrategy",
     "ExitConditionChecker",
     "ContinuousMedian",
+    "DataProcessor",
     "BacktestVerticalSpread",
     "BacktestBidirectionalVerticalSpread",
     "ProfitTargetCondition",
@@ -44,4 +48,6 @@ __all__ = [
     "VerticalSpread",
     "NakedPut",
     "NakedCall",
+    "TechnicalIndicators",
+    "ForecastModels",
 ]
