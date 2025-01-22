@@ -11,7 +11,9 @@ from optopus.trades.entry_conditions import (
     RORThresholdCondition,
     ConflictCondition,
     CompositeEntryCondition,
+    DefaultEntryCondition
 )
+from optopus.trades.external_entry_conditions import EntryOnForecast
 import configparser
 
 # Read configuration from config.txt
@@ -40,8 +42,10 @@ STRATEGY_PARAMS = {
         "class": eval(config.get("EXIT_CONDITION", "class")),
         "params": {
             "profit_target": config.getfloat(
-                "EXIT_CONDITION", "profit_target", fallback=50
+                "EXIT_CONDITION", "profit_target", fallback=80
             ),
+            "trigger": config.getfloat("EXIT_CONDITION", "trigger", fallback=40),
+            "stop_loss": config.getfloat("EXIT_CONDITION", "stop_loss", fallback=15),
             "exit_time_before_expiration": pd.Timedelta(
                 config.get(
                     "EXIT_CONDITION",
@@ -49,7 +53,7 @@ STRATEGY_PARAMS = {
                     fallback="15 minutes",
                 )
             ),
-            "window_size": config.getint("EXIT_CONDITION", "window_size", fallback=5),
+            "window_size": config.getint("EXIT_CONDITION", "window_size", fallback=3),
         },
     },
 }
@@ -71,12 +75,46 @@ BACKTESTER_CONFIG = Config(
     ),
     verbose=config.getboolean("BACKTESTER_CONFIG", "verbose", fallback=False),
     entry_condition={
-        "class": eval(config.get("ENTRY_CONDITION", "class")),
+        "class": eval(
+            config.get("ENTRY_CONDITION", "class", fallback="DefaultEntryCondition")
+        ),
         "params": {
-            "ticker": config.get("ENTRY_CONDITION", "ticker"),
             "window_size": config.getint("ENTRY_CONDITION", "window_size", fallback=25),
+            "fluctuation": config.getfloat(
+                "ENTRY_CONDITION", "fluctuation", fallback=0.15
+            ),
             "check_closed_trades": config.getboolean(
                 "ENTRY_CONDITION", "check_closed_trades", fallback=True
+            ),
+            "trailing_entry_direction": config.get(
+                "ENTRY_CONDITION", "trailing_entry_direction", fallback="bullish"
+            ),
+            "trailing_entry_threshold": config.getfloat(
+                "ENTRY_CONDITION", "trailing_entry_threshold", fallback=0.2
+            ),
+            "method": config.get("ENTRY_CONDITION", "method", fallback="percent"),
+            "trailing_entry_reset_period": config.get(
+                "ENTRY_CONDITION", "trailing_entry_reset_period", fallback=None
+            ),
+        },
+    },
+    external_entry_condition={
+        "class": eval(
+            config.get("EXTERNAL_ENTRY_CONDITION", "class", fallback="EntryOnForecast")
+        ),
+        "params": {
+            "ohlc": config.get("EXTERNAL_ENTRY_CONDITION", "ohlc"),
+            "atr_period": config.getint(
+                "EXTERNAL_ENTRY_CONDITION", "atr_period", fallback=14
+            ),
+            "linear_regression_lag": config.getint(
+                "EXTERNAL_ENTRY_CONDITION", "linear_regression_lag", fallback=14
+            ),
+            "median_trend_short_lag": config.getint(
+                "EXTERNAL_ENTRY_CONDITION", "median_trend_short_lag", fallback=50
+            ),
+            "median_trend_long_lag": config.getint(
+                "EXTERNAL_ENTRY_CONDITION", "median_trend_long_lag", fallback=200
             ),
         },
     },

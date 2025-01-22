@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from pathlib import Path
-from ..brokers.schwab.schwab_data import SchwabData
+import optopus.brokers.schwab.schwab_data as sch
 
 class DataProcessor:
     def __init__(self, ohlc, ticker=None):
@@ -18,7 +18,7 @@ class DataProcessor:
                     if not self.ticker:
                         raise ValueError("Ticker symbol is required for Schwab data")
                         
-                    self.schwab_data = SchwabData(
+                    self.schwab_data = sch.SchwabData(
                         client_id=os.getenv("SCHWAB_CLIENT_ID"),
                         client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
                         redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),

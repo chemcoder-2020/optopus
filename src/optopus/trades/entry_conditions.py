@@ -279,8 +279,10 @@ class TrailingStopEntry(EntryConditionChecker):
 
         self.trailing_entry_threshold = abs(kwargs.get("trailing_entry_threshold", 1.0))
         self.method = kwargs.get("method", "percent").lower()
-        self.trailing_entry_reset_period = kwargs.get("trailing_entry_reset_period", None)
-        
+        self.trailing_entry_reset_period = kwargs.get(
+            "trailing_entry_reset_period", None
+        )
+
         # State tracking variables
         self.current_date = None
         self.current_week = None
@@ -329,25 +331,29 @@ class TrailingStopEntry(EntryConditionChecker):
         # Calculate price movement from extreme
         if self.trailing_entry_direction == "bullish":
             if self.method == "dollar":
-                price_change = (current_price - self.cum_min)
+                price_change = current_price - self.cum_min
             elif self.method == "percent":
                 price_change = ((current_price - self.cum_min) / self.cum_min) * 100
             elif self.method == "atr":
                 if hasattr(manager, "atr") and manager.atr > 0:
-                    price_change = ((current_price - self.cum_min) / manager.atr)
+                    price_change = (current_price - self.cum_min) / manager.atr
                 else:
-                    logger.error("ATR not available or invalid for trailing stop calculation")
+                    logger.error(
+                        "ATR not available or invalid for trailing stop calculation"
+                    )
                     return False
         else:
             if self.method == "dollar":
-                price_change = (current_price - self.cum_max)
+                price_change = current_price - self.cum_max
             elif self.method == "percent":
                 price_change = ((current_price - self.cum_max) / self.cum_max) * 100
             elif self.method == "atr":
                 if hasattr(manager, "atr") and manager.atr > 0:
-                    price_change = ((current_price - self.cum_max) / manager.atr)
+                    price_change = (current_price - self.cum_max) / manager.atr
                 else:
-                    logger.error("ATR not available or invalid for trailing stop calculation")
+                    logger.error(
+                        "ATR not available or invalid for trailing stop calculation"
+                    )
                     return False
 
         if self.trailing_entry_direction == "bullish":
@@ -402,20 +408,31 @@ class DefaultEntryCondition(EntryConditionChecker):
             Checks if all default entry conditions are met.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.composite = CompositeEntryCondition(
             [
                 CapitalRequirementCondition(),
                 PositionLimitCondition(),
                 RORThresholdCondition(),
-                ConflictCondition(),
+                ConflictCondition(
+                    check_closed_trades=kwargs.get("check_closed_trades", True)
+                ),
+                MedianCalculator(
+                    window_size=kwargs.get("window_size", 7),
+                    fluctuation=kwargs.get("fluctuation", 0.1),
+                ),
+                TrailingStopEntry(
+                    trailing_entry_direction=kwargs.get(
+                        "trailing_entry_direction", "bullish"
+                    ),
+                    trailing_entry_threshold=kwargs.get("trailing_entry_threshold", 0),
+                    method=kwargs.get("method", "percent"),
+                    trailing_entry_reset_period=kwargs.get(
+                        "trailing_entry_reset_period", None
+                    ),
+                ),
             ]
         )
 
-    def should_enter(
-        self,
-        strategy,
-        manager: "OptionBacktester",
-        time: Union[datetime, str, pd.Timestamp],
-    ) -> bool:
+    def should_enter(self, strategy, manager, time) -> bool:
         return self.composite.should_enter(strategy, manager, time)
