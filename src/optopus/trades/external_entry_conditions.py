@@ -49,6 +49,16 @@ class ExternalEntryConditionChecker(ABC):
 
 class EntryOnForecast(ExternalEntryConditionChecker):
     def __init__(self, **kwargs):
+        """
+        Entry condition based on technical indicators and forecast models.
+        
+        Args:
+            ohlc (str or pd.DataFrame): OHLC data file path or DataFrame
+            atr_period (int, optional): Period for ATR calculation. Defaults to 14
+            linear_regression_lag (int, optional): Lag period for linear regression check. Defaults to 14
+            median_trend_short_lag (int, optional): Short period for median trend check. Defaults to 50
+            median_trend_long_lag (int, optional): Long period for median trend check. Defaults to 200
+        """
         self.data_processor = DataProcessor(kwargs.get("ohlc"))
         self.technical_indicators = TechnicalIndicators()
         self.forecast_models = ForecastModels()
