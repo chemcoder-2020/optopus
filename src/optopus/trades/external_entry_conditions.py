@@ -73,7 +73,7 @@ class EntryOnForecast(ExternalEntryConditionChecker):
 
         # Check technical indicators
         linear_trend = self.technical_indicators.check_linear_regression(
-            historical_data, lag=self.kwargs.get("linear_regression_lag", 3)
+            historical_data, lag=self.kwargs.get("linear_regression_lag", 14)
         )
         if not linear_trend:
             return False
