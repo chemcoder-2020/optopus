@@ -2,13 +2,15 @@ import abc
 import pandas as pd
 from typing import TYPE_CHECKING
 
-# if TYPE_CHECKING:
-from ..trades.option_spread import OptionStrategy
+if TYPE_CHECKING:
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from ..trades.option_spread import OptionStrategy
 
 
-class Order(abc.ABC):
+class Order(abc.ABC, OptionStrategy):
 
-    def __init__(self, option_strategy: OptionStrategy):
+    def __init__(self, option_strategy: 'OptionStrategy'):
         self.__dict__.update(option_strategy.__dict__)
         self.option_strategy = option_strategy
 
