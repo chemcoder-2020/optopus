@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from ..trades.option_manager import OptionBacktester
+from ..trades.entry_condition import PositionLimitCondition
 import numpy as np
 import scipy.stats
 from loguru import logger
@@ -107,6 +108,9 @@ class BaseBacktest(ABC):
             if skip_fridays and time.weekday() == 4:
                 continue
 
+            if not PositionLimitCondition().should_enter(None, backtester, time):
+                continue
+
             # Create spread
             try:
                 new_spread = self.create_spread(time, option_chain_df)
@@ -141,7 +145,7 @@ class BaseBacktest(ABC):
                     )
                 prev_active_positions = len(backtester.active_trades)
                 prev_capital = backtester.capital
-        
+
         try:
             print("\nBacktest completed!")
             print(f"Final capital: ${backtester.capital:.2f}")
@@ -209,18 +213,26 @@ class BaseBacktest(ABC):
         logger.info(f"Years per split: {years_per_split}")
         logger.info("\nBacktest Parameters:")
         logger.info(f"Date range: {self.start_date} to {self.end_date}")
-        logger.info(f"Trading hours: {self.trading_start_time} to {self.trading_end_time}")
+        logger.info(
+            f"Trading hours: {self.trading_start_time} to {self.trading_end_time}"
+        )
         logger.info("\nStrategy Configuration:")
         logger.info(f"  Initial capital: ${self.config.initial_capital:,.2f}")
         logger.info(f"  Max positions: {self.config.max_positions}")
         logger.info(f"  Max positions per day: {self.config.max_positions_per_day}")
         logger.info(f"  Max positions per week: {self.config.max_positions_per_week}")
         logger.info(f"  Position size: {self.config.position_size:.1%}")
-        logger.info(f"  ROR threshold: {self.config.ror_threshold:.1%}" if self.config.ror_threshold else "  ROR threshold: None")
+        logger.info(
+            f"  ROR threshold: {self.config.ror_threshold:.1%}"
+            if self.config.ror_threshold
+            else "  ROR threshold: None"
+        )
         logger.info(f"  Gain reinvesting: {self.config.gain_reinvesting}")
         logger.info(f"  Trade type: {self.config.trade_type}")
         logger.info(f"  Ticker: {self.config.ticker}")
-        logger.info(f"  Entry condition: {self.config.entry_condition.__class__.__name__}")
+        logger.info(
+            f"  Entry condition: {self.config.entry_condition.__class__.__name__}"
+        )
         logger.info("==========================\n")
 
         ts_folds = self.create_time_ranges(
@@ -268,7 +280,7 @@ class BaseBacktest(ABC):
             if metric != "performance_data":
                 values = [result[metric] for result in results]
                 values_array = np.array(values)
-                
+
                 # Handle boolean metrics differently
                 if isinstance(values[0], bool):
                     true_count = sum(values)
@@ -276,13 +288,15 @@ class BaseBacktest(ABC):
                     aggregated_results[metric] = {
                         "mean": true_count / total_count if total_count > 0 else 0,
                         "count": total_count,
-                        "true_ratio": true_count / total_count if total_count > 0 else 0
+                        "true_ratio": (
+                            true_count / total_count if total_count > 0 else 0
+                        ),
                     }
                 else:
                     # Convert to float array and handle NaN values
                     values_array = np.array(values, dtype=float)
                     valid_values = values_array[~np.isnan(values_array)]
-                    
+
                     if len(valid_values) > 0:
                         # For numeric metrics
                         aggregated_results[metric] = {
@@ -298,7 +312,8 @@ class BaseBacktest(ABC):
                             "skewness": scipy.stats.skew(valid_values),
                             "kurtosis": scipy.stats.kurtosis(valid_values),
                             "count": len(valid_values),
-                            "iqr": np.percentile(valid_values, 75) - np.percentile(valid_values, 25)
+                            "iqr": np.percentile(valid_values, 75)
+                            - np.percentile(valid_values, 25),
                         }
                     else:
                         # Handle case when all values are NaN
@@ -315,7 +330,7 @@ class BaseBacktest(ABC):
                             "skewness": np.nan,
                             "kurtosis": np.nan,
                             "count": len(values_array),
-                            "iqr": np.nan
+                            "iqr": np.nan,
                         }
 
         logger.info("\nCross-Validation Results:")
@@ -355,7 +370,7 @@ class BaseBacktest(ABC):
                 linestyle="-",
                 ms=0,
                 alpha=alpha,
-                label=f"Split {i + 1}"
+                label=f"Split {i + 1}",
             )
 
         def timeTicks(x, pos):
