@@ -460,8 +460,8 @@ class OptionBacktester:
             losses = [t for t in trades if not t.won]
             
             win_rate = len(wins) / len(trades)
-            avg_win = np.mean([t.return_percentage() for t in wins]) if wins else 0
-            avg_loss = np.mean([abs(t.return_percentage()) for t in losses]) if losses else 0
+            avg_win = np.mean([t.total_pl() for t in wins]) if wins else 0
+            avg_loss = np.mean([abs(t.total_pl()) for t in losses]) if losses else 0
             win_loss_ratio = avg_win / avg_loss if avg_loss != 0 else 0
             
             kelly = (win_rate - (1 - win_rate)/win_loss_ratio) if win_loss_ratio != 0 else 0
