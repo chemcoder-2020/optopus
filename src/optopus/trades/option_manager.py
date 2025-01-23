@@ -521,11 +521,10 @@ class OptionBacktester:
         except KeyError:
             average_exit_dte = np.nan
 
-        returns = df["total_pl"].pct_change().dropna().values
         drawdown_calculator = MaxDrawdown()
-        max_drawdown_result = drawdown_calculator.calculate(returns)
-        max_drawdown_dollars = max_drawdown_result["max_drawdown"] * self.allocation
-        max_drawdown_percentage = max_drawdown_result["max_drawdown"]
+        max_drawdown_result = drawdown_calculator.calculate(df["total_pl"].values, self.allocation)
+        max_drawdown_dollars = max_drawdown_result["max_drawdown_dollars"]
+        max_drawdown_percentage = max_drawdown_result["max_drawdown_percentage"]
 
         metrics = {
             "sharpe_ratio": None,
