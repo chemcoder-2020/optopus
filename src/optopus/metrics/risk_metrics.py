@@ -17,6 +17,55 @@ class SharpeRatio(BaseMetric):
         return {"sharpe_ratio": float(sharpe)}
 
 
+class RiskOfRuin(BaseMetric):
+    """Calculates risk of ruin using Monte Carlo simulation"""
+    
+    def calculate(
+        self,
+        returns: np.ndarray,
+        initial_balance: float,
+        num_simulations: int = 20000,
+        num_steps: int = 252,
+        drawdown_threshold_pct: float = 0.25,
+        distribution: str = "histogram"
+    ) -> dict:
+        """
+        Args:
+            returns (np.ndarray): Array of trade returns
+            initial_balance (float): Initial capital balance
+            num_simulations (int): Number of Monte Carlo simulations
+            num_steps (int): Number of steps in each simulation
+            drawdown_threshold_pct (float): Drawdown threshold percentage
+            distribution (str): Distribution type ("normal", "kde", "histogram")
+
+        Returns:
+            dict: Dictionary with risk_of_ruin percentage
+        """
+        returns = returns / initial_balance
+
+        if distribution == "normal":
+            random_returns = np.random.normal(
+                np.mean(returns), np.std(returns), 
+                size=(num_simulations, num_steps)
+            )
+        elif distribution == "kde":
+            kde = gaussian_kde(returns, bw_method="scott")
+            samples = kde.resample(size=(num_simulations * num_steps))
+            random_returns = samples.T
+        elif distribution == "histogram":
+            random_returns = np.random.choice(
+                returns, size=(num_simulations, num_steps)
+            )
+        else:
+            raise ValueError("Unsupported distribution type")
+
+        balances = initial_balance + np.cumsum(random_returns * initial_balance, axis=1)
+        peak_balances = np.maximum.accumulate(balances, axis=1)
+        drawdown_thresholds = peak_balances - drawdown_threshold_pct * initial_balance
+        ruin_count = np.sum(np.any(balances <= drawdown_thresholds, axis=1))
+
+        return {"risk_of_ruin": float(ruin_count / num_simulations)}
+
 class MaxDrawdown(BaseMetric):
     """Calculates maximum drawdown from cumulative returns"""
     
