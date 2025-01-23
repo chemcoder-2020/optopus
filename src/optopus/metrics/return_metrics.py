@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from .base_metric import BaseMetric
 
 class TotalReturn(BaseMetric):
