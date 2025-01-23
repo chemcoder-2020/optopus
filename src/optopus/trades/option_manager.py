@@ -18,7 +18,8 @@ from ..metrics import (
     WinRate,
     ProfitFactor,
     CAGR,
-    MonthlyReturn
+    MonthlyReturn,
+    PositiveMonthlyProbability
 )
 
 @dataclass
@@ -615,17 +616,13 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error calculating Risk of Ruin: {str(e)}")
         try:
-            metrics["probability_of_positive_monthly_pl"] = (
-                self._calculate_probability_of_positive_monthly_pl(df)
-            )
-        except Exception as e:
-            logger.error(
-                f"Error calculating Probability of Positive Monthly P/L: {str(e)}"
-            )
-        try:
-            metrics["probability_of_positive_monthly_closed_pl"] = (
-                self._calculate_probability_of_positive_monthly_closed_pl(df)
-            )
+            prob_calculator = PositiveMonthlyProbability()
+            metrics["probability_of_positive_monthly_pl"] = prob_calculator.calculate(
+                df["total_pl"], use_closed_pl=False
+            )["positive_monthly_probability"]
+            metrics["probability_of_positive_monthly_closed_pl"] = prob_calculator.calculate(
+                df["closed_pl"], use_closed_pl=True
+            )["positive_monthly_probability"]
         except Exception as e:
             logger.error(
                 f"Error calculating Probability of Positive Monthly Closed P/L: {str(e)}"
@@ -641,41 +638,6 @@ class OptionBacktester:
 
 
 
-    def _calculate_probability_of_positive_monthly_pl(self, df: pd.DataFrame) -> float:
-        """
-        Calculate the probability of having a positive monthly P/L.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing performance data.
-
-        Returns:
-            float: Probability of positive monthly P/L.
-        """
-        monthly_pl = (
-            df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
-        )
-        positive_months = monthly_pl[monthly_pl > 0]
-        total_months = monthly_pl[monthly_pl != 0]
-        return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
-
-    def _calculate_probability_of_positive_monthly_closed_pl(
-        self, df: pd.DataFrame
-    ) -> float:
-        """
-        Calculate the probability of having a positive monthly closed P/L.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing performance data.
-
-        Returns:
-            float: Probability of positive monthly closed P/L.
-        """
-        monthly_closed_pl = (
-            df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
-        )
-        positive_months = monthly_closed_pl[monthly_closed_pl > 0]
-        total_months = monthly_closed_pl[monthly_closed_pl != 0]
-        return len(positive_months) / len(total_months) if len(total_months) > 0 else 0
 
     def calculate_avg_monthly_pl_nonzero(self, df: pd.DataFrame) -> float:
         """

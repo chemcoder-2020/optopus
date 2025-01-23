@@ -10,6 +10,7 @@ __all__ = [
     'TotalReturn',
     'AnnualizedReturn',
     'CAGR',
+    'PositiveMonthlyProbability',
     'SharpeRatio',
     'MaxDrawdown',
     'WinRate',
