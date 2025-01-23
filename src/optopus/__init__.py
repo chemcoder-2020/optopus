@@ -97,6 +97,7 @@ __all__ = [
     "brokers",
     "cli",
     "decisions",
+    "metrics",
     "templates",
     "trades",
     "utils",

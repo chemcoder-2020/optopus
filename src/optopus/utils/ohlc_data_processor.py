@@ -34,13 +34,6 @@ class DataProcessor:
                 if self.ohlc.lower() == "schwab":
                     if not self.ticker:
                         raise ValueError("Ticker symbol is required for Schwab data")
-                    import optopus.brokers.schwab.schwab_data as sch
-                    self.schwab_data = sch.SchwabData(
-                        client_id=os.getenv("SCHWAB_CLIENT_ID"),
-                        client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
-                        redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
-                        token_file=os.getenv("SCHWAB_TOKEN_FILE"),
-                    )
                     
                 else:
                     raise ValueError(f"Unsupported brokerage: {self.ohlc}")
@@ -52,6 +45,13 @@ class DataProcessor:
         """Prepare historical data with monthly resampling"""
 
         if isinstance(self.ohlc, str) and self.ohlc.lower() == "schwab":
+            import optopus.brokers.schwab.schwab_data as sch
+            self.schwab_data = sch.SchwabData(
+                client_id=os.getenv("SCHWAB_CLIENT_ID"),
+                client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+                redirect_uri=os.getenv("SCHWAB_REDIRECT_URI"),
+                token_file=os.getenv("SCHWAB_TOKEN_FILE"),
+            )
             self.schwab_data.refresh_token()
                     
             # Get historical data
