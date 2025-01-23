@@ -604,11 +604,13 @@ class OptionBacktester:
             daily_pl = df["total_pl"].resample("B").last().ffill()
             daily_returns = daily_pl.diff().dropna()
             
-            metrics["risk_of_ruin"] = self.monte_carlo_risk_of_ruin(
-                daily_returns.values,
-                self.config.initial_capital,
-                distribution="histogram",
+            risk_of_ruin_calculator = RiskOfRuin()
+            risk_result = risk_of_ruin_calculator.calculate(
+                returns=daily_returns.values,
+                initial_balance=self.config.initial_capital,
+                distribution="histogram"
             )
+            metrics["risk_of_ruin"] = risk_result["risk_of_ruin"]
         except Exception as e:
             logger.error(f"Error calculating Risk of Ruin: {str(e)}")
         try:
