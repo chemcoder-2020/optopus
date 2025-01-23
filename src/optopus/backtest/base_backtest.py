@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from ..trades.option_manager import OptionBacktester
-from ..trades.entry_condition import PositionLimitCondition
+from ..trades.entry_conditions import PositionLimitCondition
 import numpy as np
 import scipy.stats
 from loguru import logger
