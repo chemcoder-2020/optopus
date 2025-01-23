@@ -15,7 +15,8 @@ from ..metrics import (
     TotalReturn,
     AnnualizedReturn,
     WinRate,
-    ProfitFactor
+    ProfitFactor,
+    CAGR
 )
 
 @dataclass
@@ -563,7 +564,15 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error calculating Profit Factor: {str(e)}")
         try:
-            metrics["cagr"] = self._calculate_cagr(df)
+            # Calculate CAGR
+            start_value = self.config.initial_capital
+            end_value = start_value + df["closed_pl"].iloc[-1]
+            start_time = df.index[0]
+            end_time = df.index[-1]
+            
+            cagr_calculator = CAGR()
+            cagr_result = cagr_calculator.calculate(start_value, end_value, start_time, end_time)
+            metrics["cagr"] = cagr_result["cagr"]
         except Exception as e:
             logger.error(f"Error calculating CAGR: {str(e)}")
         try:
@@ -623,24 +632,6 @@ class OptionBacktester:
         return metrics
 
 
-    def _calculate_cagr(self, df: pd.DataFrame) -> float:
-        """
-        Calculate the Compound Annual Growth Rate (CAGR).
-
-        Args:
-            df (pd.DataFrame): DataFrame containing performance data.
-
-        Returns:
-            float: CAGR.
-        """
-        start_value = self.config.initial_capital
-        end_value = start_value + df["closed_pl"].iloc[-1]
-        df["time"] = pd.DatetimeIndex(df.index)
-        n_years = (df["time"].iloc[-1] - df["time"].iloc[0]).days / 365.25
-        try:
-            return (end_value / start_value) ** (1 / n_years) - 1
-        except ZeroDivisionError:
-            return np.nan
 
     def _calculate_avg_monthly_pl(self, df: pd.DataFrame) -> float:
         """

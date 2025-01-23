@@ -22,3 +22,31 @@ class AnnualizedReturn(BaseMetric):
         days = len(returns)
         annualized_return = cumulative_return ** (252 / days) - 1
         return {"annualized_return": float(annualized_return)}
+
+class CAGR(BaseMetric):
+    """Calculates Compound Annual Growth Rate (CAGR)"""
+    
+    def calculate(self, initial_value: float, final_value: float, 
+                 start_time: pd.Timestamp, end_time: pd.Timestamp) -> dict:
+        """
+        Args:
+            initial_value: Starting portfolio value
+            final_value: Ending portfolio value
+            start_time: Start timestamp of the period
+            end_time: End timestamp of the period
+            
+        Returns:
+            Dictionary with cagr percentage
+        """
+        if initial_value <= 0:
+            return {"cagr": 0.0}
+            
+        delta = end_time - start_time
+        years = delta.days / 365.25
+        
+        try:
+            cagr = (final_value / initial_value) ** (1 / years) - 1
+        except ZeroDivisionError:
+            cagr = 0.0
+            
+        return {"cagr": float(cagr)}
