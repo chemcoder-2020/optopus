@@ -19,8 +19,9 @@ from ..metrics import (
     ProfitFactor,
     CAGR,
     MonthlyReturn,
-    PositiveMonthlyProbability
+    PositiveMonthlyProbability,
 )
+
 
 @dataclass
 class Config:
@@ -38,18 +39,12 @@ class Config:
     client_secret: str = None
     redirect_uri: str = None
     token_file: str = None
-    entry_condition: Union[EntryConditionChecker, Type[EntryConditionChecker], dict] = field(
-        default_factory=lambda: {
-            'class': DefaultEntryCondition,
-            'params': {}
-        }
+    entry_condition: Union[EntryConditionChecker, Type[EntryConditionChecker], dict] = (
+        field(default_factory=lambda: {"class": DefaultEntryCondition, "params": {}})
     )
-    external_entry_condition: Union[ExternalEntryConditionChecker, Type[ExternalEntryConditionChecker], dict, None] = field(
-        default_factory=lambda: {
-            'class': None,
-            'params': {}
-        }
-    )
+    external_entry_condition: Union[
+        ExternalEntryConditionChecker, Type[ExternalEntryConditionChecker], dict, None
+    ] = field(default_factory=lambda: {"class": None, "params": {}})
     trade_type: str = None
 
     def __post_init__(self):
@@ -65,31 +60,42 @@ class Config:
         """Handle entry_condition initialization."""
         if isinstance(self.entry_condition, dict):
             # Case 1: Dictionary with class and parameters
-            entry_class = self.entry_condition.get('class', DefaultEntryCondition)
-            entry_params = self.entry_condition.get('params', {})
+            entry_class = self.entry_condition.get("class", DefaultEntryCondition)
+            entry_params = self.entry_condition.get("params", {})
             self.entry_condition = entry_class(**entry_params)
-        elif isinstance(self.entry_condition, type) and issubclass(self.entry_condition, EntryConditionChecker):
+        elif isinstance(self.entry_condition, type) and issubclass(
+            self.entry_condition, EntryConditionChecker
+        ):
             # Case 2: Just the class provided
             self.entry_condition = self.entry_condition()
         elif not isinstance(self.entry_condition, EntryConditionChecker):
-            raise ValueError("Invalid entry_condition format. Must be an instance, class, or dict with class and params")
+            raise ValueError(
+                "Invalid entry_condition format. Must be an instance, class, or dict with class and params"
+            )
 
     def _initialize_external_entry_condition(self):
         """Handle external_entry_condition initialization."""
         if isinstance(self.external_entry_condition, dict):
             # Case 1: Dictionary with class and parameters
-            ext_class = self.external_entry_condition.get('class')
+            ext_class = self.external_entry_condition.get("class")
             if ext_class is None:
                 self.external_entry_condition = None
                 return
-                
-            ext_params = self.external_entry_condition.get('params', {})
+
+            ext_params = self.external_entry_condition.get("params", {})
             self.external_entry_condition = ext_class(**ext_params)
-        elif isinstance(self.external_entry_condition, type) and issubclass(self.external_entry_condition, ExternalEntryConditionChecker):
+        elif isinstance(self.external_entry_condition, type) and issubclass(
+            self.external_entry_condition, ExternalEntryConditionChecker
+        ):
             # Case 2: Just the class provided
             self.external_entry_condition = self.external_entry_condition()
-        elif not isinstance(self.external_entry_condition, (ExternalEntryConditionChecker, type(None))):
-            raise ValueError("Invalid external_entry_condition format. Must be an instance, class, dict with class and params, or None")
+        elif not isinstance(
+            self.external_entry_condition, (ExternalEntryConditionChecker, type(None))
+        ):
+            raise ValueError(
+                "Invalid external_entry_condition format. Must be an instance, class, dict with class and params, or None"
+            )
+
 
 class OptionBacktester:
     """Backtests option trading strategies."""
@@ -145,7 +151,6 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error updating backtester: {str(e)}")
 
-
     def add_spread(self, new_spread: OptionStrategy) -> bool:
         """
         Add a new option spread to the backtester.
@@ -189,9 +194,7 @@ class OptionBacktester:
         # Check external entry conditions first if configured
         if self.config.external_entry_condition is not None:
             external_met = self.config.external_entry_condition.should_enter(
-                time=self.last_update_time,
-                strategy=new_spread,
-                manager=self
+                time=self.last_update_time, strategy=new_spread, manager=self
             )
             if not external_met:
                 logger.info("External entry conditions not met")
@@ -202,11 +205,11 @@ class OptionBacktester:
         standard_met = self.config.entry_condition.should_enter(
             new_spread, self, self.last_update_time
         )
-        
+
         if not standard_met:
             logger.info("Standard entry conditions not met")
             return False
-            
+
         logger.info("All entry conditions met")
         return True
 
@@ -219,14 +222,16 @@ class OptionBacktester:
         """
         self.active_trades.remove(trade)
         self.closed_trades.append(trade)
-        
+
         pl_change = trade.total_pl()
         recovered_capital = trade.get_required_capital()
-        
+
         self.capital += pl_change
         self.available_to_trade += recovered_capital
-        
-        assert not np.isnan(self.capital), f"Capital is NaN: {self.capital} at {trade.exit_time}"
+
+        assert not np.isnan(
+            self.capital
+        ), f"Capital is NaN: {self.capital} at {trade.exit_time}"
 
         # Update allocation if gain_reinvesting is True
         if self.config.gain_reinvesting:
@@ -452,14 +457,16 @@ class OptionBacktester:
 
         return pd.DataFrame(closed_trades_data)
 
-    def calculate_kelly_criterion(self, n: Optional[int] = None, fractional_factor: Optional[float] = None) -> float:
+    def calculate_kelly_criterion(
+        self, n: Optional[int] = None, fractional_factor: Optional[float] = None
+    ) -> float:
         """
         Calculate the Kelly Criterion percentage for position sizing based on recent trades.
-        
+
         Args:
             n: Number of recent trades to consider (None for all trades)
             fractional_factor: Fraction of Kelly to recommend (e.g. 0.5 for half Kelly)
-            
+
         Returns:
             float: Recommended position size percentage (0-1)
         """
@@ -467,23 +474,27 @@ class OptionBacktester:
             trades = self.closed_trades[-n:] if n else self.closed_trades
             if not trades:
                 return 0.0
-                
+
             wins = [t for t in trades if t.won]
             losses = [t for t in trades if not t.won]
-            
+
             win_rate = len(wins) / len(trades)
             avg_win = np.mean([t.total_pl() for t in wins]) if wins else 0
             avg_loss = np.mean([abs(t.total_pl()) for t in losses]) if losses else 0
             win_loss_ratio = avg_win / avg_loss if avg_loss != 0 else 0
-            
-            kelly = (win_rate - (1 - win_rate)/win_loss_ratio) if win_loss_ratio != 0 else 0
+
+            kelly = (
+                (win_rate - (1 - win_rate) / win_loss_ratio)
+                if win_loss_ratio != 0
+                else 0
+            )
             kelly = max(min(kelly, 1.0), 0.0)  # clamp between 0-100%
-            
+
             if fractional_factor:
                 kelly *= fractional_factor
-                
+
             return kelly
-            
+
         except Exception as e:
             logger.error(f"Error calculating Kelly Criterion: {str(e)}")
             return 0.0
@@ -519,14 +530,16 @@ class OptionBacktester:
             average_dit_spread = closed_trades_df["dit"].std()
         except KeyError:
             average_dit_spread = np.nan
-        
+
         try:
             average_exit_dte = closed_trades_df["exit_dte"].mean()
         except KeyError:
             average_exit_dte = np.nan
 
         drawdown_calculator = MaxDrawdown()
-        max_drawdown_result = drawdown_calculator.calculate(df["total_pl"].values, self.allocation)
+        max_drawdown_result = drawdown_calculator.calculate(
+            df["total_pl"].values, self.allocation
+        )
         max_drawdown_dollars = max_drawdown_result["max_drawdown_dollars"]
         max_drawdown_percentage = max_drawdown_result["max_drawdown_percentage"]
 
@@ -554,8 +567,7 @@ class OptionBacktester:
             daily_returns = daily_pl.diff().dropna()
             sharpe_calculator = SharpeRatio()
             metrics["sharpe_ratio"] = sharpe_calculator.calculate(
-                daily_returns.values, 
-                risk_free_rate=0.02
+                daily_returns.values, risk_free_rate=0.02
             )["sharpe_ratio"]
         except Exception as e:
             logger.error(f"Error calculating Sharpe Ratio: {str(e)}")
@@ -572,9 +584,11 @@ class OptionBacktester:
             end_value = start_value + df["closed_pl"].iloc[-1]
             start_time = df.index[0]
             end_time = df.index[-1]
-            
+
             cagr_calculator = CAGR()
-            cagr_result = cagr_calculator.calculate(start_value, end_value, start_time, end_time)
+            cagr_result = cagr_calculator.calculate(
+                start_value, end_value, start_time, end_time
+            )
             metrics["cagr"] = cagr_result["cagr"]
         except Exception as e:
             logger.error(f"Error calculating CAGR: {str(e)}")
@@ -596,21 +610,21 @@ class OptionBacktester:
         try:
             wins = [t.won for t in self.closed_trades]
             winrate_calculator = WinRate()
-            metrics["win_rate"] = winrate_calculator.calculate(
-                np.array(wins)
-            )["win_rate"]
+            metrics["win_rate"] = winrate_calculator.calculate(np.array(wins))[
+                "win_rate"
+            ]
         except Exception as e:
             logger.error(f"Error calculating Win Rate: {str(e)}")
         try:
             # Calculate daily P/L changes from performance data
             daily_pl = df["total_pl"].resample("B").last().ffill()
             daily_returns = daily_pl.diff().dropna()
-            
+
             risk_of_ruin_calculator = RiskOfRuin()
             risk_result = risk_of_ruin_calculator.calculate(
                 returns=daily_returns.values,
                 initial_balance=self.config.initial_capital,
-                distribution="histogram"
+                distribution="histogram",
             )
             metrics["risk_of_ruin"] = risk_result["risk_of_ruin"]
         except Exception as e:
@@ -618,11 +632,13 @@ class OptionBacktester:
         try:
             prob_calculator = PositiveMonthlyProbability()
             metrics["probability_of_positive_monthly_pl"] = prob_calculator.calculate(
-                df["total_pl"], use_closed_pl=False
+                df["total_pl"]
             )["positive_monthly_probability"]
-            metrics["probability_of_positive_monthly_closed_pl"] = prob_calculator.calculate(
-                df["closed_pl"], use_closed_pl=True
-            )["positive_monthly_probability"]
+            metrics["probability_of_positive_monthly_closed_pl"] = (
+                prob_calculator.calculate(df["closed_pl"])[
+                    "positive_monthly_probability"
+                ]
+            )
         except Exception as e:
             logger.error(
                 f"Error calculating Probability of Positive Monthly Closed P/L: {str(e)}"
@@ -635,51 +651,13 @@ class OptionBacktester:
 
         return metrics
 
-
-
-
-
-    def calculate_avg_monthly_pl_nonzero(self, df: pd.DataFrame) -> float:
-        """
-        Calculate the average monthly P/L, considering only non-zero months.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing performance data.
-
-        Returns:
-            float: Average monthly P/L for non-zero months.
-        """
-        monthly_pl = (
-            df.set_index("time")["closed_pl"].resample("M").last().diff().dropna()
-        )
-        non_zero_months = monthly_pl[monthly_pl != 0]
-        return non_zero_months.mean() if not non_zero_months.empty else 0
-
-    def _calculate_max_drawdown(self, df: pd.DataFrame) -> Tuple[float, float]:
-        """
-        Calculate the maximum drawdown in dollars and percentage.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing performance data.
-
-        Returns:
-            Tuple[float, float]: Maximum drawdown in dollars and percentage.
-        """
-        df["peak"] = df["total_pl"].cummax()
-        df["drawdown"] = df["peak"] - df["total_pl"]
-        max_drawdown_dollars = df["drawdown"].max()
-        max_drawdown_percentage = max_drawdown_dollars / self.allocation
-        return max_drawdown_dollars, max_drawdown_percentage
-
-
-
     def update_config(self, **kwargs) -> bool:
         """
         Update configuration parameters.
 
         Args:
             **kwargs: Configuration parameters to update.
-                      Only existing attributes in Config will be updated.
+                    Only existing attributes in Config will be updated.
 
         Returns:
             bool: True if any parameters were updated, False otherwise.
@@ -733,7 +711,9 @@ class OptionBacktester:
                 f"Probability of Positive Monthly Closed P/L: {metrics['probability_of_positive_monthly_closed_pl']:.2%}"
             )
             print(f"Win Rate: {metrics['win_rate']:.2%}")
-            print(f"Kelly Criterion Recommendation: {self.calculate_kelly_criterion():.2%}")
+            print(
+                f"Kelly Criterion Recommendation: {self.calculate_kelly_criterion():.2%}"
+            )
             print(f"Risk of Ruin: {metrics['risk_of_ruin']:.2%}")
             print(f"Max Drawdown (Dollars): ${metrics['max_drawdown_dollars']:.2f}")
             print(

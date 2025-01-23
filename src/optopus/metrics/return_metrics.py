@@ -28,7 +28,7 @@ class CAGR(BaseMetric):
     """Calculates Compound Annual Growth Rate (CAGR)"""
     
     def calculate(self, initial_value: float, final_value: float, 
-                 start_time: pd.Timestamp, end_time: pd.Timestamp) -> dict:
+                start_time: pd.Timestamp, end_time: pd.Timestamp) -> dict:
         """
         Args:
             initial_value: Starting portfolio value
@@ -78,11 +78,10 @@ class MonthlyReturn(BaseMetric):
 class PositiveMonthlyProbability(BaseMetric):
     """Calculates probability of positive monthly P/L"""
     
-    def calculate(self, pl_series: pd.Series, use_closed_pl: bool = True) -> dict:
+    def calculate(self, pl_series: pd.Series) -> dict:
         """
         Args:
             pl_series (pd.Series): Series of P/L values with datetime index
-            use_closed_pl (bool): True to use closed P/L, False for total P/L
             
         Returns:
             Dictionary with probability of positive months
@@ -90,7 +89,6 @@ class PositiveMonthlyProbability(BaseMetric):
         if pl_series.empty:
             return {"positive_monthly_probability": 0.0}
             
-        col = "closed_pl" if use_closed_pl else "total_pl"
         monthly_pl = pl_series.resample("M").last().diff().dropna()
         positive_months = monthly_pl[monthly_pl > 0]
         total_months = monthly_pl[monthly_pl != 0]
