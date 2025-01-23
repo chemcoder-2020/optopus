@@ -9,7 +9,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
 from .external_entry_conditions import ExternalEntryConditionChecker
-from optopus.metrics import (
+from ..metrics import (
     SharpeRatio,
     MaxDrawdown,
     TotalReturn,

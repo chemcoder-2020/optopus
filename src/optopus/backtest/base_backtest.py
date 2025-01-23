@@ -274,7 +274,7 @@ class BaseBacktest(ABC):
                 delayed(run_backtest_for_timerange)(tr) for tr in ts_folds
             )
 
-        from optopus.metrics import Aggregator
+        from ..metrics import Aggregator
         aggregated_results = Aggregator.aggregate(results)
 
         logger.info("\nCross-Validation Results:")
