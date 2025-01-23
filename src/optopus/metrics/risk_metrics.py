@@ -19,15 +19,23 @@ class SharpeRatio(BaseMetric):
 
 class MaxDrawdown(BaseMetric):
     """Calculates maximum drawdown from cumulative returns"""
-
+    
     def calculate(self, pl_curve: np.ndarray, allocation: float) -> dict:
         if pl_curve.size == 0:
-            return {"max_drawdown": 0.0}
+            return {
+                "max_drawdown_dollars": 0.0,
+                "max_drawdown_percentage": 0.0
+            }
 
-        peak = np.cummax(pl_curve)
-        drawdown = peak - pl_curve
-        max_drawdown_dollars = drawdown.max()
-        max_drawdown_percentage = max_drawdown_dollars / allocation
+        # Calculate running maximum
+        peak = np.maximum.accumulate(pl_curve)
+        # Calculate drawdown from peak
+        drawdown = (peak - pl_curve) / np.where(peak == 0, 1, peak)  # Handle zero peak
+        
+        max_dd_idx = np.argmax(drawdown)
+        max_drawdown_dollars = peak[max_dd_idx] - pl_curve[max_dd_idx]
+        max_drawdown_percentage = drawdown[max_dd_idx]
+        
         return {
             "max_drawdown_dollars": float(max_drawdown_dollars),
             "max_drawdown_percentage": float(max_drawdown_percentage),
