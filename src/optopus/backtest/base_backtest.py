@@ -274,64 +274,8 @@ class BaseBacktest(ABC):
                 delayed(run_backtest_for_timerange)(tr) for tr in ts_folds
             )
 
-        # Aggregate results
-        aggregated_results = {}
-        for metric in results[0].keys():
-            if metric != "performance_data":
-                values = [result[metric] for result in results]
-                values_array = np.array(values)
-
-                # Handle boolean metrics differently
-                if isinstance(values[0], bool):
-                    true_count = sum(values)
-                    total_count = len(values)
-                    aggregated_results[metric] = {
-                        "mean": true_count / total_count if total_count > 0 else 0,
-                        "count": total_count,
-                        "true_ratio": (
-                            true_count / total_count if total_count > 0 else 0
-                        ),
-                    }
-                else:
-                    # Convert to float array and handle NaN values
-                    values_array = np.array(values, dtype=float)
-                    valid_values = values_array[~np.isnan(values_array)]
-
-                    if len(valid_values) > 0:
-                        # For numeric metrics
-                        aggregated_results[metric] = {
-                            "mean": np.nanmean(values_array),
-                            "median": np.nanmedian(values_array),
-                            "std": np.nanstd(values_array),
-                            "min": np.nanmin(values_array),
-                            "max": np.nanmax(values_array),
-                            "percentile_25": np.percentile(valid_values, 25),
-                            "percentile_75": np.percentile(valid_values, 75),
-                            "percentile_90": np.percentile(valid_values, 90),
-                            "percentile_95": np.percentile(valid_values, 95),
-                            "skewness": scipy.stats.skew(valid_values),
-                            "kurtosis": scipy.stats.kurtosis(valid_values),
-                            "count": len(valid_values),
-                            "iqr": np.percentile(valid_values, 75)
-                            - np.percentile(valid_values, 25),
-                        }
-                    else:
-                        # Handle case when all values are NaN
-                        aggregated_results[metric] = {
-                            "mean": np.nan,
-                            "median": np.nan,
-                            "std": np.nan,
-                            "min": np.nan,
-                            "max": np.nan,
-                            "percentile_25": np.nan,
-                            "percentile_75": np.nan,
-                            "percentile_90": np.nan,
-                            "percentile_95": np.nan,
-                            "skewness": np.nan,
-                            "kurtosis": np.nan,
-                            "count": len(values_array),
-                            "iqr": np.nan,
-                        }
+        from optopus.metrics import Aggregator
+        aggregated_results = Aggregator.aggregate(results)
 
         logger.info("\nCross-Validation Results:")
         logger.info("==========================")
