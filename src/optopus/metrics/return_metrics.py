@@ -55,10 +55,11 @@ class CAGR(BaseMetric):
 class MonthlyReturn(BaseMetric):
     """Calculates average monthly profit/loss from performance data"""
     
-    def calculate(self, closed_pl_series: pd.Series) -> dict:
+    def calculate(self, closed_pl_series: pd.Series, non_zero_only: bool = False) -> dict:
         """
         Args:
             closed_pl_series (pd.Series): Series of closed P/L values with datetime index
+            non_zero_only (bool): If True, average only months with non-zero P/L
             
         Returns:
             Dictionary with average monthly P/L
@@ -68,4 +69,8 @@ class MonthlyReturn(BaseMetric):
             
         # Resample to monthly and calculate changes
         monthly_pl = closed_pl_series.resample("M").last().diff().dropna()
-        return {"avg_monthly_pl": float(monthly_pl.mean())}
+        
+        if non_zero_only:
+            monthly_pl = monthly_pl[monthly_pl != 0]
+            
+        return {"avg_monthly_pl": float(monthly_pl.mean()) if not monthly_pl.empty else 0.0}
