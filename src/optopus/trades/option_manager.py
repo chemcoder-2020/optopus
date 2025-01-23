@@ -9,6 +9,14 @@ import numpy as np
 from scipy.stats import gaussian_kde
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
 from .external_entry_conditions import ExternalEntryConditionChecker
+from optopus.metrics import (
+    SharpeRatio,
+    MaxDrawdown,
+    TotalReturn,
+    AnnualizedReturn,
+    WinRate,
+    ProfitFactor
+)
 
 @dataclass
 class Config:
@@ -513,7 +521,11 @@ class OptionBacktester:
         except KeyError:
             average_exit_dte = np.nan
 
-        max_drawdown_dollars, max_drawdown_percentage = self._calculate_max_drawdown(df)
+        returns = df["total_pl"].pct_change().dropna().values
+        drawdown_calculator = MaxDrawdown()
+        max_drawdown_result = drawdown_calculator.calculate(returns)
+        max_drawdown_dollars = max_drawdown_result["max_drawdown"] * self.allocation
+        max_drawdown_percentage = max_drawdown_result["max_drawdown"]
 
         metrics = {
             "sharpe_ratio": None,
@@ -537,15 +549,18 @@ class OptionBacktester:
             # Calculate daily P/L changes from performance data
             daily_pl = df["total_pl"].resample("B").last().ffill()
             daily_returns = daily_pl.diff().dropna()
-            metrics["sharpe_ratio"] = self._calculate_sharpe_ratio(
-                daily_returns
-            )
+            sharpe_calculator = SharpeRatio()
+            metrics["sharpe_ratio"] = sharpe_calculator.calculate(
+                daily_returns.values, 
+                risk_free_rate=0.02
+            )["sharpe_ratio"]
         except Exception as e:
             logger.error(f"Error calculating Sharpe Ratio: {str(e)}")
         try:
-            metrics["profit_factor"] = self._calculate_profit_factor(
-                trade_returns_per_allocation
-            )
+            pf_calculator = ProfitFactor()
+            metrics["profit_factor"] = pf_calculator.calculate(
+                trade_returns_per_allocation.values
+            )["profit_factor"]
         except Exception as e:
             logger.error(f"Error calculating Profit Factor: {str(e)}")
         try:
@@ -565,7 +580,11 @@ class OptionBacktester:
                 f"Error calculating Average Monthly P/L (Non-Zero Months): {str(e)}"
             )
         try:
-            metrics["win_rate"] = self._calculate_win_rate()
+            wins = [t.won for t in self.closed_trades]
+            winrate_calculator = WinRate()
+            metrics["win_rate"] = winrate_calculator.calculate(
+                np.array(wins)
+            )["win_rate"]
         except Exception as e:
             logger.error(f"Error calculating Win Rate: {str(e)}")
         try:
@@ -604,38 +623,6 @@ class OptionBacktester:
 
         return metrics
 
-    def _calculate_sharpe_ratio(self, daily_pl_changes: pd.Series) -> float:
-        """
-        Calculate the Sharpe Ratio based on daily P/L changes.
-
-        Args:
-            daily_pl_changes (pd.Series): Series of daily P/L changes.
-
-        Returns:
-            float: Sharpe Ratio.
-        """
-        if len(daily_pl_changes) < 2:
-            return 0.0
-            
-        # Convert daily P/L changes to returns relative to allocation
-        daily_returns = daily_pl_changes / self.allocation
-        risk_free_rate = 0.02  # Assume 2% risk-free rate
-        excess_returns = daily_returns - risk_free_rate / 252
-        return np.sqrt(252) * excess_returns.mean() / excess_returns.std()
-
-    def _calculate_profit_factor(self, daily_returns: pd.Series) -> float:
-        """
-        Calculate the Profit Factor.
-
-        Args:
-            daily_returns (pd.Series): Series of daily returns.
-
-        Returns:
-            float: Profit Factor.
-        """
-        profits = daily_returns[daily_returns > 0].sum()
-        losses = abs(daily_returns[daily_returns < 0].sum())
-        return profits / losses if losses != 0 else np.inf
 
     def _calculate_cagr(self, df: pd.DataFrame) -> float:
         """
@@ -737,16 +724,6 @@ class OptionBacktester:
         max_drawdown_percentage = max_drawdown_dollars / self.allocation
         return max_drawdown_dollars, max_drawdown_percentage
 
-    def _calculate_win_rate(self) -> float:
-        """
-        Calculate the win rate of closed trades.
-
-        Returns:
-            float: Win rate.
-        """
-        total_trades = len(self.closed_trades)
-        winning_trades = sum(1 for trade in self.closed_trades if trade.won)
-        return winning_trades / total_trades if total_trades > 0 else 0
 
     def monte_carlo_risk_of_ruin(
         self,
