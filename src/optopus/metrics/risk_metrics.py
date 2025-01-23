@@ -79,11 +79,11 @@ class MaxDrawdown(BaseMetric):
         # Calculate running maximum
         peak = np.maximum.accumulate(pl_curve)
         # Calculate drawdown from peak
-        drawdown = (peak - pl_curve) / np.where(peak == 0, 1, peak)  # Handle zero peak
-        
-        max_dd_idx = np.argmax(drawdown)
-        max_drawdown_dollars = peak[max_dd_idx] - pl_curve[max_dd_idx]
-        max_drawdown_percentage = drawdown[max_dd_idx]
+        drawdown = (peak - pl_curve)
+
+        # Find maximum drawdown
+        max_drawdown_dollars = drawdown.max()
+        max_drawdown_percentage = max_drawdown_dollars / allocation
         
         return {
             "max_drawdown_dollars": float(max_drawdown_dollars),
