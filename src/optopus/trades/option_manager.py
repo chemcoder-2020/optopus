@@ -12,6 +12,7 @@ from .external_entry_conditions import ExternalEntryConditionChecker
 from ..metrics import (
     SharpeRatio,
     MaxDrawdown,
+    RiskOfRuin,
     TotalReturn,
     AnnualizedReturn,
     WinRate,
