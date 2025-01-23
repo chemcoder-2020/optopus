@@ -199,6 +199,7 @@ class BaseBacktest(ABC):
         self,
         n_splits: int,
         years_per_split: float,
+        n_jobs: int = -1,
     ):
         """Cross-validate the backtest."""
         logger.info("\nStarting Cross-Validation")
@@ -257,7 +258,7 @@ class BaseBacktest(ABC):
         with tqdm_joblib(
             tqdm(desc="Backtest Validation", total=n_splits)
         ) as progress_bar:
-            results = Parallel(n_jobs=-1)(
+            results = Parallel(n_jobs=n_jobs)(
                 delayed(run_backtest_for_timerange)(tr) for tr in ts_folds
             )
 
