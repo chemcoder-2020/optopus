@@ -50,22 +50,22 @@ class CAGR(BaseMetric):
         except ZeroDivisionError:
             cagr = 0.0
             
-        return {"cagr": float(cag            return {"cagr": float(cagr)}
+        return {"cagr": float(cagr)}
 
-        return {"cagr": float(cagclass MonthlyReturn(BaseMetric):
-        return {"cagr": float(cag    """Calculates average monthly profit/loss from performance data"""
+class MonthlyReturn(BaseMetric):
+    """Calculates average monthly profit/loss from performance data"""
     
-        return {"cagr": float(cag    def calculate(self, closed_pl_series: pd.Series) -> dict:
-        return {"cagr": float(cag        """
-        return {"cagr": float(cag        Args:
-        return {"cagr": float(cag            closed_pl_series (pd.Series): Series of closed P/L values with datetime index
+    def calculate(self, closed_pl_series: pd.Series) -> dict:
+        """
+        Args:
+            closed_pl_series (pd.Series): Series of closed P/L values with datetime index
             
-        return {"cagr": float(cag        Returns:
-        return {"cagr": float(cag            Dictionary with average monthly P/L
-        return {"cagr": float(cag        """
-        return {"cagr": float(cag        if closed_pl_series.empty:
-        return {"cagr": float(cag            return {"avg_monthly_pl": 0.0}
+        Returns:
+            Dictionary with average monthly P/L
+        """
+        if closed_pl_series.empty:
+            return {"avg_monthly_pl": 0.0}
             
-        return {"cagr": float(cag        # Resample to monthly and calculate changes
-        return {"cagr": float(cag        monthly_pl = closed_pl_series.resample("M").last().diff().dropna()
-        return {"cagr": float(cag        return {"avg_monthly_pl": float(monthly_pl.mean())}
+        # Resample to monthly and calculate changes
+        monthly_pl = closed_pl_series.resample("M").last().diff().dropna()
+        return {"avg_monthly_pl": float(monthly_pl.mean())}
