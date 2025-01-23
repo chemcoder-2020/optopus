@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.stats
+from scipy.stats import gaussian_kde
 from .base_metric import BaseMetric
 
 
