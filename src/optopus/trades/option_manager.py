@@ -440,6 +440,42 @@ class OptionBacktester:
 
         return pd.DataFrame(closed_trades_data)
 
+    def calculate_kelly_criterion(self, n: Optional[int] = None, fractional_factor: Optional[float] = None) -> float:
+        """
+        Calculate the Kelly Criterion percentage for position sizing based on recent trades.
+        
+        Args:
+            n: Number of recent trades to consider (None for all trades)
+            fractional_factor: Fraction of Kelly to recommend (e.g. 0.5 for half Kelly)
+            
+        Returns:
+            float: Recommended position size percentage (0-1)
+        """
+        try:
+            trades = self.closed_trades[-n:] if n else self.closed_trades
+            if not trades:
+                return 0.0
+                
+            wins = [t for t in trades if t.won]
+            losses = [t for t in trades if not t.won]
+            
+            win_rate = len(wins) / len(trades)
+            avg_win = np.mean([t.return_percentage() for t in wins]) if wins else 0
+            avg_loss = np.mean([abs(t.return_percentage()) for t in losses]) if losses else 0
+            win_loss_ratio = avg_win / avg_loss if avg_loss != 0 else 0
+            
+            kelly = (win_rate - (1 - win_rate)/win_loss_ratio) if win_loss_ratio != 0 else 0
+            kelly = max(min(kelly, 1.0), 0.0)  # clamp between 0-100%
+            
+            if fractional_factor:
+                kelly *= fractional_factor
+                
+            return kelly
+            
+        except Exception as e:
+            logger.error(f"Error calculating Kelly Criterion: {str(e)}")
+            return 0.0
+
     def calculate_performance_metrics(self) -> Optional[dict]:
         """
         Calculate various performance metrics.
@@ -848,6 +884,7 @@ class OptionBacktester:
                 f"Probability of Positive Monthly Closed P/L: {metrics['probability_of_positive_monthly_closed_pl']:.2%}"
             )
             print(f"Win Rate: {metrics['win_rate']:.2%}")
+            print(f"Kelly Criterion Recommendation: {self.calculate_kelly_criterion():.2%}")
             print(f"Risk of Ruin: {metrics['risk_of_ruin']:.2%}")
             print(f"Max Drawdown (Dollars): ${metrics['max_drawdown_dollars']:.2f}")
             print(
