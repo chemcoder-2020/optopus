@@ -579,14 +579,14 @@ class OptionBacktester:
         try:
             monthly_return_calculator = MonthlyReturn()
             metrics["avg_monthly_pl"] = monthly_return_calculator.calculate(
-                df.set_index("time")["closed_pl"]
+                df["closed_pl"]
             )["avg_monthly_pl"]
         except Exception as e:
             logger.error(f"Error calculating Average Monthly P/L: {str(e)}")
         try:
-            metrics["avg_monthly_pl_nonzero"] = self.calculate_avg_monthly_pl_nonzero(
-                df
-            )
+            metrics["avg_monthly_pl_nonzero"] = monthly_return_calculator.calculate(
+                df["closed_pl"], non_zero_only=True
+            )["avg_monthly_pl"]
         except Exception as e:
             logger.error(
                 f"Error calculating Average Monthly P/L (Non-Zero Months): {str(e)}"
