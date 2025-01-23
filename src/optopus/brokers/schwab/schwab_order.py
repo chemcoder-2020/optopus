@@ -14,7 +14,7 @@ dotenv.load_dotenv()
 class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def __init__(
         self,
-        option_strategy: OptionStrategy,
+        option_strategy: "OptionStrategy",
         client_id=os.getenv("SCHWAB_CLIENT_ID"),
         client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
         redirect_uri=os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1"),
@@ -66,7 +66,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         current_time = new_option_chain_df["QUOTE_READTIME"].iloc[0]
         for leg in self.legs:
             leg.update(current_time, new_option_chain_df)
-        
+
         # 3. Update the current price
         self.current_bid, self.current_ask = self.calculate_bid_ask()
 
@@ -117,7 +117,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def generate_entry_payload(self, price=None):
         if price is None:
             price = (self.current_bid + self.current_ask) / 2
-            
+
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating entry payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -144,7 +144,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 quantity=self.contracts,
                 price=abs(price),
                 duration="GOOD_TILL_CANCEL",
-                is_entry=True
+                is_entry=True,
             )
         elif self.strategy_type == "Iron Butterfly":
             logger.info("Generating entry payload for iron butterfly.")
@@ -157,7 +157,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 quantity=self.contracts,
                 price=abs(price),
                 duration="GOOD_TILL_CANCEL",
-                is_entry=True
+                is_entry=True,
             )
         elif self.strategy_type == "Straddle":
             logger.info("Generating entry payload for straddle.")
@@ -168,7 +168,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 quantity=self.contracts,
                 price=abs(price),
                 duration="GOOD_TILL_CANCEL",
-                is_entry=True
+                is_entry=True,
             )
         elif self.strategy_type in ["Naked Put", "Naked Call"]:
             logger.info("Generating entry payload for naked option.")
@@ -196,7 +196,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def generate_exit_payload(self, price=None):
         if price is None:
             price = (self.current_bid + self.current_ask) / 2
-            
+
         if self.strategy_type == "Vertical Spread":
             logger.info("Generating exit payload for vertical spread.")
             payload = self.generate_vertical_spread_json(
@@ -223,7 +223,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 quantity=self.contracts,
                 price=abs(price),
                 duration="GOOD_TILL_CANCEL",
-                is_entry=False
+                is_entry=False,
             )
         elif self.strategy_type == "Iron Butterfly":
             logger.info("Generating exit payload for iron butterfly.")
@@ -236,7 +236,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 quantity=self.contracts,
                 price=abs(price),
                 duration="GOOD_TILL_CANCEL",
-                is_entry=False
+                is_entry=False,
             )
         elif self.strategy_type == "Straddle":
             logger.info("Generating exit payload for straddle.")
@@ -247,7 +247,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 quantity=self.contracts,
                 price=abs(price),
                 duration="GOOD_TILL_CANCEL",
-                is_entry=False
+                is_entry=False,
             )
         elif self.strategy_type in ["Naked Put", "Naked Call"]:
             logger.info("Generating exit payload for naked option.")
@@ -284,7 +284,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         current_time = new_option_chain_df["QUOTE_READTIME"].iloc[0]
         for leg in self.legs:
             leg.update(current_time, new_option_chain_df)
-        
+
         # 3. Update the current price
         self.current_bid, self.current_ask = self.calculate_bid_ask()
 
@@ -358,7 +358,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 logger.warning(f"Exit attempt {attempt + 1} was not submitted.")
         logger.error("All attempts to place exit order failed.")
         return False
-    
+
     def get_strategy_quote(self):
         symbols = [leg.schwab_symbol for leg in self.legs]
         new_option_chain_df = self.get_quote(f"{','.join(symbols)}")
@@ -509,58 +509,58 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         )
 
 
-if __name__ == "__main__":
-    # Load sample option chain data
-    entry_df = pd.read_parquet(
-        "/Users/traderHuy/Downloads/SPY option backtest analysis/Tradier Option Data/schwab_chains/SPY/2024/SPY_2024-09-26 15-15.parquet"
-    )
+# if __name__ == "__main__":
+#     # Load sample option chain data
+#     entry_df = pd.read_parquet(
+#         "/Users/traderHuy/Downloads/SPY option backtest analysis/Tradier Option Data/schwab_chains/SPY/2024/SPY_2024-09-26 15-15.parquet"
+#     )
 
-    # Create a vertical spread strategy
-    vertical_spread = OptionStrategy.create_vertical_spread(
-        symbol="SPY",
-        option_type="PUT",
-        long_strike="-2",
-        short_strike="ATM",
-        expiration="2024-11-15",
-        contracts=1,
-        entry_time="2024-09-26 15:15:00",
-        option_chain_df=entry_df,
-    )
+#     # Create a vertical spread strategy
+#     vertical_spread = OptionStrategy.create_vertical_spread(
+#         symbol="SPY",
+#         option_type="PUT",
+#         long_strike="-2",
+#         short_strike="ATM",
+#         expiration="2024-11-15",
+#         contracts=1,
+#         entry_time="2024-09-26 15:15:00",
+#         option_chain_df=entry_df,
+#     )
 
-    # Create a SchwabOptionOrder instance
+#     # Create a SchwabOptionOrder instance
 
-    schwab_order = SchwabOptionOrder(
-        client_id=os.getenv("SCHWAB_CLIENT_ID"),
-        client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
-        option_strategy=vertical_spread,
-        token_file="token.json",
-    )
+#     schwab_order = SchwabOptionOrder(
+#         client_id=os.getenv("SCHWAB_CLIENT_ID"),
+#         client_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+#         option_strategy=vertical_spread,
+#         token_file="token.json",
+#     )
 
-    # Print order details
-    print("Schwab Option Order Details:")
-    print(f"Symbol: {schwab_order.symbol}")
-    print(f"Strategy Type: {schwab_order.strategy_type}")
-    print(f"Expiration: {schwab_order.legs[0].expiration}")
-    print(f"Long Strike: {schwab_order.legs[0].strike}")
-    print(f"Short Strike: {schwab_order.legs[1].strike}")
-    print(f"Contracts: {schwab_order.contracts}")
-    print(f"Entry Net Premium: {schwab_order.entry_net_premium:.2f}")
-    print(f"Order Status: {schwab_order.order_status}")
-    print(f"Time: {schwab_order.current_time}")
-    print(f"DIT: {schwab_order.DIT}")
-    print(f"Net Premium: {schwab_order.net_premium}")
+#     # Print order details
+#     print("Schwab Option Order Details:")
+#     print(f"Symbol: {schwab_order.symbol}")
+#     print(f"Strategy Type: {schwab_order.strategy_type}")
+#     print(f"Expiration: {schwab_order.legs[0].expiration}")
+#     print(f"Long Strike: {schwab_order.legs[0].strike}")
+#     print(f"Short Strike: {schwab_order.legs[1].strike}")
+#     print(f"Contracts: {schwab_order.contracts}")
+#     print(f"Entry Net Premium: {schwab_order.entry_net_premium:.2f}")
+#     print(f"Order Status: {schwab_order.order_status}")
+#     print(f"Time: {schwab_order.current_time}")
+#     print(f"DIT: {schwab_order.DIT}")
+#     print(f"Net Premium: {schwab_order.net_premium}")
 
-    schwab_order.update_order()
+#     schwab_order.update_order()
 
-    print("Schwab Option Order Details (After Update):")
-    print(f"Symbol: {schwab_order.symbol}")
-    print(f"Strategy Type: {schwab_order.strategy_type}")
-    print(f"Expiration: {schwab_order.legs[0].expiration}")
-    print(f"Long Strike: {schwab_order.legs[0].strike}")
-    print(f"Short Strike: {schwab_order.legs[1].strike}")
-    print(f"Contracts: {schwab_order.contracts}")
-    print(f"Entry Net Premium: {schwab_order.entry_net_premium:.2f}")
-    print(f"Order Status: {schwab_order.order_status}")
-    print(f"Time: {schwab_order.current_time}")
-    print(f"DIT: {schwab_order.DIT}")
-    print(f"Net Premium: {schwab_order.net_premium}")
+#     print("Schwab Option Order Details (After Update):")
+#     print(f"Symbol: {schwab_order.symbol}")
+#     print(f"Strategy Type: {schwab_order.strategy_type}")
+#     print(f"Expiration: {schwab_order.legs[0].expiration}")
+#     print(f"Long Strike: {schwab_order.legs[0].strike}")
+#     print(f"Short Strike: {schwab_order.legs[1].strike}")
+#     print(f"Contracts: {schwab_order.contracts}")
+#     print(f"Entry Net Premium: {schwab_order.entry_net_premium:.2f}")
+#     print(f"Order Status: {schwab_order.order_status}")
+#     print(f"Time: {schwab_order.current_time}")
+#     print(f"DIT: {schwab_order.DIT}")
+#     print(f"Net Premium: {schwab_order.net_premium}")

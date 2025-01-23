@@ -204,7 +204,7 @@ class SchwabTrade(Schwab):
         Returns:
             dict: The JSON payload for the trade.
         """
-        if symbol[0] == "$":  # Index
+        if symbol[0] == "$":  # Index symbol
             symbol = symbol[1:]
         if long_option_type not in ["C", "P"]:
             raise ValueError(

@@ -4,7 +4,10 @@ Module for handling broker interactions.
 This module provides a class `OptionBroker` that encapsulates the functionality for interacting with a broker, including authentication, data retrieval, and trading operations.
 """
 
-from ..brokers.order import Order
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..brokers.order import Order
 from loguru import logger
 import os
 
@@ -119,7 +122,7 @@ class OptionBroker:
                     "Authentication object is required to access Schwab Trade API"
                 )
 
-    def create_order(self, option_strategy) -> Order:
+    def create_order(self, option_strategy) -> "Order":
         """
         Create an order for the given option strategy.
 

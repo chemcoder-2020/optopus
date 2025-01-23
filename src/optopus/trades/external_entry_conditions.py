@@ -59,7 +59,7 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             median_trend_short_lag (int, optional): Short period for median trend check. Defaults to 50
             median_trend_long_lag (int, optional): Long period for median trend check. Defaults to 200
         """
-        self.data_processor = DataProcessor(kwargs.get("ohlc"))
+        self.data_processor = DataProcessor(kwargs.get("ohlc"), ticker=kwargs.get("ticker"))
         self.technical_indicators = TechnicalIndicators()
         self.forecast_models = ForecastModels()
         self.kwargs = kwargs
@@ -67,7 +67,8 @@ class EntryOnForecast(ExternalEntryConditionChecker):
     def should_enter(self, strategy, manager, time) -> bool:
         time = pd.Timestamp(time)
         current_price = strategy.underlying_last
-        self.data_processor.ticker = strategy.symbol
+        if not hasattr(self.data_processor, "ticker"):
+            self.data_processor.ticker = strategy.symbol
 
         historical_data, monthly_data = self.data_processor.prepare_historical_data(
             time, current_price
