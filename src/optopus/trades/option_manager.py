@@ -16,7 +16,8 @@ from ..metrics import (
     AnnualizedReturn,
     WinRate,
     ProfitFactor,
-    CAGR
+    CAGR,
+    MonthlyReturn
 )
 
 @dataclass
@@ -576,7 +577,10 @@ class OptionBacktester:
         except Exception as e:
             logger.error(f"Error calculating CAGR: {str(e)}")
         try:
-            metrics["avg_monthly_pl"] = self._calculate_avg_monthly_pl(df)
+            monthly_return_calculator = MonthlyReturn()
+            metrics["avg_monthly_pl"] = monthly_return_calculator.calculate(
+                df.set_index("time")["closed_pl"]
+            )["avg_monthly_pl"]
         except Exception as e:
             logger.error(f"Error calculating Average Monthly P/L: {str(e)}")
         try:
@@ -633,18 +637,6 @@ class OptionBacktester:
 
 
 
-    def _calculate_avg_monthly_pl(self, df: pd.DataFrame) -> float:
-        """
-        Calculate the average monthly profit and loss.
-
-        Args:
-            df (pd.DataFrame): DataFrame containing performance data.
-
-        Returns:
-            float: Average monthly P/L.
-        """
-        monthly_pl = df.set_index("time")["closed_pl"].resample("M").last().diff()
-        return monthly_pl.mean()
 
     def _calculate_probability_of_positive_monthly_pl(self, df: pd.DataFrame) -> float:
         """
