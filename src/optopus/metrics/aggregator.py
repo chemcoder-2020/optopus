@@ -42,26 +42,47 @@ class Aggregator:
     @staticmethod
     def _aggregate_numeric(values: np.ndarray) -> Dict[str, Any]:
         """Aggregate numeric metrics"""
+        # Convert boolean arrays to float for calculations
+        if values.dtype == bool:
+            values = values.astype(float)
+            
         valid_values = values[~np.isnan(values)]
         
         if len(valid_values) == 0:
             return Aggregator._empty_numeric_stats(len(values))
             
-        return {
+        stats = {
             "mean": np.nanmean(values),
             "median": np.nanmedian(values),
             "std": np.nanstd(values),
             "min": np.nanmin(values),
             "max": np.nanmax(values),
-            "percentile_25": np.percentile(valid_values, 25),
-            "percentile_75": np.percentile(valid_values, 75),
-            "percentile_90": np.percentile(valid_values, 90),
-            "percentile_95": np.percentile(valid_values, 95),
-            "skewness": scipy.stats.skew(valid_values),
-            "kurtosis": scipy.stats.kurtosis(valid_values),
             "count": len(valid_values),
-            "iqr": np.percentile(valid_values, 75) - np.percentile(valid_values, 25),
         }
+        
+        # Only calculate percentiles if we have numeric data
+        if values.dtype.kind in 'iufc':  # integer, unsigned integer, float, complex
+            stats.update({
+                "percentile_25": np.percentile(valid_values, 25),
+                "percentile_75": np.percentile(valid_values, 75),
+                "percentile_90": np.percentile(valid_values, 90),
+                "percentile_95": np.percentile(valid_values, 95),
+                "iqr": np.percentile(valid_values, 75) - np.percentile(valid_values, 25),
+            })
+            
+            # Only calculate skewness and kurtosis if we have enough values
+            if len(valid_values) > 2:
+                stats.update({
+                    "skewness": scipy.stats.skew(valid_values),
+                    "kurtosis": scipy.stats.kurtosis(valid_values),
+                })
+            else:
+                stats.update({
+                    "skewness": np.nan,
+                    "kurtosis": np.nan,
+                })
+                
+        return stats
 
     @staticmethod
     def _empty_numeric_stats(count: int) -> Dict[str, Any]:
