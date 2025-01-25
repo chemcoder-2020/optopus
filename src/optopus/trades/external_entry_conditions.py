@@ -89,7 +89,9 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         linear_trend = self.technical_indicators.check_linear_regression(
             historical_data, lag=self.kwargs.get("linear_regression_lag", 14)
         )
+        logger.debug(f"Linear regression trend check: {linear_trend}")
         if not linear_trend:
+            logger.info("Entry rejected - failed linear regression trend check")
             return False
 
         median_trend = self.technical_indicators.check_median_trend(
@@ -97,14 +99,18 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             short_lag=self.kwargs.get("median_trend_short_lag", 50),
             long_lag=self.kwargs.get("median_trend_long_lag", 200),
         )
+        logger.debug(f"Median trend check: {median_trend}")
         if not median_trend:
+            logger.info("Entry rejected - failed median trend check")
             return False
 
         # Check forecast models
         arima_trend = self.forecast_models.check_arima_trend(
             monthly_data, current_price
         )
+        logger.debug(f"ARIMA trend check: {arima_trend}")
         if not arima_trend:
+            logger.info("Entry rejected - failed ARIMA trend check")
             return False
 
         return True
@@ -143,14 +149,19 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
                 self.kwargs.get("n_lookback_kelly", 20),
                 self.kwargs.get("fractional_kelly", 0.1),
             )
+            logger.debug(f"Calculated Kelly criterion: {kc}")
+            
             if self.kwargs.get("min_position_size", None):
                 kc = max(kc, self.kwargs.get("min_position_size", 0))
+                logger.debug(f"Applied min position size constraint: {kc}")
             
             if self.kwargs.get("max_position_size", None):
                 kc = min(kc, self.kwargs.get("max_position_size", 0.1))
+                logger.debug(f"Applied max position size constraint: {kc}")
 
             if isinstance(kc, float) and 1 > kc > 0:
                 manager.update_config(position_size=kc)
+                logger.info(f"Updated position size to {kc} based on Kelly criterion")
         
         if not hasattr(self.data_processor, "ticker"):
             self.data_processor.ticker = strategy.symbol
@@ -171,7 +182,9 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         linear_trend = self.technical_indicators.check_linear_regression(
             historical_data, lag=self.kwargs.get("linear_regression_lag", 14)
         )
+        logger.debug(f"Linear regression trend check: {linear_trend}")
         if not linear_trend:
+            logger.info("Entry rejected - failed linear regression trend check")
             return False
 
         median_trend = self.technical_indicators.check_median_trend(
@@ -179,14 +192,18 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
             short_lag=self.kwargs.get("median_trend_short_lag", 50),
             long_lag=self.kwargs.get("median_trend_long_lag", 200),
         )
+        logger.debug(f"Median trend check: {median_trend}")
         if not median_trend:
+            logger.info("Entry rejected - failed median trend check")
             return False
 
         # Check forecast models
         arima_trend = self.forecast_models.check_arima_trend(
             monthly_data, current_price
         )
+        logger.debug(f"ARIMA trend check: {arima_trend}")
         if not arima_trend:
+            logger.info("Entry rejected - failed ARIMA trend check")
             return False
 
         return True
