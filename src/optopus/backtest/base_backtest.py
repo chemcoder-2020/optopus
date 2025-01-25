@@ -331,7 +331,15 @@ class BaseBacktest(ABC):
         plt.savefig("closed_pl_vs_time_all_splits.png")
         plt.close()
 
-        return aggregated_results
+        # Create dict mapping time ranges to their results
+        time_range_results = {
+            tr: result for tr, result in zip(ts_folds, results)
+        }
+        
+        return {
+            "aggregated": aggregated_results,
+            "individual": time_range_results
+        }
 
 
 @contextlib.contextmanager
