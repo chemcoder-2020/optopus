@@ -270,10 +270,17 @@ class BaseBacktest(ABC):
         with tqdm_joblib(
             tqdm(desc="Backtest Validation", total=n_splits)
         ) as progress_bar:
-            results = Parallel(n_jobs=n_jobs)(
-                delayed(run_backtest_for_timerange)(tr) for tr in ts_folds
+            # Store both time range and result together
+            results_with_tr = Parallel(n_jobs=n_jobs)(
+                delayed(lambda tr: (tr, run_backtest_for_timerange(tr)))(tr) 
+                for tr in ts_folds
             )
 
+        # Unpack the results while preserving order
+        time_range_results = {tr: result for tr, result in results_with_tr}
+
+        # Create aggregated results from the ordered results
+        results = [result for _, result in results_with_tr]
         from ..metrics import Aggregator
         aggregated_results = Aggregator.aggregate(results)
 
