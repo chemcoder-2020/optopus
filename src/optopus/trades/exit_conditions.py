@@ -410,9 +410,14 @@ class TrailingStopCondition(ExitConditionChecker):
         self.highest_return = max(self.highest_return, current_median_return)
 
         if self.highest_return >= self.trigger:
-            return (self.highest_return - current_return) >= self.stop_loss and (
+            main_condition = (self.highest_return - current_return) >= self.stop_loss and (
                 self.highest_return - current_median_return
             ) >= self.stop_loss
+
+            if self.kwargs.get("exit_upon_positive_return", False):
+                return main_condition
+            else:
+                return main_condition and current_return > 0
 
         return False
 
