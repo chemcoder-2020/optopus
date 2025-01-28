@@ -353,14 +353,17 @@ class TrailingStopCondition(ExitConditionChecker):
         Args:
             trigger (float): The trigger percentage for the trailing stop.
             stop_loss (float): The stop loss percentage.
-            **kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments that will be set as attributes.
         """
         self.trigger = trigger
         self.stop_loss = stop_loss
         self.median_window = kwargs.get("window_size", 3)
         self.median_calculator = MedianCalculator(self.median_window)
         self.highest_return = 0
-        self.kwargs = kwargs
+        
+        # Set all kwargs as attributes
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def __repr__(self):
         """
