@@ -358,6 +358,7 @@ class TrailingStopCondition(ExitConditionChecker):
         self.median_window = kwargs.get("window_size", 3)
         self.median_calculator = MedianCalculator(self.median_window)
         self.highest_return = 0
+        self.kwargs = kwargs
         
         # Set all kwargs as attributes
         for key, value in kwargs.items():
