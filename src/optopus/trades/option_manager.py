@@ -143,8 +143,8 @@ class OptionBacktester:
                 elif trade.status == "CLOSED":
                     self.close_trade(trade)
 
-            self._update_trade_counts()
             self.last_update_time = current_time
+            self._update_trade_counts()
 
             # Record performance data after update
             self._record_performance_data(current_time, option_chain_df)
@@ -250,7 +250,7 @@ class OptionBacktester:
             1 for trade in self.active_trades if trade.DIT == 0
         )
         self.trades_entered_this_week = sum(
-            1 for trade in self.active_trades if trade.DIT < 7
+            1 for trade in self.active_trades if trade.entry_time.isocalendar()[1] != self.last_update_time.isocalendar()[1]
         )
 
     def _check_conflict(self, new_spread: OptionStrategy) -> bool:

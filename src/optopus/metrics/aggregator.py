@@ -43,9 +43,7 @@ class Aggregator:
     def _aggregate_numeric(values: np.ndarray) -> Dict[str, Any]:
         """Aggregate numeric metrics"""
         # Convert boolean arrays to float for calculations
-        if values.dtype == bool:
-            values = values.astype(float)
-            
+        values = np.array(values, dtype=float)  
         valid_values = values[~np.isnan(values)]
         
         if len(valid_values) == 0:

@@ -363,7 +363,8 @@ class TrailingStopCondition(ExitConditionChecker):
         
         # Set all kwargs as attributes
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            if key != "window_size":
+                setattr(self, key, value)
 
     def __repr__(self):
         """
