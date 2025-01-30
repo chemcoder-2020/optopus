@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
-import numpy as np
 from typing import Union, TYPE_CHECKING
 from loguru import logger
 from ..utils.ohlc_data_processor import DataProcessor
@@ -66,6 +65,8 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         self.technical_indicators = TechnicalIndicators()
         self.forecast_models = ForecastModels()
         self.kwargs = kwargs
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     def should_enter(self, strategy, manager, time) -> bool:
         time = pd.Timestamp(time)
@@ -105,12 +106,38 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             return False
 
         # Check forecast models
-        arima_trend = self.forecast_models.check_arima_trend(
-            monthly_data, current_price
-        )
-        logger.debug(f"ARIMA trend check: {arima_trend}")
-        if not arima_trend:
-            logger.info("Entry rejected - failed ARIMA trend check")
+        if self.kwargs.get("forecast_model", "arima") == "arima":
+            arima_trend = self.forecast_models.check_arima_trend(
+                monthly_data, current_price
+            )
+            logger.debug(f"ARIMA trend check: {arima_trend}")
+            if not arima_trend:
+                logger.info("Entry rejected - failed ARIMA trend check")
+                return False
+        elif self.kwargs.get("forecast_model", "arima") == "autoarima":
+            autoarima_trend = self.forecast_models.check_autoarima_trend(
+                monthly_data, current_price
+            )
+            logger.debug(f"AutoARIMA trend check: {autoarima_trend}")
+            if not autoarima_trend:
+                logger.info("Entry rejected - failed AutoARIMA trend check")
+                return False
+        elif self.kwargs.get("forecast_model", "arima") == "autoces":
+            autoces_trend = self.forecast_models.check_autoces_trend(
+                monthly_data, current_price
+            )
+            logger.debug(f"AutoCES trend check: {autoces_trend}")
+            if not autoces_trend:
+                logger.info("Entry rejected - failed AutoCES trend check")
+                return False
+        elif self.kwargs.get("forecast_model", "arima") == "nbeats":
+            nbeats_trend = self.forecast_models.check_nbeats_trend(monthly_data)
+            logger.debug(f"NBEATS trend check: {nbeats_trend}")
+            if not nbeats_trend:
+                logger.info("Entry rejected - failed NBEATS trend check")
+                return False
+        else:
+            logger.info("Entry rejected - unknown forecast model")
             return False
 
         return True
@@ -136,6 +163,8 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         self.technical_indicators = TechnicalIndicators()
         self.forecast_models = ForecastModels()
         self.kwargs = kwargs
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     def should_enter(self, strategy, manager, time) -> bool:
         time = pd.Timestamp(time)
@@ -198,12 +227,38 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
             return False
 
         # Check forecast models
-        arima_trend = self.forecast_models.check_arima_trend(
-            monthly_data, current_price
-        )
-        logger.debug(f"ARIMA trend check: {arima_trend}")
-        if not arima_trend:
-            logger.info("Entry rejected - failed ARIMA trend check")
+        if self.kwargs.get("forecast_model", "arima") == "arima":
+            arima_trend = self.forecast_models.check_arima_trend(
+                monthly_data, current_price
+            )
+            logger.debug(f"ARIMA trend check: {arima_trend}")
+            if not arima_trend:
+                logger.info("Entry rejected - failed ARIMA trend check")
+                return False
+        elif self.kwargs.get("forecast_model", "arima") == "autoarima":
+            autoarima_trend = self.forecast_models.check_autoarima_trend(
+                monthly_data, current_price
+            )
+            logger.debug(f"AutoARIMA trend check: {autoarima_trend}")
+            if not autoarima_trend:
+                logger.info("Entry rejected - failed AutoARIMA trend check")
+                return False
+        elif self.kwargs.get("forecast_model", "arima") == "autoces":
+            autoces_trend = self.forecast_models.check_autoces_trend(
+                monthly_data, current_price
+            )
+            logger.debug(f"AutoCES trend check: {autoces_trend}")
+            if not autoces_trend:
+                logger.info("Entry rejected - failed AutoCES trend check")
+                return False
+        elif self.kwargs.get("forecast_model", "arima") == "nbeats":
+            nbeats_trend = self.forecast_models.check_nbeats_trend(monthly_data)
+            logger.debug(f"NBEATS trend check: {nbeats_trend}")
+            if not nbeats_trend:
+                logger.info("Entry rejected - failed NBEATS trend check")
+                return False
+        else:
+            logger.info("Entry rejected - unknown forecast model")
             return False
 
         return True
