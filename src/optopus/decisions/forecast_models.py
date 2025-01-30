@@ -10,6 +10,7 @@ from statsforecast.models import (
 )
 from neuralforecast import NeuralForecast
 from neuralforecast.models import NBEATS
+from loguru import logger
 
 
 class ForecastModels:
@@ -168,18 +169,19 @@ class ForecastModels:
         from sklearn.preprocessing import StandardScaler
 
         # Copy data
-        monthly_data = monthly_data.copy()
-        monthly_data["Target"] = (
-            monthly_data["Close"].shift(-1) > monthly_data["Close"]
+        monthly_data = monthly_data.copy().to_frame()
+        logger.info(f"Monthly data: {monthly_data}")
+        monthly_data.columns = ['close']
+        latest_data = monthly_data[-1:]
+        logger.info(f"Latest data: {latest_data}")
+        monthly_data["target"] = (
+            monthly_data.shift(-1) > monthly_data
         ).astype(int)
         monthly_data = monthly_data.dropna()
-        monthly_data = monthly_data[
-            ["Open", "High", "Low", "Close", "Target", "Volume"]
-        ]
 
         # Create features and target
-        X = monthly_data.drop(columns=["Target"])
-        y = monthly_data["Target"]
+        X = monthly_data.drop(columns=["target"])
+        y = monthly_data["target"]
 
         # Initialize classifiers
         if classifiers is None:
@@ -195,27 +197,10 @@ class ForecastModels:
         if "gradient_boosting" in classifiers:
             models.append(make_pipeline(StandardScaler(), GradientBoostingClassifier()))
 
-        # Train and predict
-        def predict_next_direction(model, data):
-            """
-            Predict the direction of the next month's price movement
-            """
-            # Get the most recent data point
-            latest_data = data.iloc[-1].drop(["Target"])
-
-            # Reshape for prediction
-            latest_data = latest_data.values.reshape(1, -1)
-
-            # Make prediction
-            prediction = model.predict(latest_data)
-            # probability = model.predict_proba(latest_data)
-
-            return prediction[0]
-
         predictions = []
         for model in models:
             model.fit(X, y)
-            pred = predict_next_direction(model, monthly_data)
+            pred = model.predict(latest_data)[0]
             predictions.append(pred)
 
         # Return majority vote
