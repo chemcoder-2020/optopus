@@ -150,17 +150,17 @@ class ForecastModels:
             return predictions[-1] > current_price
 
     @staticmethod
-    def check_ML_trend(monthly_data, classifiers=None):
+    def check_ML_trend(monthly_data, classifier="random_forest"):
         """
-        Predict next month's direction using multiple machine learning classifiers.
+        Predict next month's direction using a machine learning classifier.
 
         Args:
             monthly_data: Pandas Series of monthly prices
-            classifiers: List of classifier names to use ('logistic', 'svm', 'random_forest')
-                        Defaults to using all available classifiers
+            classifier: Classifier to use ('logistic', 'svm', 'random_forest', 'gradient_boosting')
+                      Defaults to 'random_forest'
 
         Returns:
-            bool: True if majority of classifiers predict upward trend
+            bool: True if classifier predicts upward trend
         """
         from sklearn.linear_model import LogisticRegression
         from sklearn.svm import SVC
@@ -183,25 +183,16 @@ class ForecastModels:
         X = monthly_data.drop(columns=["target"])
         y = monthly_data["target"]
 
-        # Initialize classifiers
-        if classifiers is None:
-            classifiers = ["logistic", "svm", "random_forest", "gradient_boosting"]
+        # Initialize selected classifier
+        if classifier == "logistic":
+            model = make_pipeline(StandardScaler(), LogisticRegression())
+        elif classifier == "svm":
+            model = make_pipeline(StandardScaler(), SVC(probability=True))
+        elif classifier == "gradient_boosting":
+            model = make_pipeline(StandardScaler(), GradientBoostingClassifier())
+        else:  # default to random_forest
+            model = make_pipeline(StandardScaler(), RandomForestClassifier())
 
-        models = []
-        if "logistic" in classifiers:
-            models.append(make_pipeline(StandardScaler(), LogisticRegression()))
-        if "svm" in classifiers:
-            models.append(make_pipeline(StandardScaler(), SVC(probability=True)))
-        if "random_forest" in classifiers:
-            models.append(make_pipeline(StandardScaler(), RandomForestClassifier()))
-        if "gradient_boosting" in classifiers:
-            models.append(make_pipeline(StandardScaler(), GradientBoostingClassifier()))
-
-        predictions = []
-        for model in models:
-            model.fit(X, y)
-            pred = model.predict(latest_data)[0]
-            predictions.append(pred)
-
-        # Return majority vote
-        return sum(predictions) > len(predictions) / 2
+        # Train and predict
+        model.fit(X, y)
+        return model.predict(latest_data)[0] == 1
