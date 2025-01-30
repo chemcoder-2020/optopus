@@ -147,3 +147,52 @@ class ForecastModels:
             forecaster.fit(y=monthly_data.values)
             predictions = forecaster.predict(h=1)["mean"]
             return predictions[-1] > current_price
+
+    @staticmethod
+    def check_ML_trend(monthly_data, classifiers=None):
+        """
+        Predict next month's direction using multiple machine learning classifiers.
+        
+        Args:
+            monthly_data: Pandas Series of monthly prices
+            classifiers: List of classifier names to use ('logistic', 'svm', 'random_forest')
+                        Defaults to using all available classifiers
+        
+        Returns:
+            bool: True if majority of classifiers predict upward trend
+        """
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.svm import SVC
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.model_selection import train_test_split
+        import numpy as np
+        
+        # Create features and target
+        prices = monthly_data.values
+        X = np.array([prices[i-3:i] for i in range(3, len(prices))])
+        y = (prices[3:] > prices[2:-1]).astype(int)
+        
+        # Train/test split
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+        
+        # Initialize classifiers
+        if classifiers is None:
+            classifiers = ['logistic', 'svm', 'random_forest']
+            
+        models = []
+        if 'logistic' in classifiers:
+            models.append(LogisticRegression())
+        if 'svm' in classifiers:
+            models.append(SVC(probability=True))
+        if 'random_forest' in classifiers:
+            models.append(RandomForestClassifier())
+            
+        # Train and predict
+        predictions = []
+        for model in models:
+            model.fit(X_train, y_train)
+            pred = model.predict_proba([prices[-3:]])[0][1] > 0.5
+            predictions.append(pred)
+            
+        # Return majority vote
+        return sum(predictions) > len(predictions)/2
