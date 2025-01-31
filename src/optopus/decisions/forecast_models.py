@@ -165,6 +165,8 @@ class ForecastModels:
         from sklearn.linear_model import LogisticRegression
         from sklearn.svm import SVC
         from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+        from sklearn.gaussian_process import GaussianProcessClassifier
+        from sklearn.neural_network import MLPClassifier
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import StandardScaler
 
@@ -189,7 +191,11 @@ class ForecastModels:
         elif classifier == "svm":
             model = make_pipeline(StandardScaler(), SVC(probability=True))
         elif classifier == "gradient_boosting":
-            model = make_pipeline(StandardScaler(), GradientBoostingClassifier())
+            model = make_pipeline(StandardScaler(), GradientBoostingClassifier(n_estimators=400))
+        elif classifier == "gaussian_process":
+            model = make_pipeline(StandardScaler(), GaussianProcessClassifier())
+        elif classifier == "mlp":
+            model = make_pipeline(StandardScaler(), MLPClassifier(max_iter=100))
         else:  # default to random_forest
             model = make_pipeline(StandardScaler(), RandomForestClassifier())
 

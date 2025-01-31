@@ -136,6 +136,13 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             if not nbeats_trend:
                 logger.info("Entry rejected - failed NBEATS trend check")
                 return False
+        elif self.kwargs.get("forecast_model", "arima") in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp"]:
+            ml_trend = self.forecast_models.check_ML_trend(monthly_data, classifier=self.kwargs.get("forecast_model", "arima"))
+            logger.debug(f"ML trend ({self.kwargs.get('forecast_model', 'arima')}) check: {ml_trend}")
+            if not ml_trend:
+                logger.info(f"Entry rejected - failed ML trend ({self.kwargs.get('forecast_model', 'arima')}) check")
+                return False
+
         else:
             logger.info("Entry rejected - unknown forecast model")
             return False
