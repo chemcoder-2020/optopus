@@ -169,6 +169,7 @@ class ForecastModels:
         from sklearn.neural_network import MLPClassifier
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import StandardScaler
+        from sklearn.neighbors import KNeighborsClassifier
 
         # Copy data
         monthly_data = monthly_data.copy().to_frame()
@@ -196,6 +197,8 @@ class ForecastModels:
             model = make_pipeline(StandardScaler(), GaussianProcessClassifier())
         elif classifier == "mlp":
             model = make_pipeline(StandardScaler(), MLPClassifier(max_iter=100))
+        elif classifier == "knn":
+            model = make_pipeline(StandardScaler(), KNeighborsClassifier(2))
         else:  # default to random_forest
             model = make_pipeline(StandardScaler(), RandomForestClassifier())
 
