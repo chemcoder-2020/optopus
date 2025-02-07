@@ -180,8 +180,10 @@ class ProfitTargetCondition(ExitConditionChecker):
         Initialize the ProfitTargetCondition.
 
         Args:
-            profit_target (float): The profit target percentage.
-            **kwargs: Additional keyword arguments.
+            profit_target (float): The profit target percentage
+            window_size (int): Window size for median calculation (default: 10)
+            method (str): Median calculation method ('HampelFilter' or 'ContinuousMedian') (default: 'HampelFilter')
+            **kwargs: Additional keyword arguments for future extension
         """
         self.profit_target = profit_target
         self.median_calculator = MedianCalculator(kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"))
@@ -250,8 +252,10 @@ class StopLossCondition(ExitConditionChecker):
         Initialize the StopLossCondition.
 
         Args:
-            stop_loss (float): The stop loss percentage.
-            **kwargs: Additional keyword arguments.
+            stop_loss (float): The stop loss percentage
+            window_size (int): Window size for median calculation (default: 10)
+            method (str): Median calculation method ('HampelFilter' or 'ContinuousMedian') (default: 'HampelFilter')
+            **kwargs: Additional keyword arguments for future extension
         """
         self.stop_loss = stop_loss
         self.median_calculator = MedianCalculator(kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"))
@@ -378,9 +382,12 @@ class TrailingStopCondition(ExitConditionChecker):
         Initialize the TrailingStopCondition.
 
         Args:
-            trigger (float): The trigger percentage for the trailing stop.
-            stop_loss (float): The stop loss percentage.
-            **kwargs: Additional keyword arguments that will be set as attributes.
+            trigger (float): The trigger percentage for the trailing stop
+            stop_loss (float): The stop loss percentage
+            window_size (int): Window size for median calculation (default: 3)
+            method (str): Median calculation method ('HampelFilter' or 'ContinuousMedian') (default: 'HampelFilter')
+            exit_upon_positive_return (bool): Whether to exit only if return is positive (default: False)
+            **kwargs: Additional keyword arguments that will be set as attributes
         """
         self.trigger = trigger
         self.stop_loss = stop_loss
@@ -570,9 +577,11 @@ class DefaultExitCondition(ExitConditionChecker):
         Initialize the DefaultExitCondition.
 
         Args:
-            profit_target (float): The profit target percentage.
-            exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade.
-            **kwargs: Additional keyword arguments.
+            profit_target (float): The profit target percentage
+            exit_time_before_expiration (pd.Timedelta): The time before expiration to exit the trade
+            window_size (int): Window size for median calculation (default: 10)
+            method (str): Median calculation method ('HampelFilter' or 'ContinuousMedian') (default: 'HampelFilter')
+            **kwargs: Additional keyword arguments for future extension
         """
         profit_target_condition = ProfitTargetCondition(
             profit_target=profit_target, window_size=kwargs.get("window_size", 10), method=kwargs.get("method", "HampelFilter")
