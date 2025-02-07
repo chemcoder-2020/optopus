@@ -6,10 +6,14 @@ from .base_metric import BaseMetric
 class SharpeRatio(BaseMetric):
     """Calculates Sharpe ratio from daily returns with risk-free rate adjustment"""
 
-    def calculate(self, returns: np.ndarray, risk_free_rate: float = 0.0) -> dict:
+    def calculate(self, returns: np.ndarray, risk_free_rate: float = 0.0, window: int = 3) -> dict:
         if returns.size < 2:
             return {"sharpe_ratio": 0.0}
-
+        
+        # Apply rolling median
+        if returns.size >= window:
+            returns = np.array([np.median(window) for window in np.lib.stride_tricks.sliding_window_view(returns, window)])
+            
         excess_returns = returns - risk_free_rate / 252
         mean_return = np.mean(excess_returns)
         std_return = np.std(excess_returns, ddof=1)
@@ -41,6 +45,11 @@ class RiskOfRuin(BaseMetric):
         Returns:
             dict: Dictionary with risk_of_ruin percentage
         """
+        # Apply rolling median to returns
+        window_size = min(3, returns.size)  # Use smaller window if not enough data
+        if returns.size >= window_size:
+            returns = np.array([np.median(window) for window in np.lib.stride_tricks.sliding_window_view(returns, window_size)])
+            
         returns = returns / initial_balance
 
         if distribution == "normal":
@@ -69,8 +78,17 @@ class RiskOfRuin(BaseMetric):
 class MaxDrawdown(BaseMetric):
     """Calculates maximum drawdown from cumulative returns"""
     
-    def calculate(self, pl_curve: np.ndarray, allocation: float) -> dict:
+    def calculate(self, pl_curve: np.ndarray, allocation: float, window: int = 3) -> dict:
         if pl_curve.size == 0:
+            return {
+                "max_drawdown_dollars": 0.0,
+                "max_drawdown_percentage": 0.0
+            }
+
+        # Apply rolling median
+        window = min(window, pl_curve.size)  # Adjust window size if needed
+        if pl_curve.size >= window:
+            pl_curve = np.array([np.median(window) for window in np.lib.stride_tricks.sliding_window_view(pl_curve, window)])
             return {
                 "max_drawdown_dollars": 0.0,
                 "max_drawdown_percentage": 0.0
