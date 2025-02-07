@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import scipy.stats
-from typing import Any, Dict
+from typing import Any, Dict, Union
+from sktime.transformations.series.outlier_detection import HampelFilter
+from sktime.transformations.series.impute import Imputer
+import pandas as pd
 
 class BaseMetric(ABC):
     """Base class for all metric calculations"""
@@ -15,3 +18,9 @@ class BaseMetric(ABC):
     def safe_ratio(a: float, b: float) -> float:
         """Safe division handling zero denominator"""
         return a / b if b != 0 else 0.0
+    
+    @staticmethod
+    def detect_outliers(series: Union[np.ndarray, pd.Series], window_size: int) -> None:
+        pipe = HampelFilter(window_size=window_size) * Imputer(method="ffill")
+        series = pipe.fit_transform(series)
+        return series

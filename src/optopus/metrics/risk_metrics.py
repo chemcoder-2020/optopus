@@ -6,14 +6,16 @@ from .base_metric import BaseMetric
 class SharpeRatio(BaseMetric):
     """Calculates Sharpe ratio from daily returns with risk-free rate adjustment"""
 
-    def calculate(self, returns: np.ndarray, risk_free_rate: float = 0.0, window: int = 3) -> dict:
-        if returns.size < 2:
+    def calculate(
+        self, returns: np.ndarray, risk_free_rate: float = 0.0, window: int = 3
+    ) -> dict:
+
+        if returns.size < window + 1:
             return {"sharpe_ratio": 0.0}
-        
-        # Apply rolling median
-        if returns.size >= window:
-            returns = np.array([np.median(window) for window in np.lib.stride_tricks.sliding_window_view(returns, window)])
-            
+
+        returns = returns.copy()
+        returns = self.detect_outliers(returns, window_size=window)
+
         excess_returns = returns - risk_free_rate / 252
         mean_return = np.mean(excess_returns)
         std_return = np.std(excess_returns, ddof=1)
@@ -23,7 +25,7 @@ class SharpeRatio(BaseMetric):
 
 class RiskOfRuin(BaseMetric):
     """Calculates risk of ruin using Monte Carlo simulation"""
-    
+
     def calculate(
         self,
         returns: np.ndarray,
@@ -31,7 +33,7 @@ class RiskOfRuin(BaseMetric):
         num_simulations: int = 20000,
         num_steps: int = 252,
         drawdown_threshold_pct: float = 0.25,
-        distribution: str = "histogram"
+        distribution: str = "histogram",
     ) -> dict:
         """
         Args:
@@ -46,16 +48,16 @@ class RiskOfRuin(BaseMetric):
             dict: Dictionary with risk_of_ruin percentage
         """
         # Apply rolling median to returns
-        window_size = min(3, returns.size)  # Use smaller window if not enough data
-        if returns.size >= window_size:
-            returns = np.array([np.median(window) for window in np.lib.stride_tricks.sliding_window_view(returns, window_size)])
-            
+        window_size = min(10, returns.size)  # Use smaller window if not enough data
+        if returns.size >= window_size + 1:
+            returns = returns.copy()
+            returns = self.detect_outliers(returns, window_size=window_size)
+
         returns = returns / initial_balance
 
         if distribution == "normal":
             random_returns = np.random.normal(
-                np.mean(returns), np.std(returns), 
-                size=(num_simulations, num_steps)
+                np.mean(returns), np.std(returns), size=(num_simulations, num_steps)
             )
         elif distribution == "kde":
             kde = gaussian_kde(returns, bw_method="scott")
@@ -75,34 +77,30 @@ class RiskOfRuin(BaseMetric):
 
         return {"risk_of_ruin": float(ruin_count / num_simulations)}
 
+
 class MaxDrawdown(BaseMetric):
     """Calculates maximum drawdown from cumulative returns"""
-    
-    def calculate(self, pl_curve: np.ndarray, allocation: float, window: int = 3) -> dict:
-        if pl_curve.size == 0:
-            return {
-                "max_drawdown_dollars": 0.0,
-                "max_drawdown_percentage": 0.0
-            }
+
+    def calculate(
+        self, pl_curve: np.ndarray, allocation: float, window: int = 10
+    ) -> dict:
 
         # Apply rolling median
         window = min(window, pl_curve.size)  # Adjust window size if needed
-        if pl_curve.size >= window:
-            pl_curve = np.array([np.median(window) for window in np.lib.stride_tricks.sliding_window_view(pl_curve, window)])
-            return {
-                "max_drawdown_dollars": 0.0,
-                "max_drawdown_percentage": 0.0
-            }
+        if pl_curve.size < window + 1:
+            return {"max_drawdown_dollars": 0.0, "max_drawdown_percentage": 0.0}
+        pl_curve = pl_curve.copy()
+        pl_curve = self.detect_outliers(pl_curve, window_size=window)
 
         # Calculate running maximum
         peak = np.maximum.accumulate(pl_curve)
         # Calculate drawdown from peak
-        drawdown = (peak - pl_curve)
+        drawdown = peak - pl_curve
 
         # Find maximum drawdown
         max_drawdown_dollars = drawdown.max()
         max_drawdown_percentage = max_drawdown_dollars / allocation
-        
+
         return {
             "max_drawdown_dollars": float(max_drawdown_dollars),
             "max_drawdown_percentage": float(max_drawdown_percentage),

@@ -10,6 +10,9 @@ import datetime
 import pandas as pd
 from typing import Union, List
 from loguru import logger
+import numpy as np
+from sktime.transformations.series.outlier_detection import HampelFilter
+from sktime.transformations.series.impute import Imputer
 from ..utils.heapmedian import ContinuousMedian
 
 
@@ -30,6 +33,12 @@ class ExitConditionChecker(ABC):
             str: String representation of the exit condition checker.
         """
         return f"{self.__class__.__name__}()"
+    
+    @staticmethod
+    def detect_outliers(series: Union[np.ndarray, pd.Series], window_size: int) -> None:
+        pipe = HampelFilter(window_size=window_size) * Imputer(method="ffill")
+        series = pipe.fit_transform(series)
+        return series
 
     def update(self, **kwargs):
         """
