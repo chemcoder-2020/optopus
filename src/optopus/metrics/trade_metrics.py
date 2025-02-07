@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from typing import Union
 from .base_metric import BaseMetric
 
 
@@ -16,7 +18,7 @@ class WinRate(BaseMetric):
 class ProfitFactor(BaseMetric):
     """Calculates profit factor (gross profits / gross losses)"""
 
-    def calculate(self, returns, window: int = 10) -> dict:
+    def calculate(self, returns: Union[pd.Series, np.ndarray], window: int = 10) -> dict:
         if returns.size < window + 1:
             return {"profit_factor": 0.0}
 

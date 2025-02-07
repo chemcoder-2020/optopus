@@ -33,12 +33,6 @@ class ExitConditionChecker(ABC):
             str: String representation of the exit condition checker.
         """
         return f"{self.__class__.__name__}()"
-    
-    @staticmethod
-    def detect_outliers(series: Union[np.ndarray, pd.Series], window_size: int) -> None:
-        pipe = HampelFilter(window_length=window_size) * Imputer(method="ffill")
-        series = pipe.fit_transform(series)
-        return series
 
     def update(self, **kwargs):
         """
@@ -129,7 +123,7 @@ class MedianCalculator:
             if len(self.premiums) < self.window_size + 1:
                 return 0
             else:
-                return self.median_calculator.fit_transform(self.premiums)[-1]
+                return self.median_calculator.fit_transform(np.array(self.premiums))[-1][0]
 
     def update(self, **kwargs):
         """
