@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='optopus',
-    version='0.9.3-dev1',
+    version='0.9.3-dev2',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data={
@@ -36,6 +36,7 @@ setup(
         "configparser>=5.3.0",
         "statsforecast>=1.0.0",
         "neuralforecast>=1.0.0",
+        "sktime>=0.3.0",
     ],
     entry_points={
         'console_scripts': [

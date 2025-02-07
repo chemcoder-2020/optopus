@@ -20,12 +20,12 @@ from loguru import logger
 
 class ForecastModels:
     @staticmethod
-    def check_arima_trend(monthly_data, current_price, freq="M"):
+    def check_arima_trend(monthly_data, current_price, freq="M", order=(0, 1, 1), seasonal_order=(0, 1, 1)):
         """Check ARIMA forecast for upward trend"""
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=Warning)
             forecaster = StatsForecast(
-                models=[ARIMA(order=(0, 1, 1), seasonal_order=(0, 1, 1))],
+                models=[ARIMA(order=order, seasonal_order=seasonal_order)],
                 freq=freq,
             )
             sf_df = pd.DataFrame(
@@ -214,8 +214,6 @@ class ForecastModels:
     @staticmethod
     def check_seasonality_oscillator(
         monthly_data: pd.Series, 
-        threshold: float = 1.0,
-        seasonal_period: int = 12,
         lags: int = 3
     ) -> bool:
         """
@@ -223,8 +221,6 @@ class ForecastModels:
         
         Args:
             monthly_data: Pandas Series of monthly prices
-            threshold: Z-score threshold to consider significant (default: 1.0)
-            seasonal_period: Number of periods in seasonal cycle (default: 12)
             lags: Number of lags for differencing (default: 3)
             
         Returns:
@@ -240,12 +236,8 @@ class ForecastModels:
             
             # Fit and transform pipeline
             oscillator = pipe.fit_transform(monthly_data)
-            
-            # Calculate z-score of latest value
-            zscore = (oscillator[-1] - oscillator.mean()) / oscillator.std()
-            logger.info(f"Seasonality oscillator z-score: {zscore:.2f}")
-            
-            return zscore > threshold
+        
+            return oscillator.iloc[-1] > 0
             
         except Exception as e:
             logger.warning(f"Seasonality detection failed: {str(e)}")

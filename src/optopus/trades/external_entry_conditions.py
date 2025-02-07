@@ -108,7 +108,7 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         # Check forecast models
         if self.kwargs.get("forecast_model", "arima") == "arima":
             arima_trend = self.forecast_models.check_arima_trend(
-                monthly_data, current_price
+                monthly_data, current_price, order=self.kwargs.get("order", (0, 1, 1)), seasonal_order=self.kwargs.get("seasonal_order", (0, 1, 1))
             )
             logger.debug(f"ARIMA trend check: {arima_trend}")
             if not arima_trend:
@@ -136,11 +136,17 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             if not nbeats_trend:
                 logger.info("Entry rejected - failed NBEATS trend check")
                 return False
-        elif self.kwargs.get("forecast_model", "arima") in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp"]:
+        elif self.kwargs.get("forecast_model", "arima") in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp", "knn"]:
             ml_trend = self.forecast_models.check_ML_trend(monthly_data, classifier=self.kwargs.get("forecast_model", "arima"))
             logger.debug(f"ML trend ({self.kwargs.get('forecast_model', 'arima')}) check: {ml_trend}")
             if not ml_trend:
                 logger.info(f"Entry rejected - failed ML trend ({self.kwargs.get('forecast_model', 'arima')}) check")
+                return False
+        elif self.kwargs.get("forecast_model", "arima") == "oscillator":
+            oscillator_trend = self.forecast_models.check_seasonality_oscillator(monthly_data, lags=self.kwargs.get("oscillator_lags", 3))
+            logger.debug(f"Oscillator trend check: {oscillator_trend}")
+            if not oscillator_trend:
+                logger.info("Entry rejected - failed oscillator trend check")
                 return False
 
         else:
