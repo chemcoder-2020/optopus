@@ -36,7 +36,7 @@ class ExitConditionChecker(ABC):
     
     @staticmethod
     def detect_outliers(series: Union[np.ndarray, pd.Series], window_size: int) -> None:
-        pipe = HampelFilter(window_size=window_size) * Imputer(method="ffill")
+        pipe = HampelFilter(window_length=window_size) * Imputer(method="ffill")
         series = pipe.fit_transform(series)
         return series
 
@@ -82,15 +82,20 @@ class MedianCalculator:
         median_calculator (ContinuousMedian): Continuous median calculator.
     """
 
-    def __init__(self, window_size=5):
+    def __init__(self, window_size=5, method="ContinuousMedian"):
         """
         Initialize the MedianCalculator.
 
         Args:
             window_size (int): The size of the rolling window.
         """
-        self.median_calculator = ContinuousMedian()
         self.window_size = window_size
+        self.method = method
+        if method == "ContinuousMedian":
+            self.median_calculator = ContinuousMedian()
+        else:
+            self.median_calculator = HampelFilter(window_length=window_size) * Imputer(method="ffill")
+        
         self.premiums = []
 
     def add_premium(self, mark):
@@ -100,10 +105,16 @@ class MedianCalculator:
         Args:
             mark (float): The new premium.
         """
-        self.median_calculator.add(mark)
+        if self.method == "ContinuousMedian":
+            self.median_calculator.add(mark)
         self.premiums.append(mark)
-        if len(self.premiums) > self.window_size:
-            self.median_calculator.remove(self.premiums.pop(0))
+        
+        if self.method == "ContinuousMedian":
+            if len(self.premiums) > self.window_size:
+                self.median_calculator.remove(self.premiums.pop(0))
+        else:
+            if len(self.premiums) > self.window_size + 1:
+                self.premiums.pop(0)
 
     def get_median(self):
         """
@@ -112,7 +123,13 @@ class MedianCalculator:
         Returns:
             float: The current median.
         """
-        return self.median_calculator.get_median()
+        if self.method == "ContinuousMedian":
+            return self.median_calculator.get_median()
+        else:
+            if len(self.premiums) < self.window_size + 1:
+                return 0
+            else:
+                return self.median_calculator.fit_transform(self.premiums)[-1]
 
     def update(self, **kwargs):
         """
@@ -126,7 +143,10 @@ class MedianCalculator:
             # Adjust the window size while maintaining existing data
             if new_window_size < self.window_size:
                 # Remove oldest entries if new window is smaller
-                self.premiums = self.premiums[-new_window_size:]
+                if self.method == "ContinuousMedian":
+                    self.premiums = self.premiums[-new_window_size:]
+                else:
+                    self.premiums = self.premiums[-new_window_size-1:]
             self.window_size = new_window_size
 
     def get_median_return_percentage(self, strategy):
@@ -164,7 +184,7 @@ class ProfitTargetCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments.
         """
         self.profit_target = profit_target
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 3))
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"))
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -234,7 +254,7 @@ class StopLossCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments.
         """
         self.stop_loss = stop_loss
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 3))
+        self.median_calculator = MedianCalculator(kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"))
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -366,6 +386,8 @@ class TrailingStopCondition(ExitConditionChecker):
         self.stop_loss = stop_loss
         self.median_window = kwargs.get("window_size", 3)
         self.median_calculator = MedianCalculator(self.median_window)
+        self.median_method = kwargs.get("method", "HampelFilter")
+        self.median_calculator = MedianCalculator(self.median_window, self.median_method)
         self.highest_return = 0
         self.kwargs = kwargs
         
@@ -553,7 +575,7 @@ class DefaultExitCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments.
         """
         profit_target_condition = ProfitTargetCondition(
-            profit_target=profit_target, window_size=kwargs.get("window_size", 5)
+            profit_target=profit_target, window_size=kwargs.get("window_size", 10), method=kwargs.get("method", "HampelFilter")
         )
         time_based_condition = TimeBasedCondition(
             exit_time_before_expiration=exit_time_before_expiration

@@ -16,7 +16,7 @@ class WinRate(BaseMetric):
 class ProfitFactor(BaseMetric):
     """Calculates profit factor (gross profits / gross losses)"""
 
-    def calculate(self, returns: np.ndarray, window: int = 10) -> dict:
+    def calculate(self, returns, window: int = 10) -> dict:
         if returns.size < window + 1:
             return {"profit_factor": 0.0}
 

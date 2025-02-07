@@ -21,6 +21,6 @@ class BaseMetric(ABC):
     
     @staticmethod
     def detect_outliers(series: Union[np.ndarray, pd.Series], window_size: int) -> None:
-        pipe = HampelFilter(window_size=window_size) * Imputer(method="ffill")
+        pipe = HampelFilter(window_length=window_size) * Imputer(method="ffill")
         series = pipe.fit_transform(series)
         return series
