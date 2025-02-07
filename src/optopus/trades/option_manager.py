@@ -696,30 +696,43 @@ class OptionBacktester:
         metrics = self.calculate_performance_metrics()
         if metrics:
             print("\nPerformance Summary:")
-            print(f"Sharpe Ratio: {metrics['sharpe_ratio']:.2f}")
-            print(f"Profit Factor: {metrics['profit_factor']:.2f}")
-            print(f"CAGR: {metrics['cagr']:.2%}")
-            print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
-            print(
-                f"Average Monthly P/L (Non-Zero Months): ${metrics['avg_monthly_pl_nonzero']:.2f}"
-            )
-            print(f"Average Return over Risk: {metrics['return_over_risk']:.2%}")
-            print(
-                f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}"
-            )
-            print(
-                f"Probability of Positive Monthly Closed P/L: {metrics['probability_of_positive_monthly_closed_pl']:.2%}"
-            )
-            print(f"Win Rate: {metrics['win_rate']:.2%}")
+            if metrics.get('sharpe_ratio') is not None:
+                print(f"Sharpe Ratio: {metrics['sharpe_ratio']:.2f}")
+            if metrics.get('profit_factor') is not None:
+                print(f"Profit Factor: {metrics['profit_factor']:.2f}")
+            if metrics.get('cagr') is not None:
+                print(f"CAGR: {metrics['cagr']:.2%}")
+            if metrics.get('avg_monthly_pl') is not None:
+                print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
+            if metrics.get('avg_monthly_pl_nonzero') is not None:
+                print(
+                    f"Average Monthly P/L (Non-Zero Months): ${metrics['avg_monthly_pl_nonzero']:.2f}"
+                )
+            if metrics.get('return_over_risk') is not None:
+                print(f"Average Return over Risk: {metrics['return_over_risk']:.2%}")
+            if metrics.get('probability_of_positive_monthly_pl') is not None:
+                print(
+                    f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}"
+                )
+            if metrics.get('probability_of_positive_monthly_closed_pl') is not None:
+                print(
+                    f"Probability of Positive Monthly Closed P/L: {metrics['probability_of_positive_monthly_closed_pl']:.2%}"
+                )
+            if metrics.get('win_rate') is not None:
+                print(f"Win Rate: {metrics['win_rate']:.2%}")
             print(
                 f"Kelly Criterion Recommendation: {self.calculate_kelly_criterion():.2%}"
             )
-            print(f"Risk of Ruin: {metrics['risk_of_ruin']:.2%}")
-            print(f"Max Drawdown (Dollars): ${metrics['max_drawdown_dollars']:.2f}")
-            print(
-                f"Max Drawdown (Percentage): {metrics['max_drawdown_percentage']:.2%}"
-            )
-            print(f"Average Days in Trade: {metrics['average_dit']:.2f}")
+            if metrics.get('risk_of_ruin') is not None:
+                print(f"Risk of Ruin: {metrics['risk_of_ruin']:.2%}")
+            if metrics.get('max_drawdown_dollars') is not None:
+                print(f"Max Drawdown (Dollars): ${metrics['max_drawdown_dollars']:.2f}")
+            if metrics.get('max_drawdown_percentage') is not None:
+                print(
+                    f"Max Drawdown (Percentage): {metrics['max_drawdown_percentage']:.2%}"
+                )
+            if metrics.get('average_dit') is not None:
+                print(f"Average Days in Trade: {metrics['average_dit']:.2f}")
 
             # Print time range of closed positions
             if self.closed_trades:
