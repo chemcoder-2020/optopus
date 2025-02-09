@@ -223,7 +223,7 @@ class OptionBacktester:
         self.active_trades.remove(trade)
         self.closed_trades.append(trade)
 
-        pl_change = trade.total_pl()
+        pl_change = trade.filter_pl
         recovered_capital = trade.get_required_capital()
 
         self.capital += pl_change
@@ -288,7 +288,7 @@ class OptionBacktester:
             float: Total profit and loss.
         """
         return sum(
-            trade.total_pl() for trade in self.active_trades + self.closed_trades
+            trade.filter_pl for trade in self.active_trades + self.closed_trades
         )
 
     def get_closed_pl(self) -> float:
@@ -298,7 +298,7 @@ class OptionBacktester:
         Returns:
             float: Profit and loss from closed trades.
         """
-        return sum(trade.total_pl() for trade in self.closed_trades)
+        return sum(trade.filter_pl for trade in self.closed_trades)
 
     def get_open_positions(self) -> int:
         """
@@ -413,7 +413,7 @@ class OptionBacktester:
         cumulative_pl = 0
 
         for trade in self.closed_trades:
-            pl = trade.total_pl()
+            pl = trade.filter_pl
             cumulative_pl += pl
 
             trade_data = {

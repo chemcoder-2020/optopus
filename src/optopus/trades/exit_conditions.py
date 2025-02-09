@@ -88,8 +88,10 @@ class MedianCalculator:
         if method == "ContinuousMedian":
             self.median_calculator = ContinuousMedian()
         else:
-            self.median_calculator = HampelFilter(window_length=window_size) * Imputer(method="ffill")
-        
+            self.median_calculator = HampelFilter(window_length=window_size) * Imputer(
+                method="ffill"
+            )
+
         self.premiums = []
 
     def add_premium(self, mark):
@@ -102,7 +104,7 @@ class MedianCalculator:
         if self.method == "ContinuousMedian":
             self.median_calculator.add(mark)
         self.premiums.append(mark)
-        
+
         if self.method == "ContinuousMedian":
             if len(self.premiums) > self.window_size:
                 self.median_calculator.remove(self.premiums.pop(0))
@@ -123,7 +125,9 @@ class MedianCalculator:
             if len(self.premiums) < self.window_size + 1:
                 return 0
             else:
-                return self.median_calculator.fit_transform(np.array(self.premiums))[-1][0]
+                return self.median_calculator.fit_transform(np.array(self.premiums))[
+                    -1
+                ][0]
 
     def update(self, **kwargs):
         """
@@ -132,15 +136,15 @@ class MedianCalculator:
         Args:
             **kwargs: Keyword arguments for the attributes to update.
         """
-        if 'window_size' in kwargs:
-            new_window_size = kwargs['window_size']
+        if "window_size" in kwargs:
+            new_window_size = kwargs["window_size"]
             # Adjust the window size while maintaining existing data
             if new_window_size < self.window_size:
                 # Remove oldest entries if new window is smaller
                 if self.method == "ContinuousMedian":
                     self.premiums = self.premiums[-new_window_size:]
                 else:
-                    self.premiums = self.premiums[-new_window_size-1:]
+                    self.premiums = self.premiums[-new_window_size - 1 :]
             self.window_size = new_window_size
 
     def get_median_return_percentage(self, strategy):
@@ -154,13 +158,22 @@ class MedianCalculator:
             float: The median return percentage or direct return if no method specified
         """
         current_return = strategy.return_percentage()
-        
+
         if not self.method:  # Handle empty/null method case
+            strategy.filter_return_percentage = current_return
+            strategy.filter_pl = strategy.total_pl()
+            strategy.premium_log = self.premiums.copy()
             return current_return
-            
+
+        if self.premiums == []:  # take care of first update when adding spread
+            self.add_premium(0)
         self.add_premium(current_return)
         median_return = self.get_median()
         strategy.premium_log = self.premiums.copy()
+        strategy.filter_return_percentage = median_return
+        strategy.filter_pl = (
+            strategy.entry_net_premium * strategy.contracts
+        ) * strategy.filter_return_percentage
         return median_return
 
 
@@ -184,7 +197,9 @@ class ProfitTargetCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments for future extension
         """
         self.profit_target = profit_target
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"))
+        self.median_calculator = MedianCalculator(
+            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter")
+        )
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -205,8 +220,8 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         profit_target = float(kwargs.get("profit_target", self.profit_target))
         self.profit_target = profit_target
-        if 'window_size' in kwargs:
-            self.median_calculator.update(window_size=kwargs['window_size'])
+        if "window_size" in kwargs:
+            self.median_calculator.update(window_size=kwargs["window_size"])
 
     def should_exit(
         self,
@@ -256,7 +271,9 @@ class StopLossCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments for future extension
         """
         self.stop_loss = stop_loss
-        self.median_calculator = MedianCalculator(kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"))
+        self.median_calculator = MedianCalculator(
+            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter")
+        )
         self.kwargs = kwargs
 
     def __repr__(self):
@@ -277,8 +294,8 @@ class StopLossCondition(ExitConditionChecker):
         """
         stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
         self.stop_loss = stop_loss
-        if 'window_size' in kwargs:
-            self.median_calculator.update(window_size=kwargs['window_size'])
+        if "window_size" in kwargs:
+            self.median_calculator.update(window_size=kwargs["window_size"])
 
     def should_exit(
         self,
@@ -392,10 +409,12 @@ class TrailingStopCondition(ExitConditionChecker):
         self.median_window = kwargs.get("window_size", 10)
         self.median_calculator = MedianCalculator(self.median_window)
         self.median_method = kwargs.get("method", "HampelFilter")
-        self.median_calculator = MedianCalculator(self.median_window, self.median_method)
+        self.median_calculator = MedianCalculator(
+            self.median_window, self.median_method
+        )
         self.highest_return = 0
         self.kwargs = kwargs
-        
+
         # Set all kwargs as attributes
         for key, value in kwargs.items():
             if key != "window_size":
@@ -421,8 +440,8 @@ class TrailingStopCondition(ExitConditionChecker):
         stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
         self.trigger = trigger
         self.stop_loss = stop_loss
-        if 'window_size' in kwargs:
-            self.median_calculator.update(window_size=kwargs['window_size'])
+        if "window_size" in kwargs:
+            self.median_calculator.update(window_size=kwargs["window_size"])
 
     def should_exit(
         self,
@@ -449,7 +468,9 @@ class TrailingStopCondition(ExitConditionChecker):
         self.highest_return = max(self.highest_return, current_median_return)
 
         if self.highest_return >= self.trigger:
-            main_condition = (self.highest_return - current_return) >= self.stop_loss and (
+            main_condition = (
+                self.highest_return - current_return
+            ) >= self.stop_loss and (
                 self.highest_return - current_median_return
             ) >= self.stop_loss
 
@@ -582,7 +603,9 @@ class DefaultExitCondition(ExitConditionChecker):
             **kwargs: Additional keyword arguments for future extension
         """
         profit_target_condition = ProfitTargetCondition(
-            profit_target=profit_target, window_size=kwargs.get("window_size", 10), method=kwargs.get("method", "HampelFilter")
+            profit_target=profit_target,
+            window_size=kwargs.get("window_size", 10),
+            method=kwargs.get("method", "HampelFilter"),
         )
         time_based_condition = TimeBasedCondition(
             exit_time_before_expiration=exit_time_before_expiration

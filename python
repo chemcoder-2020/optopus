@@ -1,6 +1,6 @@
 # src/optopus/__init__.py
 # This file initializes the optopus package.
-__version__ = "0.9.3-dev3"
+__version__ = "0.9.3-dev4"
 # src/optopus/brokers/__init__.py
 # This file initializes the brokers package.
 # src/optopus/brokers/schwab/__init__.py
