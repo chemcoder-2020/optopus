@@ -151,9 +151,13 @@ class MedianCalculator:
             strategy (OptionStrategy): The option strategy to calculate the return percentage for.
 
         Returns:
-            float: The median return percentage.
+            float: The median return percentage or direct return if no method specified
         """
         current_return = strategy.return_percentage()
+        
+        if not self.method:  # Handle empty/null method case
+            return current_return
+            
         self.add_premium(current_return)
         median_return = self.get_median()
         strategy.premium_log = self.premiums.copy()
