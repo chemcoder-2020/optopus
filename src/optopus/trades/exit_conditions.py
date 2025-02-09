@@ -378,14 +378,14 @@ class TrailingStopCondition(ExitConditionChecker):
         Args:
             trigger (float): The trigger percentage for the trailing stop
             stop_loss (float): The stop loss percentage
-            window_size (int): Window size for median calculation (default: 3)
+            window_size (int): Window size for median calculation (default: 10)
             method (str): Median calculation method ('HampelFilter' or 'ContinuousMedian') (default: 'HampelFilter')
             exit_upon_positive_return (bool): Whether to exit only if return is positive (default: False)
             **kwargs: Additional keyword arguments that will be set as attributes
         """
         self.trigger = trigger
         self.stop_loss = stop_loss
-        self.median_window = kwargs.get("window_size", 3)
+        self.median_window = kwargs.get("window_size", 10)
         self.median_calculator = MedianCalculator(self.median_window)
         self.median_method = kwargs.get("method", "HampelFilter")
         self.median_calculator = MedianCalculator(self.median_window, self.median_method)
