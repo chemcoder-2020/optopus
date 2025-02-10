@@ -212,7 +212,7 @@ class VerticalSpread(OptionStrategy):
             name='P/L Curve',
             line=dict(color='royalblue', width=3),
             hovertemplate="Price: %{x}<br>P/L: %{y}"
-        )
+        ))
 
         # Add breakeven line
         fig.add_shape(type="line",
