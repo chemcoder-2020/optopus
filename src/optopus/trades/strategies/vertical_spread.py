@@ -27,12 +27,12 @@ class VerticalSpread(OptionStrategy):
         leg_ratio: int = 1,
         commission: float = 0.5,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
-            'class': DefaultExitCondition,
-            'params': {
-                'profit_target': 40,
-                'exit_time_before_expiration': Timedelta(minutes=15),
-                'window_size': 5
-            }
+            "class": DefaultExitCondition,
+            "params": {
+                "profit_target": 40,
+                "exit_time_before_expiration": Timedelta(minutes=15),
+                "window_size": 5,
+            },
         },
         **kwargs,
     ):
@@ -53,7 +53,7 @@ class VerticalSpread(OptionStrategy):
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
             commission (float, optional): Commission per contract per leg.
-            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional):
                 The exit condition scheme to use. Can be:
                 - An instance of ExitConditionChecker
                 - A ExitConditionChecker class (will be instantiated with default params)
@@ -166,7 +166,7 @@ class VerticalSpread(OptionStrategy):
 
     def plot_risk_profile(self):
         """Plot the risk profile curve for the vertical spread strategy using Plotly.
-        
+
         Shows the profit/loss diagram with breakeven points and key levels marked.
         """
         # Get strategy parameters
@@ -174,76 +174,103 @@ class VerticalSpread(OptionStrategy):
         long_leg = self.legs[0]
         short_leg = self.legs[1]
         spread_width = abs(long_leg.strike - short_leg.strike)
+        current_underlying_price = self.underlying_last
         is_call = long_leg.option_type == "CALL"
         is_credit = self.strategy_side == "CREDIT"
 
         # Generate price range for underlying
         min_strike = min(long_leg.strike, short_leg.strike)
         max_strike = max(long_leg.strike, short_leg.strike)
-        price_range = np.linspace(min_strike - spread_width, max_strike + spread_width, 100)
+        price_range = np.linspace(
+            min_strike - spread_width, max_strike + spread_width, 100
+        )
 
         # Calculate profit/loss for each price point
         pnl = []
         for price in price_range:
             if is_call:
                 long_payoff = max(price - long_leg.strike, 0)
-                short_payoff = max(short_leg.strike - price, 0)
+                short_payoff = max(price - short_leg.strike, 0)
             else:
-                long_payoff = - min((long_leg.strike - price), 0)
-                short_payoff = min((short_leg.strike - price), 0)
+                long_payoff = min((price - long_leg.strike), 0)
+                short_payoff = min((price - short_leg.strike), 0)
 
-            net_payoff = (long_payoff + short_payoff + entry_premium) * 100 * self.contracts
+            net_payoff = (
+                (-long_payoff + short_payoff + entry_premium) * 100 * self.contracts
+            )
             pnl.append(net_payoff)
 
         # Calculate breakeven price
         if is_call:
-            breakeven = short_leg.strike + entry_premium if is_credit else long_leg.strike + entry_premium
+            breakeven = (
+                short_leg.strike + entry_premium
+                if is_credit
+                else long_leg.strike + entry_premium
+            )
         else:
-            breakeven = short_leg.strike - entry_premium if is_credit else long_leg.strike - entry_premium
+            breakeven = (
+                short_leg.strike - entry_premium
+                if is_credit
+                else long_leg.strike - entry_premium
+            )
 
         # Create plot
         fig = go.Figure()
-        
+
         # Add P/L curve
-        fig.add_trace(go.Scatter(
-            x=price_range,
-            y=pnl,
-            mode='lines',
-            name='P/L Curve',
-            line=dict(color='royalblue', width=3),
-            hovertemplate="Price: %{x}<br>P/L: %{y}"
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=price_range,
+                y=pnl,
+                mode="lines",
+                name="P/L Curve",
+                line=dict(color="royalblue", width=3),
+                hovertemplate="Price: %{x}<br>P/L: %{y}",
+            )
+        )
 
         # Add breakeven line
-        fig.add_shape(type="line",
-            x0=breakeven, y0=min(pnl),
-            x1=breakeven, y1=max(pnl),
+        fig.add_shape(
+            type="line",
+            x0=breakeven,
+            y0=min(pnl),
+            x1=breakeven,
+            y1=max(pnl),
             line=dict(color="red", dash="dot"),
-            name='Breakeven'
+            name="Breakeven",
         )
 
         # Add strike lines
-        fig.add_shape(type="line",
-            x0=long_leg.strike, y0=min(pnl),
-            x1=long_leg.strike, y1=max(pnl),
+        fig.add_shape(
+            type="line",
+            x0=long_leg.strike,
+            y0=min(pnl),
+            x1=long_leg.strike,
+            y1=max(pnl),
             line=dict(color="grey", dash="dashdot"),
-            name='Long Strike'
+            name="Long Strike",
         )
-        fig.add_shape(type="line",
-            x0=short_leg.strike, y0=min(pnl),
-            x1=short_leg.strike, y1=max(pnl),
+        fig.add_shape(
+            type="line",
+            x0=short_leg.strike,
+            y0=min(pnl),
+            x1=short_leg.strike,
+            y1=max(pnl),
             line=dict(color="grey", dash="dashdot"),
-            name='Short Strike'
+            name="Short Strike",
         )
 
         # Add annotations
-        fig.add_annotation(x=breakeven, y=0,
+        fig.add_annotation(
+            x=breakeven,
+            y=0,
             text=f"Breakeven: {breakeven:.2f}",
             showarrow=True,
             arrowhead=1,
             ax=0,
-            ay=-40)
-            
+            ay=-40,
+        )
+
         fig.update_layout(
             title=f"{self.strategy_type} Risk Profile ({self.strategy_side})",
             xaxis_title="Underlying Price",
@@ -251,7 +278,7 @@ class VerticalSpread(OptionStrategy):
             hovermode="x unified",
             showlegend=True,
             margin=dict(l=50, r=50, b=50, t=50),
-            height=600
+            height=600,
         )
 
         return fig.show()
