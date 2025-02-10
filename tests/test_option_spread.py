@@ -42,6 +42,11 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.entry_bid, vertical_spread.legs[1].entry_bid - vertical_spread.legs[0].entry_ask)
         self.assertEqual(len(vertical_spread.legs), 2)
         self.assertEqual(vertical_spread.strategy_type, "Vertical Spread")
+        import time
+        t0 = time.time()
+        vertical_spread.calculate_bid_ask()
+        t1 = time.time()
+        print(t1 - t0)
 
     def test_iron_condor_creation(self):
         iron_condor = IronCondor.create_iron_condor(

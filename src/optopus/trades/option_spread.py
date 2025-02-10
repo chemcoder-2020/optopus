@@ -640,53 +640,31 @@ class OptionStrategy:
             For a credit spread, both values will be positive (you receive a credit).
             For a debit spread, both values will be negative (you pay a debit).
         """
-        # Vectorized calculation using numpy
-        bids = np.array([leg.current_bid or 0 for leg in self.legs])
-        asks = np.array([leg.current_ask or 0 for leg in self.legs])
-        ratios = np.array(self.leg_ratios)
-        multipliers = np.where(
-            [leg.position_side == "SELL" for leg in self.legs], 1, -1
-        )
 
-        # Calculate bid/ask contributions simultaneously
-        bid_contributions = np.where(multipliers == 1, bids, -asks) * ratios
-        ask_contributions = np.where(multipliers == 1, asks, -bids) * ratios
+        strategy_bid = 0
+        strategy_ask = 0
 
-        strategy_bid = np.abs(bid_contributions.sum())
-        strategy_ask = np.abs(ask_contributions.sum())
+        for leg, ratio in zip(self.legs, self.leg_ratios):
+            if leg.current_bid is None or leg.current_ask is None:
+                continue
+
+            if leg.position_side == "BUY":
+                # When buying, we pay the ask and receive the bid
+                strategy_bid -= leg.current_ask * ratio  # Cost (negative)
+                strategy_ask -= leg.current_bid * ratio  # Cost (negative)
+            elif leg.position_side == "SELL":
+                # When selling, we receive the bid and pay the ask
+                strategy_bid += leg.current_bid * ratio  # Credit (positive)
+                strategy_ask += leg.current_ask * ratio  # Credit (positive)
+
+        strategy_bid = abs(strategy_bid)
+        strategy_ask = abs(strategy_ask)
 
         # Sort and cap values
         strategy_bid, strategy_ask = sorted([strategy_bid, strategy_ask])
         if hasattr(self, "max_exit_net_premium"):
             strategy_bid = min(strategy_bid, self.max_exit_net_premium)
             strategy_ask = min(strategy_ask, self.max_exit_net_premium)
-
-        return strategy_bid, strategy_ask
-
-    def calculate_bid_ask_vectorized(self) -> Tuple[float, float]:
-        """
-        Optimized vectorized version of calculate_bid_ask using full array operations.
-        """
-        # Collect all leg data into numpy arrays
-        bids = np.array([leg.current_bid or 0 for leg in self.legs])
-        asks = np.array([leg.current_ask or 0 for leg in self.legs])
-        ratios = np.array(self.leg_ratios)
-        position_multipliers = np.array(
-            [1 if leg.position_side == "SELL" else -1 for leg in self.legs]
-        )
-
-        # Vectorized calculations
-        bid_ask_matrix = np.column_stack((bids, asks))
-        weighted_values = bid_ask_matrix * ratios[:, None] * position_multipliers[:, None]
-        
-        strategy_values = np.abs(weighted_values.sum(axis=0))
-        strategy_bid, strategy_ask = sorted(strategy_values)
-
-        # Apply max premium cap if exists
-        if hasattr(self, "max_exit_net_premium"):
-            cap = self.max_exit_net_premium
-            strategy_bid = min(strategy_bid, cap)
-            strategy_ask = min(strategy_ask, cap)
 
         return strategy_bid, strategy_ask
 
