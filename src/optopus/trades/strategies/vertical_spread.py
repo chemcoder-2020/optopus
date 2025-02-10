@@ -177,12 +177,13 @@ class VerticalSpread(OptionStrategy):
         current_underlying_price = self.underlying_last
         is_call = long_leg.option_type == "CALL"
         is_credit = self.strategy_side == "CREDIT"
+        commission = - self.calculate_total_commission()
 
         # Generate price range for underlying
         min_strike = min(long_leg.strike, short_leg.strike)
         max_strike = max(long_leg.strike, short_leg.strike)
         price_range = np.linspace(
-            min_strike - spread_width, max_strike + spread_width, 100
+            min_strike - 2 * spread_width, max_strike + 2 * spread_width, 100
         )
 
         # Calculate profit/loss for each price point
@@ -197,7 +198,7 @@ class VerticalSpread(OptionStrategy):
 
             net_payoff = (
                 (-long_payoff + short_payoff + entry_premium) * 100 * self.contracts
-            )
+            ) - commission
             pnl.append(net_payoff)
 
         # Calculate breakeven price
@@ -206,13 +207,13 @@ class VerticalSpread(OptionStrategy):
                 short_leg.strike + entry_premium
                 if is_credit
                 else long_leg.strike + entry_premium
-            )
+            ) - commission
         else:
             breakeven = (
                 short_leg.strike - entry_premium
                 if is_credit
                 else long_leg.strike - entry_premium
-            )
+            ) - commission
 
         # Create plot
         fig = go.Figure()
@@ -227,17 +228,6 @@ class VerticalSpread(OptionStrategy):
                 line=dict(color="royalblue", width=3),
                 hovertemplate="Price: %{x}<br>P/L: %{y}",
             )
-        )
-
-        # Add breakeven line
-        fig.add_shape(
-            type="line",
-            x0=breakeven,
-            y0=min(pnl),
-            x1=breakeven,
-            y1=max(pnl),
-            line=dict(color="red", dash="dot"),
-            name="Breakeven",
         )
 
         # Add strike lines
@@ -259,22 +249,22 @@ class VerticalSpread(OptionStrategy):
             line=dict(color="grey", dash="dashdot"),
             name="Short Strike",
         )
-        # Add current price line
-        fig.add_shape(
-            type="line",
-            x0=current_underlying_price,
-            y0=min(pnl),
-            x1=current_underlying_price,
-            y1=max(pnl),
-            line=dict(color="green", dash="dot"),
-            name="Current Price",
-        )
 
         # Add annotations
         fig.add_annotation(
             x=breakeven,
             y=0,
             text=f"Breakeven: {breakeven:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=-40,
+        )
+
+        fig.add_annotation(
+            x=current_underlying_price,
+            y=0,
+            text=f"Current Price: {current_underlying_price:.2f}",
             showarrow=True,
             arrowhead=1,
             ax=0,
