@@ -178,6 +178,7 @@ class VerticalSpread(OptionStrategy):
         is_call = long_leg.option_type == "CALL"
         is_credit = self.strategy_side == "CREDIT"
         commission = - self.calculate_total_commission()
+        current_pl = self.filter_pl
 
         # Generate price range for underlying
         min_strike = min(long_leg.strike, short_leg.strike)
@@ -207,13 +208,13 @@ class VerticalSpread(OptionStrategy):
                 short_leg.strike + entry_premium
                 if is_credit
                 else long_leg.strike + entry_premium
-            ) - commission
+            ) - commission / 100
         else:
             breakeven = (
                 short_leg.strike - entry_premium
                 if is_credit
                 else long_leg.strike - entry_premium
-            ) - commission
+            ) - commission / 100
 
         # Create plot
         fig = go.Figure()
@@ -263,7 +264,7 @@ class VerticalSpread(OptionStrategy):
 
         fig.add_annotation(
             x=current_underlying_price,
-            y=0,
+            y=current_pl,
             text=f"Current Price: {current_underlying_price:.2f}",
             showarrow=True,
             arrowhead=1,
