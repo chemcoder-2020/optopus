@@ -186,13 +186,13 @@ class VerticalSpread(OptionStrategy):
         pnl = []
         for price in price_range:
             if is_call:
-                long_payoff = max(price - long_leg.strike, 0) * (1 if long_leg.position_side == "BUY" else -1)
-                short_payoff = max(price - short_leg.strike, 0) * (1 if short_leg.position_side == "BUY" else -1)
+                long_payoff = max(price - long_leg.strike, 0)
+                short_payoff = max(short_leg.strike - price, 0)
             else:
-                long_payoff = max(long_leg.strike - price, 0) * (1 if long_leg.position_side == "BUY" else -1)
-                short_payoff = max(short_leg.strike - price, 0) * (1 if short_leg.position_side == "BUY" else -1)
-                
-            net_payoff = (long_payoff + short_payoff - entry_premium) * 100 * self.contracts
+                long_payoff = - min((long_leg.strike - price), 0)
+                short_payoff = min((short_leg.strike - price), 0)
+
+            net_payoff = (long_payoff + short_payoff + entry_premium) * 100 * self.contracts
             pnl.append(net_payoff)
 
         # Calculate breakeven price
