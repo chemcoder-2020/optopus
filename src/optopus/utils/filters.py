@@ -4,11 +4,12 @@ import numpy as np
 class HampelFilterNumpy:
     """Scikit-learn style Hampel filter wrapper for the NumPy implementation."""
 
-    def __init__(self, window_size=10, n_sigma=3, k=1.4826, max_iterations=5):
+    def __init__(self, window_size=10, n_sigma=3, k=1.4826, max_iterations=5, replace_with_na=False):
         self.window_size = window_size
         self.n_sigma = n_sigma
         self.k = k
         self.max_iterations = max_iterations
+        self.replace_with_na = replace_with_na
 
     def fit(self, X, y=None):
         """No fitting required, returns self for compatibility."""
@@ -42,7 +43,7 @@ class HampelFilterNumpy:
 
             for i in sorted(np.where(new_bad)[0]):
                 if i > 0:
-                    y[i] = y[i - 1]
+                    y[i] = np.nan if self.replace_with_na else y[i - 1]
 
             prev_bad_count = current_bad_count
 
@@ -76,7 +77,7 @@ class HampelFilterNumpy:
 
             for i in sorted(np.where(new_bad)[0]):
                 if i > 0:
-                    y[i] = y[i - 1]
+                    y[i] = np.nan if self.replace_with_na else y[i - 1]
 
             prev_bad_count = current_bad_count
 
