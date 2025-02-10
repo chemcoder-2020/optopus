@@ -18,12 +18,8 @@ class WinRate(BaseMetric):
 class ProfitFactor(BaseMetric):
     """Calculates profit factor (gross profits / gross losses)"""
 
-    def calculate(self, returns: Union[pd.Series, np.ndarray], window: int = 10) -> dict:
-        if returns.size < window + 1:
-            return {"profit_factor": 0.0}
-
+    def calculate(self, returns: Union[pd.Series, np.ndarray]) -> dict:
         returns = returns.copy()
-        returns = self.detect_outliers(returns, window_size=window)
 
         profits = returns[returns > 0].sum()
         losses = -returns[returns < 0].sum()
