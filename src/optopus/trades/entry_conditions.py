@@ -5,6 +5,7 @@ from typing import Union, TYPE_CHECKING, List
 from loguru import logger
 import numpy as np
 from ..utils.heapmedian import ContinuousMedian
+from ..utils.filters import HampelFilterNumpy
 
 
 if TYPE_CHECKING:
@@ -31,20 +32,52 @@ class EntryConditionChecker(ABC):
 
 
 class MedianCalculator(EntryConditionChecker):
-    def __init__(self, window_size=7, fluctuation=0.1):
-        self.median_calculator = ContinuousMedian()
+    def __init__(
+        self, window_size=7, fluctuation=0.1, method="HampelFilter", **kwargs
+    ):
         self.window_size = window_size
         self.fluctuation = fluctuation
+        self.method = method
         self.premiums = []
+        self.kwargs = kwargs
+        if method == "ContinuousMedian":
+            self.median_calculator = ContinuousMedian()
+        else:
+            self.median_calculator = HampelFilterNumpy(
+                window_size=window_size,
+                n_sigma=self.kwargs.get("n_sigma", 3),
+                k=self.kwargs.get("k", 1.4826),
+                max_iterations=self.kwargs.get("max_iterations", 5),
+            )
 
     def add_premium(self, mark):
-        self.median_calculator.add(mark)
+        if self.method == "ContinuousMedian":
+            self.median_calculator.add(mark)
         self.premiums.append(mark)
-        if len(self.premiums) > self.window_size:
-            self.median_calculator.remove(self.premiums.pop(0))
+
+        if self.method == "ContinuousMedian":
+            if len(self.premiums) > self.window_size:
+                self.median_calculator.remove(self.premiums.pop(0))
+        else:
+            if len(self.premiums) > self.window_size + 1:
+                self.premiums.pop(0)
 
     def get_median(self):
-        return self.median_calculator.get_median()
+        """
+        Get the current median of the rolling window.
+
+        Returns:
+            float: The current median.
+        """
+        if self.method == "ContinuousMedian":
+            return self.median_calculator.get_median()
+        else:
+            if len(self.premiums) < self.window_size + 1:
+                return 0
+            else:
+                return self.median_calculator.fit_transform(
+                    np.array(self.premiums)
+                ).flatten()[-1]
 
     def should_enter(self, strategy, manager, time) -> bool:
         bid = strategy.current_bid
@@ -420,6 +453,10 @@ class DefaultEntryCondition(EntryConditionChecker):
                 MedianCalculator(
                     window_size=kwargs.get("window_size", 7),
                     fluctuation=kwargs.get("fluctuation", 0.1),
+                    method=kwargs.get("filter_method", "HampelFilter"),
+                    n_sigma=kwargs.get("n_sigma", 3),
+                    k=kwargs.get("k", 1.4826),
+                    max_iterations=kwargs.get("max_iterations", 5),
                 ),
                 TrailingStopEntry(
                     trailing_entry_direction=kwargs.get(

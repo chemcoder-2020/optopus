@@ -13,8 +13,6 @@ from ..metrics import (
     SharpeRatio,
     MaxDrawdown,
     RiskOfRuin,
-    TotalReturn,
-    AnnualizedReturn,
     WinRate,
     ProfitFactor,
     CAGR,
@@ -542,6 +540,7 @@ class OptionBacktester:
         )
         max_drawdown_dollars = max_drawdown_result["max_drawdown_dollars"]
         max_drawdown_percentage = max_drawdown_result["max_drawdown_percentage"]
+        max_drawdown_percentage_from_peak = max_drawdown_result["max_drawdown_percentage_from_peak"]
 
         metrics = {
             "sharpe_ratio": None,
@@ -556,6 +555,7 @@ class OptionBacktester:
             "probability_of_positive_monthly_closed_pl": None,
             "max_drawdown_dollars": max_drawdown_dollars,
             "max_drawdown_percentage": max_drawdown_percentage,
+            "max_drawdown_percentage_from_peak": max_drawdown_percentage_from_peak,
             "average_dit": average_dit,
             "average_dit_spread": average_dit_spread,
             "average_exit_dte": average_exit_dte,
@@ -730,6 +730,10 @@ class OptionBacktester:
             if metrics.get('max_drawdown_percentage') is not None:
                 print(
                     f"Max Drawdown (Percentage): {metrics['max_drawdown_percentage']:.2%}"
+                )
+            if metrics.get('max_drawdown_percentage_from_peak') is not None:
+                print(
+                    f"Max Drawdown From Peak (Percentage): {metrics['max_drawdown_percentage_from_peak']:.2%}"
                 )
             if metrics.get('average_dit') is not None:
                 print(f"Average Days in Trade: {metrics['average_dit']:.2f}")

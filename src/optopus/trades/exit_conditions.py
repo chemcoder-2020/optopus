@@ -13,6 +13,7 @@ from loguru import logger
 import numpy as np
 from sktime.transformations.series.outlier_detection import HampelFilter
 from sktime.transformations.series.impute import Imputer
+from ..utils.filters import HampelFilterNumpy
 from ..utils.heapmedian import ContinuousMedian
 
 
@@ -76,20 +77,27 @@ class MedianCalculator:
         median_calculator (ContinuousMedian): Continuous median calculator.
     """
 
-    def __init__(self, window_size=5, method="ContinuousMedian"):
+    def __init__(self, window_size=5, method="ContinuousMedian", **kwargs):
         """
         Initialize the MedianCalculator.
 
         Args:
             window_size (int): The size of the rolling window.
+            method (str): The method for calculating the median ('ContinuousMedian' or 'HampelFilter').
+        Kwargs:
+            **kwargs: Keyword arguments for the attributes to update.
         """
         self.window_size = window_size
         self.method = method
+        self.kwargs = kwargs
         if method == "ContinuousMedian":
             self.median_calculator = ContinuousMedian()
         else:
-            self.median_calculator = HampelFilter(window_length=window_size) * Imputer(
-                method="ffill"
+            self.median_calculator = HampelFilterNumpy(
+                window_size=window_size,
+                n_sigma=self.kwargs.get("n_sigma", 3),
+                k=self.kwargs.get("k", 1.4826),
+                max_iterations=self.kwargs.get("max_iterations", 5),
             )
 
         self.premiums = []
@@ -125,9 +133,9 @@ class MedianCalculator:
             if len(self.premiums) < self.window_size + 1:
                 return 0
             else:
-                return self.median_calculator.fit_transform(np.array(self.premiums))[
-                    -1
-                ][0]
+                return self.median_calculator.fit_transform(
+                    np.array(self.premiums)
+                ).flatten()[-1]
 
     def update(self, **kwargs):
         """
@@ -407,13 +415,14 @@ class TrailingStopCondition(ExitConditionChecker):
         self.trigger = trigger
         self.stop_loss = stop_loss
         self.median_window = kwargs.get("window_size", 10)
-        self.median_calculator = MedianCalculator(self.median_window)
-        self.median_method = kwargs.get("method", "HampelFilter")
-        self.median_calculator = MedianCalculator(
-            self.median_window, self.median_method
-        )
+        # self.median_calculator = MedianCalculator(self.median_window)
+        
         self.highest_return = 0
         self.kwargs = kwargs
+        self.median_method = kwargs.get("method", "HampelFilter")
+        self.median_calculator = MedianCalculator(
+            window_size=self.median_window, method=self.median_method, n_sigma=self.kwargs.get("n_sigma", 3), k=self.kwargs.get("k", 1.4826), max_iterations=self.kwargs.get("max_iterations", 5)
+        )
 
         # Set all kwargs as attributes
         for key, value in kwargs.items():

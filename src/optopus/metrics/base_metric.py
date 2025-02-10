@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import scipy.stats
 from typing import Any, Dict, Union
-from sktime.transformations.series.outlier_detection import HampelFilter
-from sktime.transformations.series.impute import Imputer
+from ..utils.filters import HampelFilterNumpy
 import pandas as pd
 
 class BaseMetric(ABC):
@@ -21,6 +20,6 @@ class BaseMetric(ABC):
     
     @staticmethod
     def detect_outliers(series: Union[np.ndarray, pd.Series], window_size: int) -> None:
-        pipe = HampelFilter(window_length=window_size) * Imputer(method="ffill")
-        series = pipe.fit_transform(series)
+        pipe = HampelFilterNumpy(window_size=window_size, n_sigma=3, k=1.4826, max_iterations=5)
+        series = pipe.fit_transform(series).flatten()
         return series

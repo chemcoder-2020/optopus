@@ -7,7 +7,7 @@ class SharpeRatio(BaseMetric):
     """Calculates Sharpe ratio from daily returns with risk-free rate adjustment"""
 
     def calculate(
-        self, returns: np.ndarray, risk_free_rate: float = 0.0, window: int = 3
+        self, returns: np.ndarray, risk_free_rate: float = 0.0, window: int = 10
     ) -> dict:
 
         if returns.size < window + 1:
@@ -34,6 +34,7 @@ class RiskOfRuin(BaseMetric):
         num_steps: int = 252,
         drawdown_threshold_pct: float = 0.25,
         distribution: str = "histogram",
+        window_size: int = 10,
     ) -> dict:
         """
         Args:
@@ -48,10 +49,11 @@ class RiskOfRuin(BaseMetric):
             dict: Dictionary with risk_of_ruin percentage
         """
         # Apply rolling median to returns
-        window_size = min(10, returns.size)  # Use smaller window if not enough data
-        if returns.size >= window_size + 1:
-            returns = returns.copy()
-            returns = self.detect_outliers(returns, window_size=window_size)
+        if returns.size < window_size + 1:
+            return {"risk_of_ruin": 0.0}
+
+        returns = returns.copy()
+        returns = self.detect_outliers(returns, window_size=window_size)
 
         returns = returns / initial_balance
 
@@ -100,8 +102,12 @@ class MaxDrawdown(BaseMetric):
         # Find maximum drawdown
         max_drawdown_dollars = drawdown.max()
         max_drawdown_percentage = max_drawdown_dollars / allocation
+        max_drawdown_percentage_from_peak = np.nanmax(drawdown / (peak+allocation))
 
         return {
             "max_drawdown_dollars": float(max_drawdown_dollars),
             "max_drawdown_percentage": float(max_drawdown_percentage),
+            "max_drawdown_percentage_from_peak": float(
+                max_drawdown_percentage_from_peak
+            ),
         }

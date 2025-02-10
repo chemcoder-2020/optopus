@@ -71,7 +71,7 @@ class MonthlyReturn(BaseMetric):
     """Calculates average monthly profit/loss from performance data"""
 
     def calculate(
-        self, closed_pl_series: pd.Series, non_zero_only: bool = False, window: int = 10
+        self, closed_pl_series: pd.Series, non_zero_only: bool = False
     ) -> dict:
         """
         Args:
@@ -81,11 +81,8 @@ class MonthlyReturn(BaseMetric):
         Returns:
             Dictionary with average monthly P/L
         """
-        if closed_pl_series.size < window + 1:
-            return {"avg_monthly_pl": 0.0}
 
         closed_pl_series = closed_pl_series.copy()
-        closed_pl_series = self.detect_outliers(closed_pl_series, window_size=window)
 
         # Resample to monthly and calculate changes
         monthly_pl = closed_pl_series.resample("M").last().diff().dropna()
@@ -101,7 +98,7 @@ class MonthlyReturn(BaseMetric):
 class PositiveMonthlyProbability(BaseMetric):
     """Calculates probability of positive monthly P/L"""
 
-    def calculate(self, pl_series: pd.Series, window: int = 10) -> dict:
+    def calculate(self, pl_series: pd.Series) -> dict:
         """
         Args:
             pl_series (pd.Series): Series of P/L values with datetime index
@@ -109,11 +106,7 @@ class PositiveMonthlyProbability(BaseMetric):
         Returns:
             Dictionary with probability of positive months
         """
-        if pl_series.size < window + 1:
-            return {"positive_monthly_probability": 0.0}
-
         pl_series = pl_series.copy()
-        pl_series = self.detect_outliers(pl_series, window_size=window)
         monthly_pl = pl_series.resample("M").last().diff().dropna()
         positive_months = monthly_pl[monthly_pl > 0]
         total_months = monthly_pl[monthly_pl != 0]
