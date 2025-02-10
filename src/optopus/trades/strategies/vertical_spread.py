@@ -259,6 +259,16 @@ class VerticalSpread(OptionStrategy):
             line=dict(color="grey", dash="dashdot"),
             name="Short Strike",
         )
+        # Add current price line
+        fig.add_shape(
+            type="line",
+            x0=current_underlying_price,
+            y0=min(pnl),
+            x1=current_underlying_price,
+            y1=max(pnl),
+            line=dict(color="green", dash="dot"),
+            name="Current Price",
+        )
 
         # Add annotations
         fig.add_annotation(
