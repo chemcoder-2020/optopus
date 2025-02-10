@@ -3,16 +3,11 @@ from pandas import Timestamp, Timedelta
 from .option_leg import OptionLeg
 import datetime
 import numpy as np
-import time  # Added for performance profiling
-import logging  # Added for logging
 from loguru import logger
-import cProfile
-import pstats
-from pstats import SortKey
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
 from .option_chain_converter import OptionChainConverter
 from typing import Union, Tuple, Optional, Type
-from io import StringIO
+
 
 class OptionStrategy:
     """
@@ -64,12 +59,12 @@ class OptionStrategy:
         contracts: int = 1,
         commission: float = 0.5,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
-            'class': DefaultExitCondition,
-            'params': {
-                'profit_target': 40,
-                'exit_time_before_expiration': Timedelta(minutes=15),
-                'window_size': 5
-            }
+            "class": DefaultExitCondition,
+            "params": {
+                "profit_target": 40,
+                "exit_time_before_expiration": Timedelta(minutes=15),
+                "window_size": 5,
+            },
         },
         **kwargs,
     ):
@@ -96,17 +91,21 @@ class OptionStrategy:
         # Handle exit_scheme initialization
         if isinstance(exit_scheme, dict):
             # Case 1: Dictionary with class and parameters
-            exit_class = exit_scheme.get('class', DefaultExitCondition)
-            exit_params = exit_scheme.get('params', {})
+            exit_class = exit_scheme.get("class", DefaultExitCondition)
+            exit_params = exit_scheme.get("params", {})
             self.exit_scheme = exit_class(**exit_params)
-        elif isinstance(exit_scheme, type) and issubclass(exit_scheme, ExitConditionChecker):
+        elif isinstance(exit_scheme, type) and issubclass(
+            exit_scheme, ExitConditionChecker
+        ):
             # Case 2: Just the class provided
             self.exit_scheme = exit_scheme()
         elif isinstance(exit_scheme, ExitConditionChecker):
             # Case 3: Already an instance
             self.exit_scheme = exit_scheme
         else:
-            raise ValueError("Invalid exit_scheme format. Must be an instance, class, or dict with class and params")
+            raise ValueError(
+                "Invalid exit_scheme format. Must be an instance, class, or dict with class and params"
+            )
 
         self.symbol = symbol
         self.strategy_type = strategy_type
@@ -238,7 +237,6 @@ class OptionStrategy:
         if self.entry_time:
             self.DIT = (self.current_time.date() - self.entry_time.date()).days
 
-
         # Update the current attributes of each leg
         for leg in self.legs:
             leg.update(current_time, option_chain_df)
@@ -253,7 +251,8 @@ class OptionStrategy:
         # Update exit_dte
         if self.status == "OPEN":
             self.exit_dte = (
-                pd.to_datetime(self.legs[0].expiration).date() - self.current_time.date()
+                pd.to_datetime(self.legs[0].expiration).date()
+                - self.current_time.date()
             ).days
 
         # Calculate and store the strategy's bid-ask spread
@@ -574,7 +573,11 @@ class OptionStrategy:
             float: The required capital for the strategy, including commission.
         """
         if self.strategy_side == "CREDIT":
-            if self.strategy_type in ["Vertical Spread", "Iron Condor", "Iron Butterfly"]:
+            if self.strategy_type in [
+                "Vertical Spread",
+                "Iron Condor",
+                "Iron Butterfly",
+            ]:
                 max_width = max(
                     abs(leg1.strike - leg2.strike)
                     for leg1, leg2 in zip(self.legs[::2], self.legs[1::2])
