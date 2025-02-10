@@ -48,6 +48,7 @@ class MedianCalculator(EntryConditionChecker):
                 n_sigma=self.kwargs.get("n_sigma", 3),
                 k=self.kwargs.get("k", 1.4826),
                 max_iterations=self.kwargs.get("max_iterations", 5),
+                replace_with_na=self.kwargs.get("replace_with_na", False),
             )
 
     def add_premium(self, mark):
