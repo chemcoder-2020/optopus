@@ -1,5 +1,7 @@
 import pandas as pd
 from pandas import Timestamp, Timedelta
+import numpy as np
+import plotly.graph_objects as go
 from ..option_leg import OptionLeg
 from ..exit_conditions import DefaultExitCondition, ExitConditionChecker
 from ..option_chain_converter import OptionChainConverter
@@ -208,3 +210,111 @@ class IronCondor(OptionStrategy):
         strategy.underlying_last = put_long_leg.underlying_last
 
         return strategy
+
+    def plot_risk_profile(self):
+        """Plot the risk profile curve for the iron condor strategy using Plotly.
+        
+        Shows the profit/loss diagram with breakeven points, strikes, and current price.
+        """
+        # Get strategy parameters
+        entry_premium = self.entry_net_premium
+        put_long = self.legs[0]
+        put_short = self.legs[1]
+        call_short = self.legs[2]
+        call_long = self.legs[3]
+        is_credit = self.strategy_side == "CREDIT"
+        current_underlying_price = self.underlying_last
+
+        # Generate price range for underlying
+        min_strike = min(leg.strike for leg in self.legs)
+        max_strike = max(leg.strike for leg in self.legs)
+        spread_width = max_strike - min_strike
+        price_range = np.linspace(min_strike - spread_width, max_strike + spread_width, 200)
+
+        # Calculate profit/loss for each price point
+        pnl = []
+        for price in price_range:
+            total = 0
+            for leg in self.legs:
+                if leg.option_type == "CALL":
+                    payoff = max(price - leg.strike, 0) * (1 if leg.position_side == "BUY" else -1)
+                else:
+                    payoff = max(leg.strike - price, 0) * (1 if leg.position_side == "BUY" else -1)
+                total += payoff * 100 * self.contracts
+            total -= entry_premium * 100 * self.contracts  # Subtract initial credit/debit
+            pnl.append(total)
+
+        # Calculate breakeven prices
+        if is_credit:
+            put_breakeven = put_short.strike - entry_premium
+            call_breakeven = call_short.strike + entry_premium
+        else:
+            put_breakeven = put_long.strike + entry_premium
+            call_breakeven = call_long.strike - entry_premium
+
+        # Create plot
+        fig = go.Figure()
+
+        # Add P/L curve
+        fig.add_trace(go.Scatter(
+            x=price_range,
+            y=pnl,
+            mode='lines',
+            name='P/L Curve',
+            line=dict(color='royalblue', width=3),
+            hovertemplate="Price: %{x}<br>P/L: %{y}"
+        ))
+
+        # Add breakeven lines
+        for breakeven in [put_breakeven, call_breakeven]:
+            fig.add_shape(type="line",
+                x0=breakeven, y0=min(pnl),
+                x1=breakeven, y1=max(pnl),
+                line=dict(color="red", dash="dot"),
+                name='Breakeven'
+            )
+
+        # Add strike lines
+        strikes = [leg.strike for leg in self.legs]
+        for strike in strikes:
+            fig.add_shape(type="line",
+                x0=strike, y0=min(pnl),
+                x1=strike, y1=max(pnl),
+                line=dict(color="grey", dash="dashdot"),
+                name='Strike'
+            )
+
+        # Add current price line
+        fig.add_shape(type="line",
+            x0=current_underlying_price, y0=min(pnl),
+            x1=current_underlying_price, y1=max(pnl),
+            line=dict(color="green", dash="dot"),
+            name='Current Price'
+        )
+
+        # Add annotations
+        fig.add_annotation(x=put_breakeven, y=0,
+            text=f"Put Breakeven: {put_breakeven:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=-50,
+            ay=-40)
+            
+        fig.add_annotation(x=call_breakeven, y=0,
+            text=f"Call Breakeven: {call_breakeven:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=50,
+            ay=-40)
+
+        fig.update_layout(
+            title=f"{self.strategy_type} Risk Profile ({self.strategy_side})",
+            xaxis_title="Underlying Price",
+            yaxis_title="Profit/Loss ($)",
+            hovermode="x unified",
+            showlegend=True,
+            margin=dict(l=50, r=50, b=50, t=50),
+            height=600
+        )
+
+        return fig.show()
