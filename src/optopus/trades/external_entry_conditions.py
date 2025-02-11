@@ -87,7 +87,11 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         )
 
         # Check technical indicators with bypass
+        # Validate linear regression params
         lin_reg_lag = self.kwargs.get("linear_regression_lag")
+        if lin_reg_lag is not None and not isinstance(lin_reg_lag, int):
+            logger.warning(f"Invalid linear_regression_lag type {type(lin_reg_lag)}, expected int. Bypassing check")
+            lin_reg_lag = None
         if lin_reg_lag is not None:
             linear_trend = self.technical_indicators.check_linear_regression(
                 historical_data, lag=lin_reg_lag
@@ -99,8 +103,17 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         else:
             logger.debug("Bypassing linear regression check")
 
+        # Validate median trend params
         med_short = self.kwargs.get("median_trend_short_lag")
         med_long = self.kwargs.get("median_trend_long_lag")
+        
+        if med_short is not None and not isinstance(med_short, int):
+            logger.warning(f"Invalid median_trend_short_lag type {type(med_short)}, expected int. Bypassing check")
+            med_short = None
+        if med_long is not None and not isinstance(med_long, int):
+            logger.warning(f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check")
+            med_long = None
+            
         if med_short is not None or med_long is not None:
             median_trend = self.technical_indicators.check_median_trend(
                 historical_data,
@@ -115,7 +128,11 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             logger.debug("Bypassing median trend check")
 
         # Check forecast models with bypass
+        # Validate forecast model params
         forecast_model = self.kwargs.get("forecast_model")
+        if forecast_model is not None and not isinstance(forecast_model, str):
+            logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
+            forecast_model = None
         if forecast_model is not None:
             if forecast_model == "arima":
                 order = self.kwargs.get("order")
@@ -204,8 +221,16 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         current_price = strategy.underlying_last
         
         # Handle Kelly criterion with bypass
+        # Validate Kelly params
         n_lookback = self.kwargs.get("n_lookback_kelly")
         fractional = self.kwargs.get("fractional_kelly")
+        
+        if n_lookback is not None and not isinstance(n_lookback, int):
+            logger.warning(f"Invalid n_lookback_kelly type {type(n_lookback)}, expected int. Bypassing Kelly updates")
+            n_lookback = None
+        if fractional is not None and not isinstance(fractional, (float, int)):
+            logger.warning(f"Invalid fractional_kelly type {type(fractional)}, expected float/int. Bypassing Kelly updates")
+            fractional = None
         
         if n_lookback is not None and fractional is not None:
             if (
