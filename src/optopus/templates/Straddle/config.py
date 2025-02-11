@@ -38,6 +38,7 @@ def get_params(section):
         if "delta" in option:
             param = config.get(section, option, raw=True)
         elif "time" in option:
+            param = config.get(section, option)
             param = pd.Timedelta(param)
             params[option] = param
             continue

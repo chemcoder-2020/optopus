@@ -180,27 +180,7 @@ class VerticalSpread(OptionStrategy):
         commission = self.calculate_total_commission()
         current_pl = self.filter_pl
 
-        # Generate price range for underlying
-        min_strike = min(long_leg.strike, short_leg.strike)
-        max_strike = max(long_leg.strike, short_leg.strike)
-        price_range = np.linspace(
-            min_strike - 2 * spread_width, max_strike + 2 * spread_width, 200
-        )
-
-        # Calculate profit/loss for each price point
-        pnl = []
-        for price in price_range:
-            if is_call:
-                long_payoff = max(price - long_leg.strike, 0)
-                short_payoff = max(price - short_leg.strike, 0)
-            else:
-                long_payoff = min((price - long_leg.strike), 0)
-                short_payoff = min((price - short_leg.strike), 0)
-
-            net_payoff = (
-                (-long_payoff + short_payoff + entry_premium) * 100 * self.contracts
-            ) - commission
-            pnl.append(net_payoff)
+        price_range, pnl = self.generate_payoff_curve()
 
         # Calculate breakeven price
         if is_call:

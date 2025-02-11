@@ -28,12 +28,12 @@ class IronCondor(OptionStrategy):
         leg_ratio: int = 1,
         commission: float = 0.5,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
-            'class': DefaultExitCondition,
-            'params': {
-                'profit_target': 40,
-                'exit_time_before_expiration': Timedelta(minutes=15),
-                'window_size': 5
-            }
+            "class": DefaultExitCondition,
+            "params": {
+                "profit_target": 40,
+                "exit_time_before_expiration": Timedelta(minutes=15),
+                "window_size": 5,
+            },
         },
         **kwargs,
     ):
@@ -55,7 +55,7 @@ class IronCondor(OptionStrategy):
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
             commission (float, optional): Commission per contract per leg.
-            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional):
                 The exit condition scheme to use. Can be:
                 - An instance of ExitConditionChecker
                 - A ExitConditionChecker class (will be instantiated with default params)
@@ -213,7 +213,7 @@ class IronCondor(OptionStrategy):
 
     def plot_risk_profile(self):
         """Plot the risk profile curve for the iron condor strategy using Plotly.
-        
+
         Shows the profit/loss diagram with breakeven points, strikes, and current price.
         """
         # Get strategy parameters
@@ -224,28 +224,9 @@ class IronCondor(OptionStrategy):
         call_long = self.legs[3]
         is_credit = self.strategy_side == "CREDIT"
         current_underlying_price = self.underlying_last
-        commission = self.calculate_total_commission()
         current_pl = self.filter_pl
 
-        # Generate price range for underlying
-        min_strike = min(leg.strike for leg in self.legs)
-        max_strike = max(leg.strike for leg in self.legs)
-        spread_width = max_strike - min_strike
-        price_range = np.linspace(min_strike - 2*spread_width, max_strike + 2*spread_width, 200)
-
-        # Calculate profit/loss for each price point
-        pnl = []
-        for price in price_range:
-            total = 0
-            for leg in self.legs:
-                if leg.option_type == "CALL":
-                    payoff = max(price - leg.strike, 0) * (-1 if leg.position_side == "BUY" else 1)
-                else:
-                    payoff = min(price - leg.strike, 0) * (-1 if leg.position_side == "BUY" else 1)
-                total += payoff * 100 * self.contracts
-            total += entry_premium * 100 * self.contracts  # Subtract initial credit/debit
-            total -= commission
-            pnl.append(total)
+        price_range, pnl = self.generate_payoff_curve()
 
         # Calculate breakeven prices
         if is_credit:
@@ -259,56 +240,73 @@ class IronCondor(OptionStrategy):
         fig = go.Figure()
 
         # Add P/L curve
-        fig.add_trace(go.Scatter(
-            x=price_range,
-            y=pnl,
-            mode='lines',
-            name='P/L Curve',
-            line=dict(color='royalblue', width=3),
-            hovertemplate="Price: %{x}<br>P/L: %{y}"
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=price_range,
+                y=pnl,
+                mode="lines",
+                name="P/L Curve",
+                line=dict(color="royalblue", width=3),
+                hovertemplate="Price: %{x}<br>P/L: %{y}",
+            )
+        )
 
         # Add breakeven lines
         for breakeven in [put_breakeven, call_breakeven]:
-            fig.add_shape(type="line",
-                x0=breakeven, y0=min(pnl),
-                x1=breakeven, y1=max(pnl),
+            fig.add_shape(
+                type="line",
+                x0=breakeven,
+                y0=min(pnl),
+                x1=breakeven,
+                y1=max(pnl),
                 line=dict(color="red", dash="dot"),
-                name='Breakeven'
+                name="Breakeven",
             )
 
         # Add strike lines
         strikes = [leg.strike for leg in self.legs]
         for strike in strikes:
-            fig.add_shape(type="line",
-                x0=strike, y0=min(pnl),
-                x1=strike, y1=max(pnl),
+            fig.add_shape(
+                type="line",
+                x0=strike,
+                y0=min(pnl),
+                x1=strike,
+                y1=max(pnl),
                 line=dict(color="grey", dash="dashdot"),
-                name='Strike'
+                name="Strike",
             )
 
         # Add current price annotation
-        fig.add_annotation(x=current_underlying_price, y=current_pl,
+        fig.add_annotation(
+            x=current_underlying_price,
+            y=current_pl,
             text=f"Current Price: {current_underlying_price:.2f}<br>P/L: ${current_pl:.2f}",
             showarrow=True,
             arrowhead=1,
             ax=0,
-            ay=-40)
+            ay=-40,
+        )
 
         # Add annotations
-        fig.add_annotation(x=put_breakeven, y=0,
+        fig.add_annotation(
+            x=put_breakeven,
+            y=0,
             text=f"Put Breakeven: {put_breakeven:.2f}",
             showarrow=True,
             arrowhead=1,
             ax=-50,
-            ay=-40)
-            
-        fig.add_annotation(x=call_breakeven, y=0,
+            ay=-40,
+        )
+
+        fig.add_annotation(
+            x=call_breakeven,
+            y=0,
             text=f"Call Breakeven: {call_breakeven:.2f}",
             showarrow=True,
             arrowhead=1,
             ax=50,
-            ay=-40)
+            ay=-40,
+        )
 
         fig.update_layout(
             title=f"{self.strategy_type} Risk Profile ({self.strategy_side})",
@@ -317,7 +315,7 @@ class IronCondor(OptionStrategy):
             hovermode="x unified",
             showlegend=True,
             margin=dict(l=50, r=50, b=50, t=50),
-            height=600
+            height=600,
         )
 
         return fig.show()

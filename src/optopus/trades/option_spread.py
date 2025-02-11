@@ -750,3 +750,39 @@ class OptionStrategy:
             return_over_risk = float("inf")  # Default to infinity if not applicable
 
         return return_over_risk
+
+    def generate_payoff_curve(self):
+        commission = self.calculate_total_commission()
+        
+        # Generate price range for underlying
+        min_strike = min(leg.strike for leg in self.legs)
+        max_strike = max(leg.strike for leg in self.legs)
+        spread_width = max_strike - min_strike
+        price_range = np.linspace(
+            min_strike - 2 * spread_width, max_strike + 2 * spread_width, 200
+        )
+
+        # Calculate profit/loss for each price point
+
+        pnl = []
+        for price in price_range:
+            puts = 0
+            calls = 0
+
+            for leg in self.legs:
+                if leg.option_type == "PUT" and leg.position_side == "BUY":
+                    puts += abs(min(price - leg.strike, 0)) - leg.entry_price
+                elif leg.option_type == "PUT" and leg.position_side == "SELL":
+                    puts += -abs(min(price - leg.strike, 0)) + leg.entry_price
+                elif leg.option_type == "CALL" and leg.position_side == "BUY":
+                    calls += abs(max(price - leg.strike, 0)) - leg.entry_price
+                elif leg.option_type == "CALL" and leg.position_side == "SELL":
+                    calls += -abs(max(price - leg.strike, 0)) + leg.entry_price
+
+            net_payoff = (
+                puts + calls
+            ) * 100 * self.contracts - commission  # Subtract initial credit/debit
+
+            pnl.append(net_payoff)
+
+        return price_range, pnl
