@@ -177,14 +177,14 @@ class VerticalSpread(OptionStrategy):
         current_underlying_price = self.underlying_last
         is_call = long_leg.option_type == "CALL"
         is_credit = self.strategy_side == "CREDIT"
-        commission = - self.calculate_total_commission()
+        commission = self.calculate_total_commission()
         current_pl = self.filter_pl
 
         # Generate price range for underlying
         min_strike = min(long_leg.strike, short_leg.strike)
         max_strike = max(long_leg.strike, short_leg.strike)
         price_range = np.linspace(
-            min_strike - 2 * spread_width, max_strike + 2 * spread_width, 100
+            min_strike - 2 * spread_width, max_strike + 2 * spread_width, 200
         )
 
         # Calculate profit/loss for each price point
@@ -208,13 +208,13 @@ class VerticalSpread(OptionStrategy):
                 short_leg.strike + entry_premium
                 if is_credit
                 else long_leg.strike + entry_premium
-            ) - commission / 100
+            )
         else:
             breakeven = (
                 short_leg.strike - entry_premium
                 if is_credit
                 else long_leg.strike - entry_premium
-            ) - commission / 100
+            )
 
         # Create plot
         fig = go.Figure()

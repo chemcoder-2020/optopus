@@ -239,11 +239,12 @@ class IronCondor(OptionStrategy):
             total = 0
             for leg in self.legs:
                 if leg.option_type == "CALL":
-                    payoff = max(price - leg.strike, 0) * (1 if leg.position_side == "BUY" else -1)
+                    payoff = max(price - leg.strike, 0) * (-1 if leg.position_side == "BUY" else 1)
                 else:
-                    payoff = max(leg.strike - price, 0) * (1 if leg.position_side == "BUY" else -1)
+                    payoff = min(price - leg.strike, 0) * (-1 if leg.position_side == "BUY" else 1)
                 total += payoff * 100 * self.contracts
-            total -= entry_premium * 100 * self.contracts  # Subtract initial credit/debit
+            total += entry_premium * 100 * self.contracts  # Subtract initial credit/debit
+            total -= commission
             pnl.append(total)
 
         # Calculate breakeven prices
@@ -285,14 +286,6 @@ class IronCondor(OptionStrategy):
                 line=dict(color="grey", dash="dashdot"),
                 name='Strike'
             )
-
-        # Add current price line
-        fig.add_shape(type="line",
-            x0=current_underlying_price, y0=min(pnl),
-            x1=current_underlying_price, y1=max(pnl),
-            line=dict(color="green", dash="dot"),
-            name='Current Price'
-        )
 
         # Add current price annotation
         fig.add_annotation(x=current_underlying_price, y=current_pl,
