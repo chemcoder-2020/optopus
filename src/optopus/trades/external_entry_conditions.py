@@ -130,7 +130,7 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         # Check forecast models with bypass
         # Validate forecast model params
         forecast_model = self.kwargs.get("forecast_model")
-        if forecast_model is not None and not isinstance(forecast_model, str):
+        if (forecast_model is not None and not isinstance(forecast_model, str)) or forecast_model == "":
             logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
             forecast_model = None
         if forecast_model is not None:
@@ -300,7 +300,7 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
 
         # Check forecast models with bypass
         forecast_model = self.kwargs.get("forecast_model")
-        if forecast_model is not None and not isinstance(forecast_model, str):
+        if (forecast_model is not None and not isinstance(forecast_model, str)) or forecast_model == "":
             logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
             forecast_model = None
         if forecast_model is not None:
