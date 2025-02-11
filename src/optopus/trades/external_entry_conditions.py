@@ -86,72 +86,92 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             period=self.kwargs.get("atr_period", 14),
         )
 
-        # Check technical indicators
-        linear_trend = self.technical_indicators.check_linear_regression(
-            historical_data, lag=self.kwargs.get("linear_regression_lag", 14)
-        )
-        logger.debug(f"Linear regression trend check: {linear_trend}")
-        if not linear_trend:
-            logger.info("Entry rejected - failed linear regression trend check")
-            return False
-
-        median_trend = self.technical_indicators.check_median_trend(
-            historical_data,
-            short_lag=self.kwargs.get("median_trend_short_lag", 50),
-            long_lag=self.kwargs.get("median_trend_long_lag", 200),
-        )
-        logger.debug(f"Median trend check: {median_trend}")
-        if not median_trend:
-            logger.info("Entry rejected - failed median trend check")
-            return False
-
-        # Check forecast models
-        if self.kwargs.get("forecast_model", "arima") == "arima":
-            arima_trend = self.forecast_models.check_arima_trend(
-                monthly_data, current_price, order=self.kwargs.get("order", (0, 1, 1)), seasonal_order=self.kwargs.get("seasonal_order", (0, 1, 1))
+        # Check technical indicators with bypass
+        lin_reg_lag = self.kwargs.get("linear_regression_lag")
+        if lin_reg_lag is not None:
+            linear_trend = self.technical_indicators.check_linear_regression(
+                historical_data, lag=lin_reg_lag
             )
-            logger.debug(f"ARIMA trend check: {arima_trend}")
-            if not arima_trend:
-                logger.info("Entry rejected - failed ARIMA trend check")
+            logger.debug(f"Linear regression trend check: {linear_trend}")
+            if not linear_trend:
+                logger.info("Entry rejected - failed linear regression trend check")
                 return False
-        elif self.kwargs.get("forecast_model", "arima") == "autoarima":
-            autoarima_trend = self.forecast_models.check_autoarima_trend(
-                monthly_data, current_price
-            )
-            logger.debug(f"AutoARIMA trend check: {autoarima_trend}")
-            if not autoarima_trend:
-                logger.info("Entry rejected - failed AutoARIMA trend check")
-                return False
-        elif self.kwargs.get("forecast_model", "arima") == "autoces":
-            autoces_trend = self.forecast_models.check_autoces_trend(
-                monthly_data, current_price
-            )
-            logger.debug(f"AutoCES trend check: {autoces_trend}")
-            if not autoces_trend:
-                logger.info("Entry rejected - failed AutoCES trend check")
-                return False
-        elif self.kwargs.get("forecast_model", "arima") == "nbeats":
-            nbeats_trend = self.forecast_models.check_nbeats_trend(monthly_data)
-            logger.debug(f"NBEATS trend check: {nbeats_trend}")
-            if not nbeats_trend:
-                logger.info("Entry rejected - failed NBEATS trend check")
-                return False
-        elif self.kwargs.get("forecast_model", "arima") in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp", "knn"]:
-            ml_trend = self.forecast_models.check_ML_trend(monthly_data, classifier=self.kwargs.get("forecast_model", "arima"))
-            logger.debug(f"ML trend ({self.kwargs.get('forecast_model', 'arima')}) check: {ml_trend}")
-            if not ml_trend:
-                logger.info(f"Entry rejected - failed ML trend ({self.kwargs.get('forecast_model', 'arima')}) check")
-                return False
-        elif self.kwargs.get("forecast_model", "arima") == "oscillator":
-            oscillator_trend = self.forecast_models.check_seasonality_oscillator(monthly_data, lags=self.kwargs.get("oscillator_lags", 3))
-            logger.debug(f"Oscillator trend check: {oscillator_trend}")
-            if not oscillator_trend:
-                logger.info("Entry rejected - failed oscillator trend check")
-                return False
-
         else:
-            logger.info("Entry rejected - unknown forecast model")
-            return False
+            logger.debug("Bypassing linear regression check")
+
+        med_short = self.kwargs.get("median_trend_short_lag")
+        med_long = self.kwargs.get("median_trend_long_lag")
+        if med_short is not None or med_long is not None:
+            median_trend = self.technical_indicators.check_median_trend(
+                historical_data,
+                short_lag=med_short if med_short is not None else 50,
+                long_lag=med_long if med_long is not None else 200,
+            )
+            logger.debug(f"Median trend check: {median_trend}")
+            if not median_trend:
+                logger.info("Entry rejected - failed median trend check")
+                return False
+        else:
+            logger.debug("Bypassing median trend check")
+
+        # Check forecast models with bypass
+        forecast_model = self.kwargs.get("forecast_model")
+        if forecast_model is not None:
+            if forecast_model == "arima":
+                order = self.kwargs.get("order")
+                seasonal_order = self.kwargs.get("seasonal_order")
+                arima_trend = self.forecast_models.check_arima_trend(
+                    monthly_data, current_price, 
+                    order=order if order is not None else (0, 1, 1), 
+                    seasonal_order=seasonal_order if seasonal_order is not None else (0, 1, 1)
+                )
+                logger.debug(f"ARIMA trend check: {arima_trend}")
+                if not arima_trend:
+                    logger.info("Entry rejected - failed ARIMA trend check")
+                    return False
+            elif forecast_model == "autoarima":
+                autoarima_trend = self.forecast_models.check_autoarima_trend(
+                    monthly_data, current_price
+                )
+                logger.debug(f"AutoARIMA trend check: {autoarima_trend}")
+                if not autoarima_trend:
+                    logger.info("Entry rejected - failed AutoARIMA trend check")
+                    return False
+            elif forecast_model == "autoces":
+                autoces_trend = self.forecast_models.check_autoces_trend(
+                    monthly_data, current_price
+                )
+                logger.debug(f"AutoCES trend check: {autoces_trend}")
+                if not autoces_trend:
+                    logger.info("Entry rejected - failed AutoCES trend check")
+                    return False
+            elif forecast_model == "nbeats":
+                nbeats_trend = self.forecast_models.check_nbeats_trend(monthly_data)
+                logger.debug(f"NBEATS trend check: {nbeats_trend}")
+                if not nbeats_trend:
+                    logger.info("Entry rejected - failed NBEATS trend check")
+                    return False
+            elif forecast_model in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp", "knn"]:
+                ml_trend = self.forecast_models.check_ML_trend(monthly_data, classifier=forecast_model)
+                logger.debug(f"ML trend ({forecast_model}) check: {ml_trend}")
+                if not ml_trend:
+                    logger.info(f"Entry rejected - failed ML trend ({forecast_model}) check")
+                    return False
+            elif forecast_model == "oscillator":
+                osc_lags = self.kwargs.get("oscillator_lags")
+                oscillator_trend = self.forecast_models.check_seasonality_oscillator(
+                    monthly_data, 
+                    lags=osc_lags if osc_lags is not None else 3
+                ) if osc_lags is not None else True
+                logger.debug(f"Oscillator trend check: {oscillator_trend}")
+                if not oscillator_trend:
+                    logger.info("Entry rejected - failed oscillator trend check")
+                    return False
+            else:
+                logger.info("Entry rejected - unknown forecast model")
+                return False
+        else:
+            logger.debug("Bypassing forecast model checks")
 
         return True
 
@@ -183,27 +203,31 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         time = pd.Timestamp(time)
         current_price = strategy.underlying_last
         
-        if (
-            len(manager.closed_trades) >= self.kwargs.get("n_lookback_kelly", 20)
-            and len(manager.closed_trades) % self.kwargs.get("kelly_update_interval", 1) == 0
-        ):
-            kc = manager.calculate_kelly_criterion(
-                self.kwargs.get("n_lookback_kelly", 20),
-                self.kwargs.get("fractional_kelly", 0.1),
-            )
-            logger.debug(f"Calculated Kelly criterion: {kc}")
-            
-            if self.kwargs.get("min_position_size", None):
-                kc = max(kc, self.kwargs.get("min_position_size", 0))
-                logger.debug(f"Applied min position size constraint: {kc}")
-            
-            if self.kwargs.get("max_position_size", None):
-                kc = min(kc, self.kwargs.get("max_position_size", 0.1))
-                logger.debug(f"Applied max position size constraint: {kc}")
+        # Handle Kelly criterion with bypass
+        n_lookback = self.kwargs.get("n_lookback_kelly")
+        fractional = self.kwargs.get("fractional_kelly")
+        
+        if n_lookback is not None and fractional is not None:
+            if (
+                len(manager.closed_trades) >= n_lookback
+                and len(manager.closed_trades) % self.kwargs.get("kelly_update_interval", 1) == 0
+            ):
+                kc = manager.calculate_kelly_criterion(n_lookback, fractional)
+                logger.debug(f"Calculated Kelly criterion: {kc}")
+                
+                if self.kwargs.get("min_position_size", None):
+                    kc = max(kc, self.kwargs.get("min_position_size", 0))
+                    logger.debug(f"Applied min position size constraint: {kc}")
+                
+                if self.kwargs.get("max_position_size", None):
+                    kc = min(kc, self.kwargs.get("max_position_size", 0.1))
+                    logger.debug(f"Applied max position size constraint: {kc}")
 
-            if isinstance(kc, float) and 1 > kc > 0:
-                manager.update_config(position_size=kc)
-                logger.info(f"Updated position size to {kc} based on Kelly criterion")
+                if isinstance(kc, float) and 1 > kc > 0:
+                    manager.update_config(position_size=kc)
+                    logger.info(f"Updated position size to {kc} based on Kelly criterion")
+        else:
+            logger.debug("Bypassing Kelly criterion updates")
         
         if not hasattr(self.data_processor, "ticker"):
             self.data_processor.ticker = strategy.symbol
