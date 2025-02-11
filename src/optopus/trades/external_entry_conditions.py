@@ -281,8 +281,13 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
             period=self.kwargs.get("atr_period", 14),
         )
 
-        # Check technical indicators with bypass
+        # Check technical indicators with bypass and validation
         lin_reg_lag = self.kwargs.get("linear_regression_lag")
+        if lin_reg_lag in ("", None):  # Handle empty string as None
+            lin_reg_lag = None
+        elif lin_reg_lag is not None and not isinstance(lin_reg_lag, int):
+            logger.warning(f"Invalid linear_regression_lag type {type(lin_reg_lag)}, expected int. Bypassing check")
+            lin_reg_lag = None
         if lin_reg_lag is not None:
             linear_trend = self.technical_indicators.check_linear_regression(
                 historical_data, lag=lin_reg_lag
@@ -294,9 +299,21 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         else:
             logger.debug("Bypassing linear regression check")
 
-        # Check median trend with bypass
+        # Check median trend with bypass and validation
         med_short = self.kwargs.get("median_trend_short_lag")
         med_long = self.kwargs.get("median_trend_long_lag")
+        
+        if med_short in ("", None):  # Handle empty string as None
+            med_short = None
+        elif med_short is not None and not isinstance(med_short, int):
+            logger.warning(f"Invalid median_trend_short_lag type {type(med_short)}, expected int. Bypassing check")
+            med_short = None
+        if med_long in ("", None):  # Handle empty string as None
+            med_long = None
+        elif med_long is not None and not isinstance(med_long, int):
+            logger.warning(f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check")
+            med_long = None
+            
         if med_short is not None and med_long is not None:
             median_trend = self.technical_indicators.check_median_trend(
                 historical_data,
@@ -319,8 +336,19 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
             forecast_model = None
         if forecast_model is not None:
             if forecast_model == "arima":
+                order = self.kwargs.get("order")
+                seasonal_order = self.kwargs.get("seasonal_order")
                 arima_trend = self.forecast_models.check_arima_trend(
-                    monthly_data, current_price
+                    monthly_data, current_price, 
+                    order=order if order is not None else (0, 1, 1), 
+                    seasonal_order=seasonal_order if seasonal_order is not None else (0, 1, 1)
+                )
+                order = self.kwargs.get("order")
+                seasonal_order = self.kwargs.get("seasonal_order")
+                arima_trend = self.forecast_models.check_arima_trend(
+                    monthly_data, current_price, 
+                    order=order if order is not None else (0, 1, 1), 
+                    seasonal_order=seasonal_order if seasonal_order is not None else (0, 1, 1)
                 )
                 logger.debug(f"ARIMA trend check: {arima_trend}")
                 if not arima_trend:
@@ -347,6 +375,22 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
                 logger.debug(f"NBEATS trend check: {nbeats_trend}")
                 if not nbeats_trend:
                     logger.info("Entry rejected - failed NBEATS trend check")
+                    return False
+            elif forecast_model in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp", "knn"]:
+                ml_trend = self.forecast_models.check_ML_trend(monthly_data, classifier=forecast_model)
+                logger.debug(f"ML trend ({forecast_model}) check: {ml_trend}")
+                if not ml_trend:
+                    logger.info(f"Entry rejected - failed ML trend ({forecast_model}) check")
+                    return False
+            elif forecast_model == "oscillator":
+                osc_lags = self.kwargs.get("oscillator_lags")
+                oscillator_trend = self.forecast_models.check_seasonality_oscillator(
+                    monthly_data, 
+                    lags=osc_lags if osc_lags is not None else 3
+                ) if osc_lags is not None else True
+                logger.debug(f"Oscillator trend check: {oscillator_trend}")
+                if not oscillator_trend:
+                    logger.info("Entry rejected - failed oscillator trend check")
                     return False
             else:
                 logger.info("Entry rejected - unknown forecast model")
