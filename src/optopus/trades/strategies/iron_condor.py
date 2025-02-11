@@ -224,12 +224,14 @@ class IronCondor(OptionStrategy):
         call_long = self.legs[3]
         is_credit = self.strategy_side == "CREDIT"
         current_underlying_price = self.underlying_last
+        commission = self.calculate_total_commission()
+        current_pl = self.filter_pl
 
         # Generate price range for underlying
         min_strike = min(leg.strike for leg in self.legs)
         max_strike = max(leg.strike for leg in self.legs)
         spread_width = max_strike - min_strike
-        price_range = np.linspace(min_strike - spread_width, max_strike + spread_width, 200)
+        price_range = np.linspace(min_strike - 2*spread_width, max_strike + 2*spread_width, 200)
 
         # Calculate profit/loss for each price point
         pnl = []
