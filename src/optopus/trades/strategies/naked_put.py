@@ -1,5 +1,6 @@
 import pandas as pd
 from pandas import Timestamp, Timedelta
+import plotly.graph_objects as go
 from ..option_leg import OptionLeg
 from ..exit_conditions import DefaultExitCondition, ExitConditionChecker
 from ..option_chain_converter import OptionChainConverter
