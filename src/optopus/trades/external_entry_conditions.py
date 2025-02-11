@@ -89,7 +89,9 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         # Check technical indicators with bypass
         # Validate linear regression params
         lin_reg_lag = self.kwargs.get("linear_regression_lag")
-        if lin_reg_lag is not None and not isinstance(lin_reg_lag, int):
+        if lin_reg_lag in ("", None):  # Handle empty string as None
+            lin_reg_lag = None
+        elif lin_reg_lag is not None and not isinstance(lin_reg_lag, int):
             logger.warning(f"Invalid linear_regression_lag type {type(lin_reg_lag)}, expected int. Bypassing check")
             lin_reg_lag = None
         if lin_reg_lag is not None:
@@ -107,10 +109,14 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         med_short = self.kwargs.get("median_trend_short_lag")
         med_long = self.kwargs.get("median_trend_long_lag")
         
-        if med_short is not None and not isinstance(med_short, int):
+        if med_short in ("", None):  # Handle empty string as None
+            med_short = None
+        elif med_short is not None and not isinstance(med_short, int):
             logger.warning(f"Invalid median_trend_short_lag type {type(med_short)}, expected int. Bypassing check")
             med_short = None
-        if med_long is not None and not isinstance(med_long, int):
+        if med_long in ("", None):  # Handle empty string as None
+            med_long = None
+        elif med_long is not None and not isinstance(med_long, int):
             logger.warning(f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check")
             med_long = None
             
@@ -130,7 +136,9 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         # Check forecast models with bypass
         # Validate forecast model params
         forecast_model = self.kwargs.get("forecast_model")
-        if (forecast_model is not None and not isinstance(forecast_model, str)) or forecast_model == "":
+        if forecast_model in ("", None):  # Explicitly handle empty string
+            forecast_model = None
+        elif forecast_model is not None and not isinstance(forecast_model, str):
             logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
             forecast_model = None
         if forecast_model is not None:
@@ -225,10 +233,14 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         n_lookback = self.kwargs.get("n_lookback_kelly")
         fractional = self.kwargs.get("fractional_kelly")
         
-        if n_lookback is not None and not isinstance(n_lookback, int):
+        if n_lookback in ("", None):  # Handle empty string as None
+            n_lookback = None
+        elif n_lookback is not None and not isinstance(n_lookback, int):
             logger.warning(f"Invalid n_lookback_kelly type {type(n_lookback)}, expected int. Bypassing Kelly updates")
             n_lookback = None
-        if fractional is not None and not isinstance(fractional, (float, int)):
+        if fractional in ("", None):  # Handle empty string as None
+            fractional = None
+        elif fractional is not None and not isinstance(fractional, (float, int)):
             logger.warning(f"Invalid fractional_kelly type {type(fractional)}, expected float/int. Bypassing Kelly updates")
             fractional = None
         
@@ -300,7 +312,9 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
 
         # Check forecast models with bypass
         forecast_model = self.kwargs.get("forecast_model")
-        if (forecast_model is not None and not isinstance(forecast_model, str)) or forecast_model == "":
+        if forecast_model in ("", None):  # Handle empty string explicitly
+            forecast_model = None
+        elif forecast_model is not None and not isinstance(forecast_model, str):
             logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
             forecast_model = None
         if forecast_model is not None:
