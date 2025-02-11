@@ -114,7 +114,7 @@ class EntryOnForecast(ExternalEntryConditionChecker):
             logger.warning(f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check")
             med_long = None
             
-        if med_short is not None or med_long is not None:
+        if med_short is not None and med_long is not None:
             median_trend = self.technical_indicators.check_median_trend(
                 historical_data,
                 short_lag=med_short if med_short is not None else 50,
@@ -300,6 +300,9 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
 
         # Check forecast models with bypass
         forecast_model = self.kwargs.get("forecast_model")
+        if forecast_model is not None and not isinstance(forecast_model, str):
+            logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
+            forecast_model = None
         if forecast_model is not None:
             if forecast_model == "arima":
                 arima_trend = self.forecast_models.check_arima_trend(
