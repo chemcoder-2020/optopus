@@ -294,6 +294,14 @@ class IronCondor(OptionStrategy):
             name='Current Price'
         )
 
+        # Add current price annotation
+        fig.add_annotation(x=current_underlying_price, y=current_pl,
+            text=f"Current Price: {current_underlying_price:.2f}<br>P/L: ${current_pl:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=-40)
+
         # Add annotations
         fig.add_annotation(x=put_breakeven, y=0,
             text=f"Put Breakeven: {put_breakeven:.2f}",
