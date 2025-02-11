@@ -244,58 +244,72 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
             period=self.kwargs.get("atr_period", 14),
         )
 
-        # Check technical indicators
-        linear_trend = self.technical_indicators.check_linear_regression(
-            historical_data, lag=self.kwargs.get("linear_regression_lag", 14)
-        )
-        logger.debug(f"Linear regression trend check: {linear_trend}")
-        if not linear_trend:
-            logger.info("Entry rejected - failed linear regression trend check")
-            return False
-
-        median_trend = self.technical_indicators.check_median_trend(
-            historical_data,
-            short_lag=self.kwargs.get("median_trend_short_lag", 50),
-            long_lag=self.kwargs.get("median_trend_long_lag", 200),
-        )
-        logger.debug(f"Median trend check: {median_trend}")
-        if not median_trend:
-            logger.info("Entry rejected - failed median trend check")
-            return False
-
-        # Check forecast models
-        if self.kwargs.get("forecast_model", "arima") == "arima":
-            arima_trend = self.forecast_models.check_arima_trend(
-                monthly_data, current_price
+        # Check technical indicators with bypass
+        lin_reg_lag = self.kwargs.get("linear_regression_lag")
+        if lin_reg_lag is not None:
+            linear_trend = self.technical_indicators.check_linear_regression(
+                historical_data, lag=lin_reg_lag
             )
-            logger.debug(f"ARIMA trend check: {arima_trend}")
-            if not arima_trend:
-                logger.info("Entry rejected - failed ARIMA trend check")
-                return False
-        elif self.kwargs.get("forecast_model", "arima") == "autoarima":
-            autoarima_trend = self.forecast_models.check_autoarima_trend(
-                monthly_data, current_price
-            )
-            logger.debug(f"AutoARIMA trend check: {autoarima_trend}")
-            if not autoarima_trend:
-                logger.info("Entry rejected - failed AutoARIMA trend check")
-                return False
-        elif self.kwargs.get("forecast_model", "arima") == "autoces":
-            autoces_trend = self.forecast_models.check_autoces_trend(
-                monthly_data, current_price
-            )
-            logger.debug(f"AutoCES trend check: {autoces_trend}")
-            if not autoces_trend:
-                logger.info("Entry rejected - failed AutoCES trend check")
-                return False
-        elif self.kwargs.get("forecast_model", "arima") == "nbeats":
-            nbeats_trend = self.forecast_models.check_nbeats_trend(monthly_data)
-            logger.debug(f"NBEATS trend check: {nbeats_trend}")
-            if not nbeats_trend:
-                logger.info("Entry rejected - failed NBEATS trend check")
+            logger.debug(f"Linear regression trend check: {linear_trend}")
+            if not linear_trend:
+                logger.info("Entry rejected - failed linear regression trend check")
                 return False
         else:
-            logger.info("Entry rejected - unknown forecast model")
-            return False
+            logger.debug("Bypassing linear regression check")
+
+        # Check median trend with bypass
+        med_short = self.kwargs.get("median_trend_short_lag")
+        med_long = self.kwargs.get("median_trend_long_lag")
+        if med_short is not None and med_long is not None:
+            median_trend = self.technical_indicators.check_median_trend(
+                historical_data,
+                short_lag=med_short,
+                long_lag=med_long,
+            )
+            logger.debug(f"Median trend check: {median_trend}")
+            if not median_trend:
+                logger.info("Entry rejected - failed median trend check")
+                return False
+        else:
+            logger.debug("Bypassing median trend check")
+
+        # Check forecast models with bypass
+        forecast_model = self.kwargs.get("forecast_model")
+        if forecast_model is not None:
+            if forecast_model == "arima":
+                arima_trend = self.forecast_models.check_arima_trend(
+                    monthly_data, current_price
+                )
+                logger.debug(f"ARIMA trend check: {arima_trend}")
+                if not arima_trend:
+                    logger.info("Entry rejected - failed ARIMA trend check")
+                    return False
+            elif forecast_model == "autoarima":
+                autoarima_trend = self.forecast_models.check_autoarima_trend(
+                    monthly_data, current_price
+                )
+                logger.debug(f"AutoARIMA trend check: {autoarima_trend}")
+                if not autoarima_trend:
+                    logger.info("Entry rejected - failed AutoARIMA trend check")
+                    return False
+            elif forecast_model == "autoces":
+                autoces_trend = self.forecast_models.check_autoces_trend(
+                    monthly_data, current_price
+                )
+                logger.debug(f"AutoCES trend check: {autoces_trend}")
+                if not autoces_trend:
+                    logger.info("Entry rejected - failed AutoCES trend check")
+                    return False
+            elif forecast_model == "nbeats":
+                nbeats_trend = self.forecast_models.check_nbeats_trend(monthly_data)
+                logger.debug(f"NBEATS trend check: {nbeats_trend}")
+                if not nbeats_trend:
+                    logger.info("Entry rejected - failed NBEATS trend check")
+                    return False
+            else:
+                logger.info("Entry rejected - unknown forecast model")
+                return False
+        else:
+            logger.debug("Bypassing forecast model checks")
 
         return True
