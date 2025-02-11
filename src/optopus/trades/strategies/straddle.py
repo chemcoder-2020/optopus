@@ -131,3 +131,100 @@ class Straddle(OptionStrategy):
         strategy.underlying_last = put_leg.underlying_last
 
         return strategy
+
+    def plot_risk_profile(self):
+        """Plot the risk profile curve for the straddle strategy using Plotly.
+
+        Shows the profit/loss diagram with breakeven points and key levels marked.
+        """
+        entry_premium = abs(self.entry_net_premium)
+        call_leg = self.legs[0]
+        put_leg = self.legs[1]
+        current_underlying_price = self.underlying_last
+        is_debit = self.strategy_side == "DEBIT"
+        current_pl = self.filter_pl
+
+        price_range, pnl = self.generate_payoff_curve()
+
+        # Calculate breakeven prices
+        breakeven_up = call_leg.strike + entry_premium
+        breakeven_down = put_leg.strike - entry_premium
+
+        # Create plot
+        fig = go.Figure()
+
+        # Add P/L curve
+        fig.add_trace(
+            go.Scatter(
+                x=price_range,
+                y=pnl,
+                mode="lines",
+                name="P/L Curve",
+                line=dict(color="royalblue", width=3),
+                hovertemplate="Price: %{x}<br>P/L: %{y}",
+            )
+        )
+
+        # Add strike line
+        fig.add_shape(
+            type="line",
+            x0=call_leg.strike,
+            y0=min(pnl),
+            x1=call_leg.strike,
+            y1=max(pnl),
+            line=dict(color="grey", dash="dashdot"),
+            name="Strike Price",
+        )
+
+        # Add breakeven lines
+        for be_price, direction in [(breakeven_up, "Upper"), (breakeven_down, "Lower")]:
+            fig.add_shape(
+                type="line",
+                x0=be_price,
+                y0=min(pnl),
+                x1=be_price,
+                y1=max(pnl),
+                line=dict(color="green" if is_debit else "red", dash="dot"),
+                name=f"{direction} Breakeven",
+            )
+
+        # Add annotations
+        fig.add_annotation(
+            x=breakeven_up,
+            y=0,
+            text=f"Upper BE: {breakeven_up:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=-40,
+        )
+        fig.add_annotation(
+            x=breakeven_down,
+            y=0,
+            text=f"Lower BE: {breakeven_down:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=-40,
+        )
+        fig.add_annotation(
+            x=current_underlying_price,
+            y=current_pl,
+            text=f"Current Price: {current_underlying_price:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=-40,
+        )
+
+        fig.update_layout(
+            title=f"{self.strategy_type} Risk Profile ({self.strategy_side})",
+            xaxis_title="Underlying Price",
+            yaxis_title="Profit/Loss ($)",
+            hovermode="x unified",
+            showlegend=True,
+            margin=dict(l=50, r=50, b=50, t=50),
+            height=600,
+        )
+
+        return fig.show()
