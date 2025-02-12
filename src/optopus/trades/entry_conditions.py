@@ -331,8 +331,8 @@ class TimeBasedEntryCondition(EntryConditionChecker):
             else:
                 start_str, end_str = time_spec
                 
-            start = pd.Timestamp(start_str).tz_localize(self.timezone).tz_convert("UTC")
-            end = pd.Timestamp(end_str).tz_localize(self.timezone).tz_convert("UTC")
+            start = pd.Timestamp(start_str).tz_localize(self.timezone)
+            end = pd.Timestamp(end_str).tz_localize(self.timezone)
             self.time_ranges.append((start.time(), end.time()))
 
     def should_enter(
@@ -341,7 +341,7 @@ class TimeBasedEntryCondition(EntryConditionChecker):
         manager: "OptionBacktester",
         time: Union[datetime, str, pd.Timestamp],
     ) -> bool:
-        current_time = pd.Timestamp(time).tz_convert("UTC")
+        current_time = pd.Timestamp(time).tz_convert(self.timezone)
         
         # Check allowed days
         if self.allowed_day_numbers:
