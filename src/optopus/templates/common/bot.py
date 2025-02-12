@@ -15,7 +15,6 @@ from config import (
     STRATEGY_PARAMS,
     BACKTESTER_CONFIG,
 )
-from entry_condition import BotEntryCondition
 
 
 # Configure loguru to write logs to a file
@@ -43,7 +42,6 @@ else:
     config.client_secret = os.getenv("SCHWAB_CLIENT_SECRET")
     config.redirect_uri = os.getenv("SCHWAB_REDIRECT_URI")
     config.token_file = os.path.join(basename, "token.json")
-    config.entry_condition = BotEntryCondition(ticker=ticker, basename=basename)
     trading_manager = TradingManager(config)
 
 trading_manager.auth_refresh()
