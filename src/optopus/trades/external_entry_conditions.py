@@ -78,16 +78,31 @@ class AndComponent:
         self.left = left
         self.right = right
 
+    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+        return (
+            self.left.should_enter(time, strategy, manager) and 
+            self.right.should_enter(time, strategy, manager)
+        )
+
 class OrComponent:
     """OR logical operator component"""
     def __init__(self, left: BaseComponent, right: BaseComponent):
         self.left = left
         self.right = right
 
+    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+        return (
+            self.left.should_enter(time, strategy, manager) or 
+            self.right.should_enter(time, strategy, manager)
+        )
+
 class NotComponent:
     """NOT logical operator component"""
     def __init__(self, component: BaseComponent):
         self.component = component
+
+    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+        return not self.component.should_enter(time, strategy, manager)
 
 @BaseComponent.register("rsi")
 class RSIComponent(BaseComponent):
@@ -96,7 +111,7 @@ class RSIComponent(BaseComponent):
         self.period = period
         self.oversold = oversold
         
-    def should_enter(self, strategy, manager, time) -> bool:
+    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
         hist_data = manager.context['historical_data']
         return TechnicalIndicators.check_rsi(
             historical_data=hist_data,
@@ -106,6 +121,36 @@ class RSIComponent(BaseComponent):
         
     def __repr__(self):
         return f"RSIComponent(period={self.period}, oversold={self.oversold})"
+
+class CompositePipelineCondition(ExternalEntryConditionChecker):
+    """Decision pipeline combining multiple indicators/models using logical operators"""
+    def __init__(self, pipeline: BaseComponent, ohlc_data: str):
+        """
+        Args:
+            pipeline: Configured pipeline using component operators
+            ohlc_data: Path to OHLC data file
+        """
+        self.pipeline = pipeline
+        self.data_processor = DataProcessor(ohlc_data)
+        
+    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+        # Prepare market data
+        current_price = strategy.underlying_last if strategy else None
+        hist_data, monthly_data = self.data_processor.prepare_historical_data(time, current_price)
+        
+        # Initialize context if needed
+        if not hasattr(manager, 'context'):
+            manager.context = {}
+            
+        # Store data in context for components
+        manager.context.update({
+            'historical_data': hist_data,
+            'monthly_data': monthly_data,
+            'current_price': current_price
+        })
+        
+        # Evaluate the pipeline
+        return self.pipeline.should_enter(time, strategy, manager)
 
 class EntryOnForecast(ExternalEntryConditionChecker):
     def __init__(self, **kwargs):
