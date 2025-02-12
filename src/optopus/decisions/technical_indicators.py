@@ -23,6 +23,21 @@ class TechnicalIndicators:
         return median1 > median2
 
     @staticmethod
+    def check_rsi(historical_data, period=14, overbought=70, oversold=30) -> bool:
+        """Check if RSI indicates oversold condition"""
+        close_prices = historical_data["close"]
+        delta = close_prices.diff()
+        gain = delta.where(delta > 0, 0)
+        loss = -delta.where(delta < 0, 0)
+        
+        avg_gain = gain.rolling(window=period, min_periods=1).mean()
+        avg_loss = loss.rolling(window=period, min_periods=1).mean()
+        
+        rs = avg_gain / (avg_loss + 1e-10)  # Avoid division by zero
+        rsi = 100 - (100 / (1 + rs))
+        return rsi.iloc[-1] < oversold
+
+    @staticmethod
     def check_linear_regression(historical_data, lag=3):
         """Check linear regression trend over specified lag period using daily data"""
         if len(historical_data) < lag:
