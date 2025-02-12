@@ -13,3 +13,4 @@ dill>=0.3.4
 statsforecast>=1.0.0
 neuralforecast>=1.0.0
 sktime>=0.3.0
+plotly>=5.0.0

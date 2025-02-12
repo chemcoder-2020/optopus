@@ -35,7 +35,7 @@ DEBUG = config.getboolean("GENERAL", "DEBUG")
 def get_params(section):
     params = {}
     for option in config[section]._options():
-        if "delta" in option:
+        if "delta" in option or "strike" in option:
             param = config.get(section, option, raw=True)
         elif "time" in option:
             param = config.get(section, option)

@@ -37,6 +37,7 @@ setup(
         "statsforecast>=1.0.0",
         "neuralforecast>=1.0.0",
         "sktime>=0.3.0",
+        "plotly>=5.0.0",
     ],
     entry_points={
         'console_scripts': [

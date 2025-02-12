@@ -167,7 +167,7 @@ class MedianCalculator:
         """
         current_return = strategy.return_percentage()
 
-        if not self.method:  # Handle empty/null method case
+        if not hasattr(self, "method") or not self.method:  # Handle empty/null method case
             strategy.filter_return_percentage = current_return
             strategy.filter_pl = strategy.total_pl()
             strategy.premium_log = self.premiums.copy()

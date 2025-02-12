@@ -31,7 +31,7 @@ class TestOptionStrategy(unittest.TestCase):
             option_type="PUT",
             long_strike="ATM-1.5%",
             short_strike="ATM",
-            expiration="2024-10-31",
+            expiration=0, #"2024-09-06",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
@@ -42,11 +42,6 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.entry_bid, vertical_spread.legs[1].entry_bid - vertical_spread.legs[0].entry_ask)
         self.assertEqual(len(vertical_spread.legs), 2)
         self.assertEqual(vertical_spread.strategy_type, "Vertical Spread")
-        import time
-        t0 = time.time()
-        vertical_spread.calculate_bid_ask()
-        t1 = time.time()
-        print(t1 - t0)
 
     def test_iron_condor_creation(self):
         iron_condor = IronCondor.create_iron_condor(

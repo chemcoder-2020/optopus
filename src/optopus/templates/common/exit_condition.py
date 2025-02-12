@@ -21,13 +21,15 @@ class ExitCondition(ExitConditionChecker):
     ):
 
         profit_target_condition = ProfitTargetCondition(
-            profit_target=profit_target, window_size=kwargs.get("window_size", 3)
+            profit_target=profit_target, window_size=kwargs.get("window_size", 10), method=kwargs.get("filter_method", "HampelFilter")
         )
 
         tsl_condition = TrailingStopCondition(
             trigger=trigger,
             stop_loss=stop_loss,
-            window_size=kwargs.get("window_size", 3),
+            window_size=kwargs.get("window_size", 10),
+            method=kwargs.get("filter_method", "HampelFilter"),
+            exit_upon_positive_return=kwargs.get("exit_upon_positive_return", False),
         )
 
         time_based_condition = TimeBasedCondition(
