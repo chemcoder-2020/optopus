@@ -519,7 +519,7 @@ class DefaultEntryCondition(EntryConditionChecker):
         self.composite = CompositeEntryCondition(
             [
                 CapitalRequirementCondition(),
-                TimeBasedEntryCondition(),
+                TimeBasedEntryCondition(**kwargs),
                 PositionLimitCondition(),
                 RORThresholdCondition(),
                 ConflictCondition(
