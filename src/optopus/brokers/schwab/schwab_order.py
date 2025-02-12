@@ -71,10 +71,12 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self.current_bid, self.current_ask = self.calculate_bid_ask()
 
         current_price = (self.current_bid + self.current_ask) / 2
-        if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
+        if self.strategy_side == "CREDIT":
             target_price = self.current_bid
-        else:
+        elif self.strategy_side == "DEBIT":
             target_price = self.current_ask
+        else:
+            raise ValueError("Invalid strategy side.")
 
         max_attempts = int(abs(target_price - current_price) // price_step) + int(
             abs(target_price - current_price) % price_step != 0
@@ -151,8 +153,8 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             payload = self.generate_iron_butterfly_json(
                 symbol=self.symbol,
                 expiration=self.legs[0].expiration,
-                long_call_strike_price=self.legs[2].strike,
-                strike_price=self.legs[1].strike,
+                long_call_strike_price=self.legs[3].strike,
+                strike_price=self.legs[2].strike,
                 long_put_strike_price=self.legs[0].strike,
                 quantity=self.contracts,
                 price=abs(price),

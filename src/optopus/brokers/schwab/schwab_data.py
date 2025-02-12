@@ -241,45 +241,71 @@ class SchwabData(Schwab):
                 else formatted_quote[f"{contractType}_MARK"]
             )
             formatted_quote["intDTE"] = int(formatted_quote["DTE"])
-            formatted_quotes.append(formatted_quote)
-
-        formatted_df = pd.DataFrame(formatted_quotes)
-        formatted_df = formatted_df[
-            [
+            
+            formatted_df = pd.Series(formatted_quote).to_frame().T
+            formatted_df = formatted_df[
+                [
+                    f"{contractType}_BID",
+                    f"{contractType}_ASK",
+                    f"{contractType}_LAST",
+                    f"{contractType}_MARK",
+                    f"{contractType}_DELTA",
+                    "STRIKE",
+                    "EXPIRE_DATE",
+                    "DTE",
+                    f"{contractType}_ITM",
+                    "UNDERLYING_LAST",
+                    "QUOTE_READTIME",
+                    "QUOTE_TIME_HOURS",
+                    "intDTE",
+                ]
+            ]
+            formatted_df[f"{contractType}_ITM"] = formatted_df[
+                f"{contractType}_ITM"
+            ].astype(bool)
+            formatted_df["intDTE"] = formatted_df["intDTE"].astype(int)
+            formatted_df["QUOTE_READTIME"] = pd.to_datetime(
+                formatted_df["QUOTE_READTIME"]
+            ).round("15min")
+            for col in [
                 f"{contractType}_BID",
                 f"{contractType}_ASK",
                 f"{contractType}_LAST",
                 f"{contractType}_MARK",
                 f"{contractType}_DELTA",
                 "STRIKE",
-                "EXPIRE_DATE",
                 "DTE",
-                f"{contractType}_ITM",
                 "UNDERLYING_LAST",
-                "QUOTE_READTIME",
-                "QUOTE_TIME_HOURS",
-                "intDTE",
-            ]
-        ]
-        formatted_df[f"{contractType}_ITM"] = formatted_df[
-            f"{contractType}_ITM"
-        ].astype(bool)
-        formatted_df["intDTE"] = formatted_df["intDTE"].astype(int)
-        formatted_df["QUOTE_READTIME"] = pd.to_datetime(
-            formatted_df["QUOTE_READTIME"]
-        ).round("15min")
-        for col in [
-            f"{contractType}_BID",
-            f"{contractType}_ASK",
-            f"{contractType}_LAST",
-            f"{contractType}_MARK",
-            f"{contractType}_DELTA",
-            "STRIKE",
-            "DTE",
-            "UNDERLYING_LAST",
-        ]:
-            formatted_df[col] = formatted_df[col].astype("float64")
-        return formatted_df
+            ]:
+                formatted_df[col] = formatted_df[col].astype("float64")
+
+            formatted_quotes.append(formatted_df)
+
+        # Separate puts (P_ columns) and calls (C_ columns)
+        df_puts = pd.concat([df for df in formatted_quotes if 'P_BID' in df.columns])
+        df_calls = pd.concat([df for df in formatted_quotes if 'C_BID' in df.columns])
+        # Merge on key columns and handle overlapping columns with suffixes
+        merge_keys = ['STRIKE', 'EXPIRE_DATE']
+        merged_df = pd.merge(
+            df_puts,
+            df_calls,
+            on=merge_keys,
+            how='outer',
+            suffixes=('_PUT', '_CALL')
+        )
+        # Columns to consolidate (common between puts and calls)
+        common_cols_all = df_puts.columns.intersection(df_calls.columns).tolist()
+        common_cols = [col for col in common_cols_all if col not in merge_keys]
+
+        for col in common_cols:
+            merged_col_put = f'{col}_PUT'
+            merged_col_call = f'{col}_CALL'
+            # Use put value if available; fallback to call
+            merged_df[col] = merged_df[merged_col_put].fillna(merged_df[merged_col_call])
+            # Drop the original merged columns
+            merged_df.drop([merged_col_put, merged_col_call], axis=1, inplace=True)
+
+        return merged_df
 
     def format_equity_quote(self, raw_quote):
         """
