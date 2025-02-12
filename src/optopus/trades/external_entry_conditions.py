@@ -72,9 +72,10 @@ class BaseComponent:
     def __invert__(self):
         return NotComponent(self)
 
-class AndComponent:
+class AndComponent(BaseComponent):
     """AND logical operator component"""
     def __init__(self, left: BaseComponent, right: BaseComponent):
+        super().__init__()
         self.left = left
         self.right = right
 
@@ -84,9 +85,10 @@ class AndComponent:
             self.right.should_enter(time, strategy, manager)
         )
 
-class OrComponent:
+class OrComponent(BaseComponent):
     """OR logical operator component"""
     def __init__(self, left: BaseComponent, right: BaseComponent):
+        super().__init__()
         self.left = left
         self.right = right
 
@@ -96,9 +98,10 @@ class OrComponent:
             self.right.should_enter(time, strategy, manager)
         )
 
-class NotComponent:
+class NotComponent(BaseComponent):
     """NOT logical operator component"""
     def __init__(self, component: BaseComponent):
+        super().__init__()
         self.component = component
 
     def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
