@@ -108,6 +108,76 @@ class NotComponent(BaseComponent):
         return not self.component.should_enter(time, strategy, manager)
 
 @BaseComponent.register("rsi")
+class IndicatorCheck(BaseComponent):
+    """Component for technical indicator checks"""
+    def __init__(self, name: str, **params):
+        self.name = name.lower()
+        self.params = params
+        self._validate_indicator()
+        
+    def _validate_indicator(self):
+        valid_indicators = {
+            'atr': (TechnicalIndicators.calculate_atr, ['high', 'low', 'close', 'period']),
+            'linear_regression': (TechnicalIndicators.check_linear_regression, ['historical_data', 'lag']),
+            'median_trend': (TechnicalIndicators.check_median_trend, ['historical_data', 'short_lag', 'long_lag']),
+            'rsi': (TechnicalIndicators.check_rsi, ['historical_data', 'period', 'oversold'])
+        }
+        if self.name not in valid_indicators:
+            raise ValueError(f"Invalid indicator: {self.name}")
+        self.func, self.expected_args = valid_indicators[self.name]
+        
+    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+        hist_data = manager.context['historical_data']
+        bound_args = self._bind_arguments()
+        return self.func(TechnicalIndicators, **bound_args)
+    
+    def _bind_arguments(self):
+        bound_args = {}
+        for arg in self.expected_args:
+            if arg == 'historical_data':
+                bound_args[arg] = manager.context.get('historical_data')
+            else:
+                bound_args[arg] = self.params.get(arg)
+        return bound_args
+        
+    def __repr__(self):
+        return f"IndicatorCheck(name={self.name}, params={self.params})"
+
+class ModelCheck(BaseComponent):
+    """Component for forecast model checks"""
+    def __init__(self, name: str, **params):
+        self.name = name.lower()
+        self.params = params
+        self._validate_model()
+        
+    def _validate_model(self):
+        valid_models = {
+            'arima': (ForecastModels.check_arima_trend, ['monthly_data', 'current_price', 'order', 'seasonal_order']),
+            'autoarima': (ForecastModels.check_autoarima_trend, ['monthly_data', 'current_price']),
+            'ml_model': (ForecastModels.check_ML_trend, ['monthly_data', 'classifier'])
+        }
+        if self.name not in valid_models:
+            raise ValueError(f"Invalid model: {self.name}")
+        self.func, self.expected_args = valid_models[self.name]
+        
+    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+        bound_args = self._bind_arguments(manager)
+        return self.func(ForecastModels, **bound_args)
+    
+    def _bind_arguments(self, manager):
+        bound_args = {}
+        for arg in self.expected_args:
+            if arg == 'monthly_data':
+                bound_args[arg] = manager.context.get('monthly_data')
+            elif arg == 'current_price':
+                bound_args[arg] = manager.context.get('current_price')
+            else:
+                bound_args[arg] = self.params.get(arg)
+        return bound_args
+        
+    def __repr__(self):
+        return f"ModelCheck(name={self.name}, params={self.params})"
+
 class RSIComponent(BaseComponent):
     """RSI component with operator support"""
     def __init__(self, period=14, oversold=30):
