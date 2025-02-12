@@ -37,9 +37,14 @@ def get_params(section):
     for option in config[section]._options():
         if "delta" in option or "strike" in option:
             param = config.get(section, option, raw=True)
-        elif "time" in option:
+        elif "exit_time_before_expiration" in option:
             param = config.get(section, option)
             param = pd.Timedelta(param)
+            params[option] = param
+            continue
+        elif "allowed_times" in option:
+            param = config.get(section, option)
+            param = eval(param)
             params[option] = param
             continue
         else:
