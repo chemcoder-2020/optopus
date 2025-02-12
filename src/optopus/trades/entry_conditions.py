@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
-from typing import Union, TYPE_CHECKING, List
+from typing import Union, TYPE_CHECKING, List, Tuple
 from loguru import logger
 import numpy as np
 from ..utils.heapmedian import ContinuousMedian
