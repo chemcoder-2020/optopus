@@ -67,11 +67,9 @@ class OptionChainConverter:
                 ).replace(tzinfo=None)
 
         target_date = pd.Timestamp(target_date.date())
-        # print(target_date)
         expirations = self.option_chain_df["EXPIRE_DATE"].unique()
         # Filter expirations to only include those that are at least target_date days from t0
         valid_expirations = [exp for exp in expirations if pd.Timestamp(exp.date()) >= target_date]
-        # print(sorted(valid_expirations)[0])
         if not valid_expirations:
             raise ValueError(
                 "No valid expiration dates found that meet the target date criteria."
