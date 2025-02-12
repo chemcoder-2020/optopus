@@ -282,14 +282,23 @@ class SchwabData(Schwab):
             formatted_quotes.append(formatted_df)
 
         # Separate puts (P_ columns) and calls (C_ columns)
-        df_puts = pd.concat([df for df in formatted_quotes if 'P_BID' in df.columns])
-        df_calls = pd.concat([df for df in formatted_quotes if 'C_BID' in df.columns])
-
-        if df_puts.empty:
+        put_list = [df for df in formatted_quotes if 'P_BID' in df.columns]
+        if put_list != []:
+            df_puts = pd.concat(put_list)
+        
+        call_list = [df for df in formatted_quotes if 'C_BID' in df.columns]
+        if call_list != []:
+            df_calls = pd.concat([df for df in formatted_quotes if 'C_BID' in df.columns])
+        
+        if call_list == [] and put_list == []:
+            raise ValueError("No calls or puts found in quote data.")
+            
+        if put_list == []:
             return df_calls
-
-        if df_calls.empty:
+        
+        if call_list == []:
             return df_puts
+
         # Merge on key columns and handle overlapping columns with suffixes
         merge_keys = ['STRIKE', 'EXPIRE_DATE']
         merged_df = pd.merge(
