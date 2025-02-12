@@ -47,6 +47,66 @@ class ExternalEntryConditionChecker(ABC):
         return f"{self.__class__.__name__}()"
 
 
+class BaseComponent:
+    """Base class for all pipeline components with operator overloading"""
+    _registry = {}  # Class-level component registry
+    
+    @classmethod
+    def register(cls, name: str):
+        def decorator(subclass):
+            cls._registry[name.lower()] = subclass
+            return subclass
+        return decorator
+    
+    @classmethod
+    def create(cls, name: str, **kwargs):
+        """Factory method for creating components"""
+        return cls._registry[name.lower()](**kwargs)
+
+    def __mul__(self, other):
+        return AndComponent(self, other)
+    
+    def __or__(self, other):
+        return OrComponent(self, other)
+    
+    def __invert__(self):
+        return NotComponent(self)
+
+class AndComponent:
+    """AND logical operator component"""
+    def __init__(self, left: BaseComponent, right: BaseComponent):
+        self.left = left
+        self.right = right
+
+class OrComponent:
+    """OR logical operator component"""
+    def __init__(self, left: BaseComponent, right: BaseComponent):
+        self.left = left
+        self.right = right
+
+class NotComponent:
+    """NOT logical operator component"""
+    def __init__(self, component: BaseComponent):
+        self.component = component
+
+@BaseComponent.register("rsi")
+class RSIComponent(BaseComponent):
+    """RSI component with operator support"""
+    def __init__(self, period=14, oversold=30):
+        self.period = period
+        self.oversold = oversold
+        
+    def should_enter(self, strategy, manager, time) -> bool:
+        hist_data = manager.context['historical_data']
+        return TechnicalIndicators.check_rsi(
+            historical_data=hist_data,
+            period=self.period,
+            oversold=self.oversold
+        )
+        
+    def __repr__(self):
+        return f"RSIComponent(period={self.period}, oversold={self.oversold})"
+
 class EntryOnForecast(ExternalEntryConditionChecker):
     def __init__(self, **kwargs):
         """
