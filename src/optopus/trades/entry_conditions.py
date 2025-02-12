@@ -519,7 +519,7 @@ class DefaultEntryCondition(EntryConditionChecker):
         self.composite = CompositeEntryCondition(
             [
                 CapitalRequirementCondition(),
-                TimeBasedEntryCondition(**kwargs),
+                TimeBasedEntryCondition(allowed_days=kwargs.get("allowed_days", ["Mon", "Tue", "Wed", "Thu", "Fri"]), allowed_times=kwargs.get("allowed_times", ["09:45-15:45"]), timezone=kwargs.get("timezone", "America/New_York")),
                 PositionLimitCondition(),
                 RORThresholdCondition(),
                 ConflictCondition(
