@@ -299,19 +299,19 @@ class TimeBasedEntryCondition(EntryConditionChecker):
     Checks if current time is within allowed entry times.
 
     Args:
-        allowed_times (List[Union[Tuple[str, str], str]]): List of time ranges in "HH:MM-HH:MM" format or tuples
-        allowed_days (List[Union[int, str]]): List of allowed days (0=Mon-6=Sun or 'Mon'-'Sun')
+        allowed_times (List[Union[Tuple[str, str], str]]): List of time ranges in "HH:MM-HH:MM" format (default: 9:45AM-3:45PM ET)
+        allowed_days (List[Union[int, str]]): List of allowed days (0=Mon-6=Sun or 'Mon'-'Sun', default: Mon-Fri)
         timezone (str): Timezone string (default: "America/New_York")
     """
     
     def __init__(
         self,
-        allowed_times: List[Union[Tuple[str, str], str]] = None,
-        allowed_days: List[Union[int, str]] = None,
+        allowed_times: List[Union[Tuple[str, str], str]] = ["09:45-15:45"],
+        allowed_days: List[Union[int, str]] = ['Mon','Tue','Wed','Thu','Fri'],
         timezone: str = "America/New_York",
     ):
-        self.allowed_times = allowed_times or []
-        self.allowed_days = allowed_days or []
+        self.allowed_times = allowed_times
+        self.allowed_days = allowed_days
         self.timezone = timezone
         
         # Convert string day names to numbers if needed
