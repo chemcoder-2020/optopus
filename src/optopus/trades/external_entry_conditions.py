@@ -208,12 +208,15 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         self.data_processor = DataProcessor(ohlc_data, ticker=ticker)
         
     def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+        logger.debug(f"Evaluating pipeline at {time}: {self.pipeline}")
+        
         # Prepare market data
         current_price = strategy.underlying_last if strategy else None
         hist_data, monthly_data = self.data_processor.prepare_historical_data(time, current_price)
         
         # Initialize context if needed
         if not hasattr(manager, 'context'):
+            logger.debug("Creating new context in manager")
             manager.context = {}
             
         # Store data in context for components
@@ -222,9 +225,12 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
             'monthly_data': monthly_data,
             'current_price': current_price
         })
+        logger.debug(f"Context updated with historical data ({len(hist_data)} rows), monthly data ({len(monthly_data)} rows), current price {current_price}")
         
         # Evaluate the pipeline
-        return self.pipeline.should_enter(time, strategy, manager)
+        result = self.pipeline.should_enter(time, strategy, manager)
+        logger.debug(f"Pipeline evaluation result: {result}")
+        return result
 
 class EntryOnForecast(ExternalEntryConditionChecker):
     def __init__(self, **kwargs):
