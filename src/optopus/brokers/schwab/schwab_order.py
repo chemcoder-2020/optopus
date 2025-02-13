@@ -503,10 +503,27 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                             break
 
     def __repr__(self):
+        """
+        Return a string representation combining both order details and strategy details.
+        """
+        legs_repr = "\n    ".join(repr(leg) for leg in self.legs)
         return (
             f"SchwabOptionOrder(\n"
             f"  Order ID: {self.order_id},\n"
-            f"  Order Status: {self.order_status}\n"
+            f"  Order Status: {self.order_status},\n"
+            f"  Strategy Details:\n"
+            f"    Symbol: {self.symbol},\n"
+            f"    Strategy Type: {self.strategy_type},\n"
+            f"    Status: {self.status},\n"
+            f"    Contracts: {self.contracts},\n"
+            f"    Entry Time: {self.entry_time},\n"
+            f"    Current Time: {self.current_time},\n"
+            f"    Entry Net Premium: {self.entry_net_premium:.2f},\n"
+            f"    Current Net Premium: {self.net_premium:.2f},\n"
+            f"    Return Percentage: {self.return_percentage():.2f}%,\n"
+            f"    Current Delta: {self.current_delta():.2f},\n"
+            f"    Days in Trade (DIT): {self.DIT},\n"
+            f"    Strategy Legs:\n    {legs_repr}\n"
             f")"
         )
 
