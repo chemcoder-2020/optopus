@@ -44,8 +44,9 @@ class TradingManager(OptionBacktester):
         - bool: True if the order was successfully added, False otherwise.
         """
         market_isopen = order.market_isOpen()
+        logger.info(f"Market open: {market_isopen}")
         if market_isopen and (
-            hasattr(self, "automation_on") == False or self.automation_on
+            hasattr(self, "automation_on") is False or self.automation_on
         ):
             if self.add_spread(order):
                 if order.submit_entry():
@@ -641,6 +642,7 @@ class TradingManager(OptionBacktester):
                 return
 
             order = self.option_broker.create_order(strategy)
+            logger.info(f"{bar}: Created order: {order}")
             if self.add_order(order):
                 logger.info(f"{bar}: Added order: {order}")
             else:

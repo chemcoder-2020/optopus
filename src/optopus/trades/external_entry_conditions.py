@@ -198,14 +198,14 @@ class RSIComponent(BaseComponent):
 
 class CompositePipelineCondition(ExternalEntryConditionChecker):
     """Decision pipeline combining multiple indicators/models using logical operators"""
-    def __init__(self, pipeline: BaseComponent, ohlc_data: str):
+    def __init__(self, pipeline: BaseComponent, ohlc_data: str, ticker=None):
         """
         Args:
             pipeline: Configured pipeline using component operators
             ohlc_data: Path to OHLC data file
         """
         self.pipeline = pipeline
-        self.data_processor = DataProcessor(ohlc_data)
+        self.data_processor = DataProcessor(ohlc_data, ticker=ticker)
         
     def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
         # Prepare market data
