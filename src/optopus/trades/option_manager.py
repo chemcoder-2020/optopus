@@ -161,6 +161,7 @@ class OptionBacktester:
         """
         try:
             if not self._can_add_spread(new_spread):
+                logger.info(f"Rejecting {new_spread.symbol} {new_spread.strategy_type} - entry conditions not met")
                 return False
 
             required_capital = new_spread.get_required_capital()
@@ -169,7 +170,7 @@ class OptionBacktester:
             self.active_trades.append(new_spread)
             self.available_to_trade -= required_capital
             self._update_trade_counts()
-            logger.info(f"Added new spread: {new_spread}")
+            logger.success(f"Added {new_spread.symbol} {new_spread.strategy_type} (Contracts: {new_spread.contracts}, Required Capital: ${required_capital:.2f}, Available: ${self.available_to_trade:.2f})")
             return True
         except Exception as e:
             logger.error(f"Error adding spread: {str(e)}")
@@ -186,7 +187,7 @@ class OptionBacktester:
             bool: True if the spread can be added, False otherwise.
         """
         if self.capital <= 0:
-            logger.warning("Cannot add spread: no capital left.")
+            logger.warning(f"Cannot add {new_spread.symbol} {new_spread.strategy_type}: no capital left")
             return False
 
         # Check external entry conditions first if configured
@@ -195,9 +196,9 @@ class OptionBacktester:
                 time=self.last_update_time, strategy=new_spread, manager=self
             )
             if not external_met:
-                logger.info("External entry conditions not met")
+                logger.info(f"External conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
                 return False
-            logger.info("External entry conditions met")
+            logger.info(f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}")
 
         # Check standard entry conditions (required for both cases)
         standard_met = self.config.entry_condition.should_enter(
@@ -205,10 +206,10 @@ class OptionBacktester:
         )
 
         if not standard_met:
-            logger.info("Standard entry conditions not met")
+            logger.info(f"Standard conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
             return False
 
-        logger.info("All entry conditions met")
+        logger.info(f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}")
         return True
 
     def close_trade(self, trade: OptionStrategy) -> None:
