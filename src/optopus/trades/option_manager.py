@@ -131,9 +131,9 @@ class OptionBacktester:
         try:
             current_time = pd.to_datetime(current_time)
             self.last_update_time = current_time
-            
+
             # Update all active trades
-            if self.active_trades != []
+            if self.active_trades != []:
                 for trade in self.active_trades:
                     trade_update_success = trade.update(current_time, option_chain_df)
                     if not trade_update_success:
