@@ -135,7 +135,8 @@ class IndicatorCheck(BaseComponent):
         bound_args = {}
         for arg in self.expected_args:
             if arg == 'historical_data':
-                bound_args[arg] = manager.context.get('historical_data')
+                # Get historical_data from params if not in manager context
+                bound_args[arg] = self.params.get('historical_data')
             else:
                 bound_args[arg] = self.params.get(arg)
         return bound_args
