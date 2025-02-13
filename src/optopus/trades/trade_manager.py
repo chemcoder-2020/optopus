@@ -642,6 +642,7 @@ class TradingManager(OptionBacktester):
                 return
 
             order = self.option_broker.create_order(strategy)
+            self.last_update_time = bar.round("15min")
             logger.info(f"{bar}: Created order: {order}")
             if self.add_order(order):
                 logger.info(f"{bar}: Added order: {order}")

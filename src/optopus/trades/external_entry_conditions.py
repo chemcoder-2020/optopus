@@ -25,9 +25,9 @@ class ExternalEntryConditionChecker(ABC):
     @abstractmethod
     def should_enter(
         self,
+        strategy,
+        manager: "OptionBacktester",
         time: Union[datetime, str, pd.Timestamp],
-        strategy=None,
-        manager: "OptionBacktester" = None,
     ) -> bool:
         """
         Check if the external entry conditions are met.
@@ -79,7 +79,7 @@ class AndComponent(BaseComponent):
         self.left = left
         self.right = right
 
-    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         return (
             self.left.should_enter(time, strategy, manager) and 
             self.right.should_enter(time, strategy, manager)
@@ -92,7 +92,7 @@ class OrComponent(BaseComponent):
         self.left = left
         self.right = right
 
-    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         return (
             self.left.should_enter(time, strategy, manager) or 
             self.right.should_enter(time, strategy, manager)
@@ -104,7 +104,7 @@ class NotComponent(BaseComponent):
         super().__init__()
         self.component = component
 
-    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         return not self.component.should_enter(time, strategy, manager)
 
 @BaseComponent.register("rsi")
@@ -126,7 +126,7 @@ class IndicatorCheck(BaseComponent):
             raise ValueError(f"Invalid indicator: {self.name}")
         self.func, self.expected_args = valid_indicators[self.name]
         
-    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         hist_data = manager.context['historical_data']
         bound_args = self._bind_arguments()
         return self.func(TechnicalIndicators, **bound_args)
@@ -161,7 +161,7 @@ class ModelCheck(BaseComponent):
             raise ValueError(f"Invalid model: {self.name}")
         self.func, self.expected_args = valid_models[self.name]
         
-    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         bound_args = self._bind_arguments(manager)
         return self.func(ForecastModels, **bound_args)
     
@@ -185,7 +185,7 @@ class RSIComponent(BaseComponent):
         self.period = period
         self.oversold = oversold
         
-    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         hist_data = manager.context['historical_data']
         return TechnicalIndicators.check_rsi(
             historical_data=hist_data,
@@ -207,7 +207,7 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         self.pipeline = pipeline
         self.data_processor = DataProcessor(ohlc_data, ticker=ticker)
         
-    def should_enter(self, time: pd.Timestamp, strategy=None, manager=None) -> bool:
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         logger.debug(f"Evaluating pipeline at {time}: {self.pipeline}")
         
         # Prepare market data

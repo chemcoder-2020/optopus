@@ -114,7 +114,7 @@ class OptionBacktester:
         self.available_to_trade = config.initial_capital
         self.active_trades: List[OptionStrategy] = []
         self.closed_trades: List[OptionStrategy] = []
-        self.last_update_time: Optional[datetime, pd.Timestamp] = None
+        self.last_update_time: Optional[datetime, pd.Timestamp] = None # pd.Timestamp.now(tz="America/New_York")
         self.trades_entered_today = 0
         self.trades_entered_this_week = 0
         self.performance_data = []
@@ -130,18 +130,20 @@ class OptionBacktester:
 
         try:
             current_time = pd.to_datetime(current_time)
-
-            # Update all active trades
-            for trade in self.active_trades:
-                trade_update_success = trade.update(current_time, option_chain_df)
-                if not trade_update_success:
-                    logger.warning(
-                        f"Trade {trade} update failed at {current_time}, due to spike in option chain."
-                    )
-                elif trade.status == "CLOSED":
-                    self.close_trade(trade)
-
             self.last_update_time = current_time
+            
+            # Update all active trades
+            if self.active_trades != []
+                for trade in self.active_trades:
+                    trade_update_success = trade.update(current_time, option_chain_df)
+                    if not trade_update_success:
+                        logger.warning(
+                            f"Trade {trade} update failed at {current_time}, due to spike in option chain."
+                        )
+                    elif trade.status == "CLOSED":
+                        self.close_trade(trade)
+
+            
             self._update_trade_counts()
 
             # Record performance data after update
