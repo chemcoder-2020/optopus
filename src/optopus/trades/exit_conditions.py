@@ -98,6 +98,7 @@ class MedianCalculator:
                 n_sigma=self.kwargs.get("n_sigma", 3),
                 k=self.kwargs.get("k", 1.4826),
                 max_iterations=self.kwargs.get("max_iterations", 5),
+                replace_with_na=self.kwargs.get("replace_with_na", False),
             )
 
         self.premiums = []
@@ -206,7 +207,7 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         self.profit_target = profit_target
         self.median_calculator = MedianCalculator(
-            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter")
+            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"), replace_with_na=kwargs.get("replace_with_na", False)
         )
         self.kwargs = kwargs
 
@@ -280,7 +281,7 @@ class StopLossCondition(ExitConditionChecker):
         """
         self.stop_loss = stop_loss
         self.median_calculator = MedianCalculator(
-            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter")
+            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"), replace_with_na=kwargs.get("replace_with_na", False)
         )
         self.kwargs = kwargs
 
@@ -421,7 +422,7 @@ class TrailingStopCondition(ExitConditionChecker):
         self.kwargs = kwargs
         self.median_method = kwargs.get("method", "HampelFilter")
         self.median_calculator = MedianCalculator(
-            window_size=self.median_window, method=self.median_method, n_sigma=self.kwargs.get("n_sigma", 3), k=self.kwargs.get("k", 1.4826), max_iterations=self.kwargs.get("max_iterations", 5)
+            window_size=self.median_window, method=self.median_method, n_sigma=self.kwargs.get("n_sigma", 3), k=self.kwargs.get("k", 1.4826), max_iterations=self.kwargs.get("max_iterations", 5), replace_with_na=kwargs.get("replace_with_na", False)
         )
 
         # Set all kwargs as attributes

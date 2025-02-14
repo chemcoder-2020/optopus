@@ -10,24 +10,27 @@ class DataProcessor:
         if isinstance(self.ohlc, str):
             # Check if it's a file path
             if Path(self.ohlc).exists():
-                self.ohlc = pd.read_csv(self.ohlc, parse_dates=["date"]).set_index("date")
-                self.daily_data = (
-                    self.ohlc.resample("D")
-                    .apply(
-                        {
-                            "close": "last",
-                            "open": "first",
-                            "low": "min",
-                            "high": "max",
-                            "volume": "sum",
-                        }
-                    )
-                    .dropna(subset="close")
-                )
-                self.daily_data.reset_index(inplace=True)
-                self.daily_data.rename(columns={"date": "day"}, inplace=True)
-                self.ohlc = self.ohlc.reset_index()
-                self.ohlc["day"] = pd.DatetimeIndex(self.ohlc.date.dt.date)
+                self.intraday_data = pd.read_csv(self.ohlc, parse_dates=["date"])
+                self.intraday_data["day"] = pd.DatetimeIndex(self.intraday_data.date.dt.date)
+                self.intraday_data.set_index("date", inplace=True)
+
+                # self.daily_data = (
+                #     self.ohlc.resample("D")
+                #     .apply(
+                #         {
+                #             "close": "last",
+                #             "open": "first",
+                #             "low": "min",
+                #             "high": "max",
+                #             "volume": "sum",
+                #         }
+                #     )
+                #     .dropna(subset="close")
+                # )
+                # self.daily_data.reset_index(inplace=True)
+                # self.daily_data.rename(columns={"date": "day"}, inplace=True)
+                # self.ohlc = self.ohlc.reset_index()
+                
 
             else:
                 # Check if it's a brokerage name
@@ -61,28 +64,46 @@ class DataProcessor:
             current_quote = self.schwab_data.get_quote(self.ticker)
             
             # Create OHLC DataFrame
-            self.daily_data = pd.concat(
+            current_daily_data = pd.concat(
                 [
                     equity_price,
                     pd.DataFrame({
                         "close": [current_quote["LAST_PRICE"].iloc[-1]],
+                        "open": [current_quote["OPEN_PRICE"].iloc[-1]],
+                        "high": [current_quote["HIGH_PRICE"].iloc[-1]],
+                        "low": [current_quote["LOW_PRICE"].iloc[-1]],
+                        "volume": [current_quote["TOTAL_VOLUME"].iloc[-1]],
                         "datetime": [pd.Timestamp.now().date()]
                     })
                 ],
                 axis=0,
                 ignore_index=True
             ).set_index("datetime")
-            self.daily_data.index.name = "date"
-            self.daily_data.index = pd.DatetimeIndex(self.daily_data.index)
-            self.daily_data.reset_index(inplace=True)
-            self.daily_data.rename(columns={"date": "day"}, inplace=True)
-            
-        historical_data = (
-            self.daily_data.set_index("day")[: time.date()].iloc[-500:].copy()
-        )
-        historical_data.iloc[-1, historical_data.columns.get_loc("close")] = (
-            current_price
-        )
-        monthly_data = historical_data["close"].resample("M").last()
-        historical_data = historical_data.asfreq("D").ffill()
+            current_daily_data.index.name = "date"
+            current_daily_data.index = pd.DatetimeIndex(current_daily_data.index)
+            current_daily_data.reset_index(inplace=True)
+            current_daily_data.rename(columns={"date": "day"}, inplace=True)
+            # self.ohlc[: time.date()]
+            historical_data = current_daily_data.set_index("day").iloc[-500:]
+            # historical_data = (
+            #     self.daily_data.set_index("day")[: time.date()].iloc[-500:].copy()
+            # )
+            # historical_data.iloc[-1, historical_data.columns.get_loc("close")] = (
+            #     current_price
+            # )
+            monthly_data = historical_data["close"].resample("M").last()
+            historical_data = historical_data.asfreq("B").ffill()
+        
+        else:
+            current_intraday_data = self.intraday_data[:time]
+            historical_data = current_intraday_data.resample("B").apply({
+                                    "close": "last",
+                                    "open": "first",
+                                    "low": "min",
+                                    "high": "max",
+                                    "volume": "sum",})[-500:]
+            monthly_data = historical_data["close"].resample("M").last()
+            historical_data = historical_data.asfreq("B").ffill()
+        
+        
         return historical_data, monthly_data

@@ -232,8 +232,8 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
             payload = self.generate_iron_butterfly_json(
                 symbol=self.symbol,
                 expiration=self.legs[0].expiration,
-                long_call_strike_price=self.legs[2].strike,
-                strike_price=self.legs[1].strike,
+                long_call_strike_price=self.legs[3].strike,
+                strike_price=self.legs[2].strike,
                 long_put_strike_price=self.legs[0].strike,
                 quantity=self.contracts,
                 price=abs(price),
@@ -292,36 +292,36 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
 
         current_price = (self.current_bid + self.current_ask) / 2
 
-        if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
+        if self.strategy_type in ["Vertical Spread", "Iron Condor", "Iron Butterfly"]:
             target_price = self.current_ask
         else:
             target_price = self.current_bid
 
         # Guarding against false price
 
-        if (
-            hasattr(self, "exit_scheme")
-            and not hasattr(self.exit_scheme, "stoploss")
-            and hasattr(self.exit_scheme, "profit_target")
-        ):  # if exit scheme has profit target but no stoploss
-            if self.strategy_type in ["Vertical Spread", "Iron Condor", "Butterfly"]:
-                if current_price >= self.entry_net_premium:
-                    logger.info(
-                        "Exit scheme doesn't have stoploss, only profit target. Current exit price exceeds entry price. Will not profit, so no exit. A false price has been detected. If status is CLOSED, will reopen strategy. Exiting..."
-                    )
-                    if self.status == "CLOSED":
-                        self._reopen_strategy()  # reopen strategy
-                        logger.info("Strategy was incorrectly closed. Now re-opened.")
-                    return False
-            elif self.strategy_type in ["Naked Put", "Naked Call"]:
-                if current_price <= self.entry_net_premium:
-                    logger.info(
-                        "Exit scheme doesn't have stoploss, only profit target. Current exit price less than entry price. Will not profit, so no exit. A false price has been detected. If status is CLOSED, will reopen strategy. Exiting..."
-                    )
-                    if self.status == "CLOSED":
-                        self._reopen_strategy()  # reopen strategy
-                        logger.info("Strategy was incorrectly closed. Now re-opened.")
-                    return False
+        # if (
+        #     hasattr(self, "exit_scheme")
+        #     and not hasattr(self.exit_scheme, "stoploss")
+        #     and hasattr(self.exit_scheme, "profit_target")
+        # ):  # if exit scheme has profit target but no stoploss
+        #     if self.strategy_type in ["Vertical Spread", "Iron Condor", "Iron Butterfly"]:
+        #         if current_price >= self.entry_net_premium:
+        #             logger.info(
+        #                 "Exit scheme doesn't have stoploss, only profit target. Current exit price exceeds entry price. Will not profit, so no exit. A false price has been detected. If status is CLOSED, will reopen strategy. Exiting..."
+        #             )
+        #             if self.status == "CLOSED":
+        #                 self._reopen_strategy()  # reopen strategy
+        #                 logger.info("Strategy was incorrectly closed. Now re-opened.")
+        #             return False
+        #     elif self.strategy_type in ["Naked Put", "Naked Call"]:
+        #         if current_price <= self.entry_net_premium:
+        #             logger.info(
+        #                 "Exit scheme doesn't have stoploss, only profit target. Current exit price less than entry price. Will not profit, so no exit. A false price has been detected. If status is CLOSED, will reopen strategy. Exiting..."
+        #             )
+        #             if self.status == "CLOSED":
+        #                 self._reopen_strategy()  # reopen strategy
+        #                 logger.info("Strategy was incorrectly closed. Now re-opened.")
+        #             return False
 
         max_attempts = int(abs(target_price - current_price) // price_step) + int(
             abs(target_price - current_price) % price_step != 0
