@@ -223,9 +223,10 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         manager.context.update({
             'historical_data': hist_data,
             'monthly_data': monthly_data,
-            'current_price': current_price
+            'current_price': current_price,
+            'bar': time
         })
-        logger.debug(f"Context updated with historical data ({len(hist_data)} rows), monthly data ({len(monthly_data)} rows), current price {current_price}")
+        logger.debug(f"Context at {time} updated with historical data ({len(hist_data)} rows), monthly data ({len(monthly_data)} rows), current price {current_price}")
         
         # Evaluate the pipeline
         result = self.pipeline.should_enter(time, strategy, manager)
