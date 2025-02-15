@@ -410,18 +410,21 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                                 break
         self.update_order_status()
 
-    def update_entry_net_premium(self):
-        """Update the entry net premium to match the filled price from the broker's executed order."""
+    def update_entry_net_premium(self, order_response=None):
+        """Update the entry net premium using data from a broker's order response.
+        
+        Args:
+            order_response (dict): The order response from get_order() containing fill details
+        """
         # Strategy side determines sign - credit is positive, debit is negative
-        order = self.get_order(order_url=self.order_id) if self.order_id else None
-        if order and order.get("status") == "FILLED":
-            filled_price = abs(order.get("price", 0.0))
+        if order_response and order_response.get("status") == "FILLED":
+            filled_price = abs(order_response.get("price", 0.0))
             self.entry_net_premium = (filled_price if self.strategy_side == "CREDIT" 
                                      else -filled_price)
-            logger.info(f"Updated from executed price: {self.entry_net_premium:.2f} "
+            logger.info(f"Updated from executed order: {self.entry_net_premium:.2f} "
                        f"({self.strategy_side})")
         else:
-            logger.warning("No filled execution found - using legacy calculation")
+            logger.warning("No order data provided - using calculated premium")
             self.entry_net_premium = sum(
                 leg.entry_price * ratio * (1 if leg.position_side == "SELL" else -1)
                 for leg, ratio in zip(self.legs, self.leg_ratios)
