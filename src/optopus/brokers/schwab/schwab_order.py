@@ -461,7 +461,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                         leg.update_entry_price(average_prices_per_leg[leg_num + 1])
 
                     # Update entry net premium
-                    self.update_entry_net_premium()
+                    self.update_entry_net_premium(order_response=order)
 
     def cancel(self):
         if self.order_id:
