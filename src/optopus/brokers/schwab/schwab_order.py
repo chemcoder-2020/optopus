@@ -410,6 +410,30 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                                 break
         self.update_order_status()
 
+    def update_entry_net_premium(self):
+        """Update the entry net premium. Helpful to update entry net premium after actual trading order is filled."""
+        _replace_premium = 0
+        for leg, ratio in zip(self.legs, self.leg_ratios):
+            premium_adjustment = leg.entry_price * ratio
+            if leg.position_side == "SELL":
+                _replace_premium += premium_adjustment
+            else:  # BUY
+                _replace_premium -= premium_adjustment
+
+        self.entry_net_premium = _replace_premium
+
+    def update_exit_net_premium(self):
+        """Update the exit net premium. Helpful to update exit net premium after actual trading order is filled."""
+        _replace_premium = 0
+        for leg, ratio in zip(self.legs, self.leg_ratios):
+            premium_adjustment = leg.exit_price * ratio
+            if leg.position_side == "SELL":
+                _replace_premium += premium_adjustment
+            else:  # BUY
+                _replace_premium -= premium_adjustment
+
+        self.exit_net_premium = _replace_premium
+
     def update_order_status(self):
         if self.order_id:
             order = self.get_order(order_url=self.order_id)
