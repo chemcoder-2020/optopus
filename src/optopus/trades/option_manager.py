@@ -246,9 +246,14 @@ class OptionBacktester:
         """
         Update the count of trades entered today and this week.
         """
-        self.trades_entered_today = sum(
-            1 for trade in self.active_trades if trade.DIT == 0
-        )
+        # Count trades entered on the same calendar date (including closed ones)
+        if self.last_update_time:
+            self.trades_entered_today = sum(
+                1 for trade in self.active_trades + self.closed_trades 
+                if trade.entry_time.date() == self.last_update_time.date()
+            )
+            
+        # Weekly count remains active trades only
         self.trades_entered_this_week = sum(
             1 for trade in self.active_trades if trade.entry_time.isocalendar()[1] != self.last_update_time.isocalendar()[1]
         )
