@@ -81,8 +81,8 @@ class AndComponent(BaseComponent):
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         return (
-            self.left.should_enter(time, strategy, manager) and 
-            self.right.should_enter(time, strategy, manager)
+            self.left.should_enter(time=time, strategy=strategy, manager=manager) and 
+            self.right.should_enter(time=time, strategy=strategy, manager=manager)
         )
 
 class OrComponent(BaseComponent):
@@ -94,8 +94,8 @@ class OrComponent(BaseComponent):
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         return (
-            self.left.should_enter(time, strategy, manager) or 
-            self.right.should_enter(time, strategy, manager)
+            self.left.should_enter(time=time, strategy=strategy, manager=manager) or 
+            self.right.should_enter(time=time, strategy=strategy, manager=manager)
         )
 
 class NotComponent(BaseComponent):
@@ -105,7 +105,7 @@ class NotComponent(BaseComponent):
         self.component = component
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        return not self.component.should_enter(time, strategy, manager)
+        return not self.component.should_enter(time=time, strategy=strategy, manager=manager)
 
 @BaseComponent.register("rsi")
 class IndicatorCheck(BaseComponent):
@@ -229,7 +229,7 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         logger.debug(f"Context at {time} updated with historical data ({len(hist_data)} rows), monthly data ({len(monthly_data)} rows), current price {current_price}")
         
         # Evaluate the pipeline
-        result = self.pipeline.should_enter(time, strategy, manager)
+        result = self.pipeline.should_enter(time=time, strategy=strategy, manager=manager)
         logger.debug(f"Pipeline evaluation result: {result}")
         return result
 

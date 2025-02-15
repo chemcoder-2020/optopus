@@ -386,37 +386,26 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                                 f"Order status updated to: {self.exit_order_status}"
                             )
                             if self.exit_order_status == "FILLED":
-                                # Update entry price for each leg
-                                activities = []
-                                for activity in exit_order["orderActivityCollection"]:
-                                    activities.append(
-                                        pd.DataFrame(activity["executionLegs"])
-                                    )
-                                activities = pd.concat(activities, ignore_index=True)
-                                average_prices_per_leg = activities.groupby(
-                                    "legId"
-                                ).apply(
-                                    lambda x: (
-                                        x.price * x.quantity / x.quantity.sum()
-                                    ).sum()
-                                )
-                                for leg_num, leg in enumerate(self.legs):
-                                    leg.update_exit_price(
-                                        average_prices_per_leg[leg_num + 1]
-                                    )
+                                # Update exit price for each leg
+                                order_df = self.parse_order(exit_order)
+                                for leg in self.legs:
+                                    leg_df = order_df.query("`instrument.symbol` == @leg.schwab_symbol")
+                                    avg_leg_price = (
+                                        leg_df["price"] * leg_df["quantity"] / leg_df["quantity"].sum()
+                                    ) .sum()
+                                    leg.update_exit_price(avg_leg_price)
 
                                 # Update exit net premium
-                                self.update_exit_net_premium()
+                                self.update_exit_net_premium(order_response=exit_order)
                                 break
         self.update_order_status()
 
     def update_entry_net_premium(self, order_response=None):
         """Update the entry net premium using data from a broker's order response.
-        
+
         Args:
             order_response (dict): The order response from get_order() containing fill details
         """
-        # Strategy side determines sign - credit is positive, debit is negative
         if order_response and order_response.get("status") == "FILLED":
             filled_price = abs(order_response.get("price", 0.0))
             self.entry_net_premium = filled_price
@@ -428,17 +417,22 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                 for leg, ratio in zip(self.legs, self.leg_ratios)
             )
 
-    def update_exit_net_premium(self):
-        """Update the exit net premium. Helpful to update exit net premium after actual trading order is filled."""
-        _replace_premium = 0
-        for leg, ratio in zip(self.legs, self.leg_ratios):
-            premium_adjustment = leg.exit_price * ratio
-            if leg.position_side == "SELL":
-                _replace_premium += premium_adjustment
-            else:  # BUY
-                _replace_premium -= premium_adjustment
+    def update_exit_net_premium(self, order_response=None):
+        """Update the exit net premium using data from a broker's order response.
 
-        self.exit_net_premium = _replace_premium
+        Args:
+            order_response (dict): The order response from get_order() containing fill details
+        """
+        if order_response and order_response.get("status") == "FILLED":
+            filled_price = abs(order_response.get("price", 0.0))
+            self.exit_net_premium = filled_price
+            logger.info(f"Updated from executed order: {self.exit_net_premium:.2f}")
+        else:
+            logger.warning("No order data provided - using calculated premium")
+            self.exit_net_premium = sum(
+                leg.entry_price * ratio * (1 if leg.position_side == "SELL" else -1)
+                for leg, ratio in zip(self.legs, self.leg_ratios)
+            )
 
     def update_order_status(self):
         if self.order_id:
@@ -450,15 +444,13 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     logger.info(f"Order status updated to: {self.order_status}")
                 if self.order_status == "FILLED" and previous_order_status != "FILLED":
                     # Update entry price for each leg
-                    activities = []
-                    for activity in order["orderActivityCollection"]:
-                        activities.append(pd.DataFrame(activity["executionLegs"]))
-                    activities = pd.concat(activities, ignore_index=True)
-                    average_prices_per_leg = activities.groupby("legId").apply(
-                        lambda x: (x.price * x.quantity / x.quantity.sum()).sum()
-                    )
-                    for leg_num, leg in enumerate(self.legs):
-                        leg.update_entry_price(average_prices_per_leg[leg_num + 1])
+                    order_df = self.parse_order(order)
+                    for leg in self.legs:
+                        leg_df = order_df.query("`instrument.symbol` == @leg.schwab_symbol")
+                        avg_leg_price = (
+                            leg_df["price"] * leg_df["quantity"] / leg_df["quantity"].sum()
+                        ) .sum()
+                        leg.update_entry_price(avg_leg_price)
 
                     # Update entry net premium
                     self.update_entry_net_premium(order_response=order)
@@ -511,26 +503,53 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                             f"Order status updated to: {self.exit_order_status}"
                         )
                         if self.exit_order_status == "FILLED":
-                            # Update entry price for each leg
-                            activities = []
-                            for activity in exit_order["orderActivityCollection"]:
-                                activities.append(
-                                    pd.DataFrame(activity["executionLegs"])
-                                )
-                            activities = pd.concat(activities, ignore_index=True)
-                            average_prices_per_leg = activities.groupby("legId").apply(
-                                lambda x: (
-                                    x.price * x.quantity / x.quantity.sum()
-                                ).sum()
-                            )
-                            for leg_num, leg in enumerate(self.legs):
-                                leg.update_exit_price(
-                                    average_prices_per_leg[leg_num + 1]
-                                )
+                            # Update exit price for each leg
+                            order_df = self.parse_order(exit_order)
+                            for leg in self.legs:
+                                leg_df = order_df.query("`instrument.symbol` == @leg.schwab_symbol")
+                                avg_leg_price = (
+                                    leg_df["price"] * leg_df["quantity"] / leg_df["quantity"].sum()
+                                ) .sum()
+                                leg.update_exit_price(avg_leg_price)
 
                             # Update exit net premium
-                            self.update_exit_net_premium()
+                            self.update_exit_net_premium(order_response=exit_order)
                             break
+
+    @staticmethod
+    def parse_order(order_json):
+        """Returns a DataFrame of the order details
+
+        Args:
+            order_json (dict): returned value from get_order()
+        """
+        leg_collection = pd.json_normalize(order_json["orderLegCollection"])
+        activity_collection = pd.json_normalize(
+            order_json["orderActivityCollection"], "executionLegs"
+        )
+
+        merged_df = pd.merge(
+            leg_collection,
+            activity_collection,
+            on=["legId"],
+            how="inner",
+            suffixes=["_leg", "_activity"],
+        )
+        common_cols_all = leg_collection.columns.intersection(
+            activity_collection.columns
+        ).tolist()
+        common_cols = [col for col in common_cols_all if col not in ["legId"]]
+        for col in common_cols:
+            merged_col_leg = f"{col}_leg"
+            merged_col_activity = f"{col}_activity"
+
+            merged_df[col] = merged_df[merged_col_leg].fillna(
+                merged_df[merged_col_activity]
+            )
+            # Drop the original merged columns
+            merged_df.drop([merged_col_leg, merged_col_activity], axis=1, inplace=True)
+
+        return merged_df
 
     def __repr__(self):
         """

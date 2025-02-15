@@ -14,7 +14,6 @@ class SharpeRatio(BaseMetric):
             return {"sharpe_ratio": 0.0}
 
         returns = returns.copy()
-        returns = self.detect_outliers(returns, window_size=window)
 
         excess_returns = returns - risk_free_rate / 252
         mean_return = np.mean(excess_returns)
@@ -34,7 +33,6 @@ class RiskOfRuin(BaseMetric):
         num_steps: int = 252,
         drawdown_threshold_pct: float = 0.25,
         distribution: str = "histogram",
-        window_size: int = 10,
     ) -> dict:
         """
         Args:
@@ -49,11 +47,8 @@ class RiskOfRuin(BaseMetric):
             dict: Dictionary with risk_of_ruin percentage
         """
         # Apply rolling median to returns
-        if returns.size < window_size + 1:
-            return {"risk_of_ruin": 0.0}
 
         returns = returns.copy()
-        returns = self.detect_outliers(returns, window_size=window_size)
 
         returns = returns / initial_balance
 

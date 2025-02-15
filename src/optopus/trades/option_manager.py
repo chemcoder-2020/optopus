@@ -143,7 +143,6 @@ class OptionBacktester:
                     elif trade.status == "CLOSED":
                         self.close_trade(trade)
 
-            
             self._update_trade_counts()
 
             # Record performance data after update
@@ -204,7 +203,7 @@ class OptionBacktester:
 
         # Check standard entry conditions (required for both cases)
         standard_met = self.config.entry_condition.should_enter(
-            new_spread, self, self.last_update_time
+            strategy=new_spread, manager=self, time=self.last_update_time
         )
 
         if not standard_met:
