@@ -411,16 +411,21 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self.update_order_status()
 
     def update_entry_net_premium(self):
-        """Update the entry net premium. Helpful to update entry net premium after actual trading order is filled."""
-        _replace_premium = 0
-        for leg, ratio in zip(self.legs, self.leg_ratios):
-            premium_adjustment = leg.entry_price * ratio
-            if leg.position_side == "SELL":
-                _replace_premium += premium_adjustment
-            else:  # BUY
-                _replace_premium -= premium_adjustment
-
-        self.entry_net_premium = _replace_premium
+        """Update the entry net premium to match the filled price from the broker's executed order."""
+        # Strategy side determines sign - credit is positive, debit is negative
+        order = self.get_order(order_url=self.order_id) if self.order_id else None
+        if order and order.get("status") == "FILLED":
+            filled_price = abs(order.get("price", 0.0))
+            self.entry_net_premium = (filled_price if self.strategy_side == "CREDIT" 
+                                     else -filled_price)
+            logger.info(f"Updated from executed price: {self.entry_net_premium:.2f} "
+                       f"({self.strategy_side})")
+        else:
+            logger.warning("No filled execution found - using legacy calculation")
+            self.entry_net_premium = sum(
+                leg.entry_price * ratio * (1 if leg.position_side == "SELL" else -1)
+                for leg, ratio in zip(self.legs, self.leg_ratios)
+            )
 
     def update_exit_net_premium(self):
         """Update the exit net premium. Helpful to update exit net premium after actual trading order is filled."""
