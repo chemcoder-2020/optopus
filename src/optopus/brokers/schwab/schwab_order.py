@@ -419,10 +419,8 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         # Strategy side determines sign - credit is positive, debit is negative
         if order_response and order_response.get("status") == "FILLED":
             filled_price = abs(order_response.get("price", 0.0))
-            self.entry_net_premium = (filled_price if self.strategy_side == "CREDIT" 
-                                     else -filled_price)
-            logger.info(f"Updated from executed order: {self.entry_net_premium:.2f} "
-                       f"({self.strategy_side})")
+            self.entry_net_premium = filled_price
+            logger.info(f"Updated from executed order: {self.entry_net_premium:.2f}")
         else:
             logger.warning("No order data provided - using calculated premium")
             self.entry_net_premium = sum(
