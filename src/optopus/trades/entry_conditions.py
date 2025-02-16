@@ -146,7 +146,46 @@ class HampelFilterCondition(BaseComponent):
         )
     
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        values = manager.
+        # Get current bid/ask and calculate mark price
+        bid = strategy.current_bid
+        ask = strategy.current_ask
+        mark = (ask + bid) / 2
+        
+        # Initialize premiums list in context if needed
+        if "premiums" not in manager.context:
+            manager.context["premiums"] = []
+            
+        # Add new premium to rolling window
+        manager.context["premiums"].append(mark)
+        
+        # Trim to window size
+        if len(manager.context["premiums"]) > self.window_size:
+            manager.context["premiums"].pop(0)
+            
+        try:
+            # Apply Hampel filter through window
+            filtered_values = self.filter_operator.fit_transform(
+                np.array(manager.context["premiums"]).reshape(-1, 1)
+            ).flatten()
+            
+            # Get most recent filtered value
+            filtered_mark = filtered_values[-1] if len(filtered_values) > 0 else mark
+            
+            # Check if current mark is within acceptable fluctuation from filtered median
+            current_median = np.median(filtered_values[:-1]) if len(filtered_values) > 1 else mark
+            deviation = abs((filtered_mark - current_median) / current_median) \ 
+                if current_median != 0 else 0.0
+                
+            logger.debug(f"Hampel filter check: Deviation={deviation:.4f} vs Fluctuation={self.fluctuation}")
+            
+            # Update context with filtered values
+            manager.context["filtered_premiums"] = filtered_values.tolist()
+            
+            return deviation <= self.fluctuation
+        
+        except Exception as e:
+            logger.error(f"Hampel filter error: {str(e)}")
+            return False
 
     
 
