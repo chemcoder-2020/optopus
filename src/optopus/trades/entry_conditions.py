@@ -31,10 +31,189 @@ class EntryConditionChecker(ABC):
         pass
 
 
+class BaseComponent:
+    """Base class for all pipeline components with operator overloading"""
+
+    _registry = {}  # Class-level component registry
+
+    @classmethod
+    def register(cls, name: str):
+        def decorator(subclass):
+            cls._registry[name.lower()] = subclass
+            return subclass
+
+        return decorator
+
+    @classmethod
+    def create(cls, name: str, **kwargs):
+        """Factory method for creating components"""
+        return cls._registry[name.lower()](**kwargs)
+
+    def __mul__(self, other):
+        return AndComponent(self, other)
+
+    def __or__(self, other):
+        return OrComponent(self, other)
+
+    def __invert__(self):
+        return NotComponent(self)
+
+
+class AndComponent(BaseComponent):
+    """AND logical operator component"""
+
+    def __init__(self, left: BaseComponent, right: BaseComponent):
+        super().__init__()
+        self.left = left
+        self.right = right
+
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
+        return self.left.should_enter(
+            strategy=strategy, manager=manager, time=time
+        ) and self.right.should_enter(
+            strategy=strategy,
+            manager=manager,
+            time=time,
+        )
+
+
+class OrComponent(BaseComponent):
+    """OR logical operator component"""
+
+    def __init__(self, left: BaseComponent, right: BaseComponent):
+        super().__init__()
+        self.left = left
+        self.right = right
+
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
+        return self.left.should_enter(
+            strategy=strategy, manager=manager, time=time
+        ) or self.right.should_enter(
+            strategy=strategy,
+            manager=manager,
+            time=time,
+        )
+
+
+class NotComponent(BaseComponent):
+    """NOT logical operator component"""
+
+    def __init__(self, component: BaseComponent):
+        super().__init__()
+        self.component = component
+
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
+        return not self.component.should_enter(
+            strategy=strategy,
+            manager=manager,
+            time=time,
+        )
+
+
+class CompositePipelineCondition(EntryConditionChecker):
+    """Decision pipeline combining multiple bot entry conditions using logical operators"""
+
+    def __init__(self, pipeline: BaseComponent, ohlc_data: str, ticker=None):
+        """
+        Args:
+            pipeline: Configured pipeline using component operators
+            ohlc_data: Path to OHLC data file
+        """
+        self.pipeline = pipeline
+
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
+        logger.debug(f"Evaluating pipeline at {time}: {self.pipeline}")
+
+        # Evaluate the pipeline
+        result = self.pipeline.should_enter(
+            strategy=strategy, manager=manager, time=time
+        )
+        logger.debug(f"Pipeline evaluation result: {result}")
+        return result
+
+
+class HampelFilterCondition(BaseComponent):
+    def __init__(self, window_size=7, fluctuation=0.1, **kwargs):
+        self.window_size = window_size
+        self.fluctuation = fluctuation
+        self.kwargs = kwargs
+        self.filter_operator = HampelFilterNumpy(
+            window_size=window_size,
+            n_sigma=self.kwargs.get("n_sigma", 3),
+            k=self.kwargs.get("k", 1.4826),
+            max_iterations=self.kwargs.get("max_iterations", 5),
+            replace_with_na=self.kwargs.get("replace_with_na", False),
+        )
+    
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
+        values = manager.
+
+    
+
+
+
+class MedianCalculator(BaseComponent):
+    def __init__(self, window_size=7, fluctuation=0.1, method="HampelFilter", **kwargs):
+        self.window_size = window_size
+        self.fluctuation = fluctuation
+        self.method = method
+        self.premiums = []
+        self.kwargs = kwargs
+        if method == "ContinuousMedian":
+            self.median_calculator = ContinuousMedian()
+        else:
+            self.median_calculator = HampelFilterNumpy(
+                window_size=window_size,
+                n_sigma=self.kwargs.get("n_sigma", 3),
+                k=self.kwargs.get("k", 1.4826),
+                max_iterations=self.kwargs.get("max_iterations", 5),
+                replace_with_na=self.kwargs.get("replace_with_na", False),
+            )
+
+    def add_premium(self, mark):
+        if self.method == "ContinuousMedian":
+            self.median_calculator.add(mark)
+        self.premiums.append(mark)
+
+        if self.method == "ContinuousMedian":
+            if len(self.premiums) > self.window_size:
+                self.median_calculator.remove(self.premiums.pop(0))
+        else:
+            if len(self.premiums) > self.window_size + 1:
+                self.premiums.pop(0)
+
+    def get_median(self):
+        """
+        Get the current median of the rolling window.
+
+        Returns:
+            float: The current median.
+        """
+        if self.method == "ContinuousMedian":
+            return self.median_calculator.get_median()
+        else:
+            if len(self.premiums) < self.window_size + 1:
+                return 0
+            else:
+                return self.median_calculator.fit_transform(
+                    np.array(self.premiums)
+                ).flatten()[-1]
+
+    def should_enter(self, strategy, manager, time) -> bool:
+        bid = strategy.current_bid
+        ask = strategy.current_ask
+        mark = (ask + bid) / 2
+
+        self.add_premium(mark)
+        median_mark = self.get_median()
+
+        return np.isclose(mark, median_mark, rtol=self.fluctuation) and np.isclose(
+            bid, mark, rtol=self.fluctuation
+        )
+
+
 class MedianCalculator(EntryConditionChecker):
-    def __init__(
-        self, window_size=7, fluctuation=0.1, method="HampelFilter", **kwargs
-    ):
+    def __init__(self, window_size=7, fluctuation=0.1, method="HampelFilter", **kwargs):
         self.window_size = window_size
         self.fluctuation = fluctuation
         self.method = method
@@ -303,26 +482,26 @@ class TimeBasedEntryCondition(EntryConditionChecker):
         allowed_days (List[Union[int, str]]): List of allowed days (0=Mon-6=Sun or 'Mon'-'Sun', default: Mon-Fri)
         timezone (str): Timezone string (default: "America/New_York")
     """
-    
+
     def __init__(
         self,
         allowed_times: List[Union[Tuple[str, str], str]] = ["09:45-15:45"],
-        allowed_days: List[Union[int, str]] = ['Mon','Tue','Wed','Thu','Fri'],
+        allowed_days: List[Union[int, str]] = ["Mon", "Tue", "Wed", "Thu", "Fri"],
         timezone: str = "America/New_York",
     ):
         self.allowed_times = allowed_times
         self.allowed_days = allowed_days
         self.timezone = timezone
-        
+
         # Convert string day names to numbers if needed
         self.allowed_day_numbers = []
-        day_map = {'mon':0, 'tue':1, 'wed':2, 'thu':3, 'fri':4, 'sat':5, 'sun':6}
+        day_map = {"mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6}
         for day in self.allowed_days:
             if isinstance(day, str):
                 self.allowed_day_numbers.append(day_map[day.lower()[:3]])
             else:
                 self.allowed_day_numbers.append(int(day))
-                
+
         # Parse time ranges
         self.time_ranges = []
         for time_spec in self.allowed_times:
@@ -330,9 +509,9 @@ class TimeBasedEntryCondition(EntryConditionChecker):
                 start_str, end_str = time_spec.split("-")
             else:
                 start_str, end_str = time_spec
-                
-            start = pd.Timestamp(start_str)#.tz_localize(self.timezone)
-            end = pd.Timestamp(end_str)#.tz_localize(self.timezone)
+
+            start = pd.Timestamp(start_str)  # .tz_localize(self.timezone)
+            end = pd.Timestamp(end_str)  # .tz_localize(self.timezone)
             self.time_ranges.append((start.time(), end.time()))
 
     def should_enter(
@@ -341,15 +520,15 @@ class TimeBasedEntryCondition(EntryConditionChecker):
         manager: "OptionBacktester",
         time: Union[datetime, str, pd.Timestamp],
     ) -> bool:
-        current_time = pd.Timestamp(time)#.tz_convert(self.timezone)
-        
+        current_time = pd.Timestamp(time)  # .tz_convert(self.timezone)
+
         # Check allowed days
         if self.allowed_day_numbers:
             day_of_week = current_time.dayofweek
             if day_of_week not in self.allowed_day_numbers:
                 logger.warning(f"Entry not allowed on {current_time.day_name()}")
                 return False
-        
+
         # Check allowed time ranges
         if self.time_ranges:
             in_window = False
@@ -358,11 +537,13 @@ class TimeBasedEntryCondition(EntryConditionChecker):
                 if start <= curr_time <= end:
                     in_window = True
                     break
-                    
+
             if not in_window:
-                logger.warning(f"Current time {curr_time.strftime('%H:%M:%S')} UTC not in allowed ranges")
+                logger.warning(
+                    f"Current time {curr_time.strftime('%H:%M:%S')} UTC not in allowed ranges"
+                )
                 return False
-        
+
         logger.info("Time-based entry conditions met")
         return True
 
@@ -519,7 +700,13 @@ class DefaultEntryCondition(EntryConditionChecker):
         self.composite = CompositeEntryCondition(
             [
                 CapitalRequirementCondition(),
-                TimeBasedEntryCondition(allowed_days=kwargs.get("allowed_days", ["Mon", "Tue", "Wed", "Thu", "Fri"]), allowed_times=kwargs.get("allowed_times", ["09:45-15:45"]), timezone=kwargs.get("timezone", "America/New_York")),
+                TimeBasedEntryCondition(
+                    allowed_days=kwargs.get(
+                        "allowed_days", ["Mon", "Tue", "Wed", "Thu", "Fri"]
+                    ),
+                    allowed_times=kwargs.get("allowed_times", ["09:45-15:45"]),
+                    timezone=kwargs.get("timezone", "America/New_York"),
+                ),
                 PositionLimitCondition(),
                 RORThresholdCondition(),
                 ConflictCondition(
