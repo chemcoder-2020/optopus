@@ -173,8 +173,8 @@ class HampelFilterCondition(BaseComponent):
             
             # Check if current mark is within acceptable fluctuation from filtered median
             current_median = np.median(filtered_values[:-1]) if len(filtered_values) > 1 else mark
-            deviation = abs((filtered_mark - current_median) / current_median) \ 
-                if current_median != 0 else 0.0
+            deviation = (abs((filtered_mark - current_median) / current_median)
+                if current_median != 0 else 0.0)
                 
             logger.debug(f"Hampel filter check: Deviation={deviation:.4f} vs Fluctuation={self.fluctuation}")
             
