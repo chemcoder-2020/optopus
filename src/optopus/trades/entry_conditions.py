@@ -193,6 +193,55 @@ class PremiumHampelFilterCondition(BaseComponent):
             logger.error(f"Hampel filter error: {str(e)}")
             return False
 
+class PremiumMedianFilterCondition(BaseComponent):
+    def __init__(self, window_size=7, fluctuation=0.1, **kwargs):
+        self.window_size = window_size
+        self.fluctuation = fluctuation
+        self.median_calculator = ContinuousMedian()
+
+    def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
+        # Get current bid/ask and calculate mark price
+        bid = strategy.current_bid
+        ask = strategy.current_ask
+        mark = (
+            (ask + bid) / 2 if bid != 0 else ask
+        )
+
+        # Initialize context if needed
+        if not hasattr(manager, "context"):
+            logger.debug("Creating new context in manager")
+            manager.context = {}
+
+        # Initialize median premiums tracking if needed
+        if "median_premiums" not in manager.context:
+            manager.context["median_premiums"] = []
+            self.median_calculator = ContinuousMedian()
+
+        # Track premiums in rolling window
+        manager.context["median_premiums"].append(mark)
+        self.median_calculator.add(mark)
+
+        # Maintain window size
+        if len(manager.context["median_premiums"]) > self.window_size:
+            oldest = manager.context["median_premiums"].pop(0)
+            self.median_calculator.remove(oldest)
+
+        try:
+            # Get current median and calculate deviation
+            current_median = self.median_calculator.get_median()
+            deviation = abs((mark - current_median) / current_median) if current_median != 0 else 0.0
+            
+            logger.debug(f"Median filter check: {deviation:.2%} vs allowed {self.fluctuation:.2%}")
+            
+            # Store calculated median in context
+            manager.context["current_median"] = current_median
+            
+            return deviation <= self.fluctuation
+
+        except Exception as e:
+            logger.error(f"Median filter error: {str(e)}")
+            return False
+
 
 class MedianCalculator(BaseComponent):
     def __init__(self, window_size=7, fluctuation=0.1, method="HampelFilter", **kwargs):
