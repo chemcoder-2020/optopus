@@ -132,7 +132,7 @@ class CompositePipelineCondition(EntryConditionChecker):
         return result
 
 
-class HampelFilterCondition(BaseComponent):
+class PremiumHampelFilterCondition(BaseComponent):
     def __init__(self, window_size=7, fluctuation=0.1, **kwargs):
         self.window_size = window_size
         self.fluctuation = fluctuation
@@ -142,53 +142,56 @@ class HampelFilterCondition(BaseComponent):
             n_sigma=self.kwargs.get("n_sigma", 3),
             k=self.kwargs.get("k", 1.4826),
             max_iterations=self.kwargs.get("max_iterations", 5),
-            replace_with_na=self.kwargs.get("replace_with_na", False),
+            replace_with_na=True,
         )
-    
+
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         # Get current bid/ask and calculate mark price
         bid = strategy.current_bid
         ask = strategy.current_ask
-        mark = (ask + bid) / 2
-        
+        mark = (
+            (ask + bid) / 2 if bid != 0 else ask
+        )  # assume mark is trading at mid price if bid is not 0, and ask price if bid is 0
+
+        # Initialize context if needed
+        if not hasattr(manager, "context"):
+            logger.debug("Creating new context in manager")
+            manager.context = {}
+
         # Initialize premiums list in context if needed
         if "premiums" not in manager.context:
             manager.context["premiums"] = []
-            
+
         # Add new premium to rolling window
         manager.context["premiums"].append(mark)
-        
+
         # Trim to window size
         if len(manager.context["premiums"]) > self.window_size:
             manager.context["premiums"].pop(0)
-            
+
         try:
             # Apply Hampel filter through window
             filtered_values = self.filter_operator.fit_transform(
-                np.array(manager.context["premiums"]).reshape(-1, 1)
+                np.array(manager.context["premiums"])
             ).flatten()
-            
+
             # Get most recent filtered value
             filtered_mark = filtered_values[-1] if len(filtered_values) > 0 else mark
-            
-            # Check if current mark is within acceptable fluctuation from filtered median
-            current_median = np.median(filtered_values[:-1]) if len(filtered_values) > 1 else mark
-            deviation = (abs((filtered_mark - current_median) / current_median)
-                if current_median != 0 else 0.0)
-                
-            logger.debug(f"Hampel filter check: Deviation={deviation:.4f} vs Fluctuation={self.fluctuation}")
-            
-            # Update context with filtered values
-            manager.context["filtered_premiums"] = filtered_values.tolist()
-            
-            return deviation <= self.fluctuation
-        
+
+            if np.isnan(filtered_mark):
+                logger.debug(
+                    "Filtered mark is NaN, replacing premium context with previous value and returning False"
+                )
+                manager.context["premiums"][-1] = manager.context["premiums"][-2]
+                return False
+
+            logger.debug(f"Premium passed Hampel filter: {filtered_mark}")
+
+            return True
+
         except Exception as e:
             logger.error(f"Hampel filter error: {str(e)}")
             return False
-
-    
-
 
 
 class MedianCalculator(BaseComponent):
