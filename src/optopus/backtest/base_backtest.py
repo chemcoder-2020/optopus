@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from ..trades.option_manager import OptionBacktester
-from ..trades.entry_conditions import PositionLimitCondition
+from ..trades.entry_conditions import MaxPositionLimitCondition, DailyLimitCondition, WeeklyLimitCondition
 import numpy as np
 import scipy.stats
 from loguru import logger
@@ -43,7 +43,6 @@ class BaseBacktest(ABC):
         self,
         start_date=None,
         end_date=None,
-        skip_fridays=False,
         plot_performance=True,
         backtester=None,
     ):
@@ -105,15 +104,14 @@ class BaseBacktest(ABC):
                     logger.warning(f"Data is empty for {time}. Skipping this update.")
                 continue
 
-            if skip_fridays and time.weekday() == 4:
-                continue
 
-            if not PositionLimitCondition().should_enter(None, backtester, time):
-                continue
+            # if not (MaxPositionLimitCondition() * DailyLimitCondition() * WeeklyLimitCondition()).should_enter(None, backtester, time):
+            #     continue
 
             # Create spread
             try:
                 new_spread = self.create_spread(time, option_chain_df)
+                logger.info(f"Created new spread at {time}. {new_spread}")
             except Exception as e:
                 if self.debug:
                     logger.error(f"Error creating new spread: {e} at {time}")
@@ -254,7 +252,6 @@ class BaseBacktest(ABC):
             self.run_backtest(
                 start_date,
                 end_date,
-                skip_fridays=False,
                 plot_performance=False,
                 backtester=backtester,
             )
