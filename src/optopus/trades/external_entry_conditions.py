@@ -49,15 +49,17 @@ class ExternalEntryConditionChecker(ABC):
 
 class BaseComponent:
     """Base class for all pipeline components with operator overloading"""
+
     _registry = {}  # Class-level component registry
-    
+
     @classmethod
     def register(cls, name: str):
         def decorator(subclass):
             cls._registry[name.lower()] = subclass
             return subclass
+
         return decorator
-    
+
     @classmethod
     def create(cls, name: str, **kwargs):
         """Factory method for creating components"""
@@ -65,139 +67,169 @@ class BaseComponent:
 
     def __mul__(self, other):
         return AndComponent(self, other)
-    
+
     def __or__(self, other):
         return OrComponent(self, other)
-    
+
     def __invert__(self):
         return NotComponent(self)
 
+
 class AndComponent(BaseComponent):
     """AND logical operator component"""
+
     def __init__(self, left: BaseComponent, right: BaseComponent):
         super().__init__()
         self.left = left
         self.right = right
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        return (
-            self.left.should_enter(time=time, strategy=strategy, manager=manager) and 
-            self.right.should_enter(time=time, strategy=strategy, manager=manager)
-        )
+        return self.left.should_enter(
+            time=time, strategy=strategy, manager=manager
+        ) and self.right.should_enter(time=time, strategy=strategy, manager=manager)
+
 
 class OrComponent(BaseComponent):
     """OR logical operator component"""
+
     def __init__(self, left: BaseComponent, right: BaseComponent):
         super().__init__()
         self.left = left
         self.right = right
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        return (
-            self.left.should_enter(time=time, strategy=strategy, manager=manager) or 
-            self.right.should_enter(time=time, strategy=strategy, manager=manager)
-        )
+        return self.left.should_enter(
+            time=time, strategy=strategy, manager=manager
+        ) or self.right.should_enter(time=time, strategy=strategy, manager=manager)
+
 
 class NotComponent(BaseComponent):
     """NOT logical operator component"""
+
     def __init__(self, component: BaseComponent):
         super().__init__()
         self.component = component
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        return not self.component.should_enter(time=time, strategy=strategy, manager=manager)
+        return not self.component.should_enter(
+            time=time, strategy=strategy, manager=manager
+        )
+
 
 @BaseComponent.register("rsi")
 class IndicatorCheck(BaseComponent):
     """Component for technical indicator checks"""
+
     def __init__(self, name: str, **params):
         self.name = name.lower()
         self.params = params
         self._validate_indicator()
-        
+
     def _validate_indicator(self):
         valid_indicators = {
-            'atr': (TechnicalIndicators.calculate_atr, ['high', 'low', 'close', 'period']),
-            'linear_regression': (TechnicalIndicators.check_linear_regression, ['historical_data', 'lag']),
-            'median_trend': (TechnicalIndicators.check_median_trend, ['historical_data', 'short_lag', 'long_lag']),
-            'rsi': (TechnicalIndicators.check_rsi, ['historical_data', 'period', 'oversold'])
+            "atr": (
+                TechnicalIndicators.calculate_atr,
+                ["high", "low", "close", "period"],
+            ),
+            "linear_regression": (
+                TechnicalIndicators.check_linear_regression,
+                ["historical_data", "lag"],
+            ),
+            "median_trend": (
+                TechnicalIndicators.check_median_trend,
+                ["historical_data", "short_lag", "long_lag"],
+            ),
+            "rsi": (
+                TechnicalIndicators.check_rsi,
+                ["historical_data", "period", "oversold"],
+            ),
         }
         if self.name not in valid_indicators:
             raise ValueError(f"Invalid indicator: {self.name}")
         self.func, self.expected_args = valid_indicators[self.name]
-        
+
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        hist_data = manager.context['historical_data']
+        hist_data = manager.context["historical_data"]
         bound_args = self._bind_arguments()
         return self.func(TechnicalIndicators, **bound_args)
-    
+
     def _bind_arguments(self):
         bound_args = {}
         for arg in self.expected_args:
-            if arg == 'historical_data':
+            if arg == "historical_data":
                 # Get historical_data from params if not in manager context
-                bound_args[arg] = self.params.get('historical_data')
+                bound_args[arg] = self.params.get("historical_data")
             else:
                 bound_args[arg] = self.params.get(arg)
         return bound_args
-        
+
     def __repr__(self):
         return f"IndicatorCheck(name={self.name}, params={self.params})"
 
+
 class ModelCheck(BaseComponent):
     """Component for forecast model checks"""
+
     def __init__(self, name: str, **params):
         self.name = name.lower()
         self.params = params
         self._validate_model()
-        
+
     def _validate_model(self):
         valid_models = {
-            'arima': (ForecastModels.check_arima_trend, ['monthly_data', 'current_price', 'order', 'seasonal_order']),
-            'autoarima': (ForecastModels.check_autoarima_trend, ['monthly_data', 'current_price']),
-            'ml_model': (ForecastModels.check_ML_trend, ['monthly_data', 'classifier'])
+            "arima": (
+                ForecastModels.check_arima_trend,
+                ["monthly_data", "current_price", "order", "seasonal_order"],
+            ),
+            "autoarima": (
+                ForecastModels.check_autoarima_trend,
+                ["monthly_data", "current_price"],
+            ),
+            "ml_model": (ForecastModels.check_ML_trend, ["monthly_data", "classifier"]),
         }
         if self.name not in valid_models:
             raise ValueError(f"Invalid model: {self.name}")
         self.func, self.expected_args = valid_models[self.name]
-        
+
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         bound_args = self._bind_arguments(manager)
         return self.func(ForecastModels, **bound_args)
-    
+
     def _bind_arguments(self, manager):
         bound_args = {}
         for arg in self.expected_args:
-            if arg == 'monthly_data':
-                bound_args[arg] = manager.context.get('monthly_data')
-            elif arg == 'current_price':
-                bound_args[arg] = manager.context.get('current_price')
+            if arg == "monthly_data":
+                bound_args[arg] = manager.context.get("monthly_data")
+            elif arg == "current_price":
+                bound_args[arg] = manager.context.get("current_price")
             else:
                 bound_args[arg] = self.params.get(arg)
         return bound_args
-        
+
     def __repr__(self):
         return f"ModelCheck(name={self.name}, params={self.params})"
 
+
 class RSIComponent(BaseComponent):
     """RSI component with operator support"""
+
     def __init__(self, period=14, oversold=30):
         self.period = period
         self.oversold = oversold
-        
+
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        hist_data = manager.context['historical_data']
+        hist_data = manager.context["historical_data"]
         return TechnicalIndicators.check_rsi(
-            historical_data=hist_data,
-            period=self.period,
-            oversold=self.oversold
+            historical_data=hist_data, period=self.period, oversold=self.oversold
         )
-        
+
     def __repr__(self):
         return f"RSIComponent(period={self.period}, oversold={self.oversold})"
 
+
 class CompositePipelineCondition(ExternalEntryConditionChecker):
     """Decision pipeline combining multiple indicators/models using logical operators"""
+
     def __init__(self, pipeline: BaseComponent, ohlc_data: str, ticker=None):
         """
         Args:
@@ -206,32 +238,41 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         """
         self.pipeline = pipeline
         self.data_processor = DataProcessor(ohlc_data, ticker=ticker)
-        
+
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         logger.debug(f"Evaluating pipeline at {time}: {self.pipeline}")
-        
+
         # Prepare market data
         current_price = strategy.underlying_last if strategy else None
-        hist_data, monthly_data = self.data_processor.prepare_historical_data(time, current_price)
-        
+        hist_data, monthly_data = self.data_processor.prepare_historical_data(
+            time, current_price
+        )
+
         # Initialize context if needed
-        if not hasattr(manager, 'context'):
+        if not hasattr(manager, "context"):
             logger.debug("Creating new context in manager")
             manager.context = {}
-            
+
         # Store data in context for components
-        manager.context.update({
-            'historical_data': hist_data,
-            'monthly_data': monthly_data,
-            'current_price': current_price,
-            'bar': time
-        })
-        logger.debug(f"Context at {time} updated with historical data ({len(hist_data)} rows), monthly data ({len(monthly_data)} rows), current price {current_price}")
-        
+        manager.context.update(
+            {
+                "historical_data": hist_data,
+                "monthly_data": monthly_data,
+                "current_price": current_price,
+                "bar": time,
+            }
+        )
+        logger.debug(
+            f"Context at {time} updated with historical data ({len(hist_data)} rows), monthly data ({len(monthly_data)} rows), current price {current_price}"
+        )
+
         # Evaluate the pipeline
-        result = self.pipeline.should_enter(time=time, strategy=strategy, manager=manager)
+        result = self.pipeline.should_enter(
+            time=time, strategy=strategy, manager=manager
+        )
         logger.debug(f"Pipeline evaluation result: {result}")
         return result
+
 
 class EntryOnForecast(ExternalEntryConditionChecker):
     def __init__(self, **kwargs):
@@ -278,7 +319,9 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         if lin_reg_lag in ("", None):  # Handle empty string as None
             lin_reg_lag = None
         elif lin_reg_lag is not None and not isinstance(lin_reg_lag, int):
-            logger.warning(f"Invalid linear_regression_lag type {type(lin_reg_lag)}, expected int. Bypassing check")
+            logger.warning(
+                f"Invalid linear_regression_lag type {type(lin_reg_lag)}, expected int. Bypassing check"
+            )
             lin_reg_lag = None
         if lin_reg_lag is not None:
             linear_trend = self.technical_indicators.check_linear_regression(
@@ -294,18 +337,22 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         # Validate median trend params
         med_short = self.kwargs.get("median_trend_short_lag")
         med_long = self.kwargs.get("median_trend_long_lag")
-        
+
         if med_short in ("", None):  # Handle empty string as None
             med_short = None
         elif med_short is not None and not isinstance(med_short, int):
-            logger.warning(f"Invalid median_trend_short_lag type {type(med_short)}, expected int. Bypassing check")
+            logger.warning(
+                f"Invalid median_trend_short_lag type {type(med_short)}, expected int. Bypassing check"
+            )
             med_short = None
         if med_long in ("", None):  # Handle empty string as None
             med_long = None
         elif med_long is not None and not isinstance(med_long, int):
-            logger.warning(f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check")
+            logger.warning(
+                f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check"
+            )
             med_long = None
-            
+
         if med_short is not None and med_long is not None:
             median_trend = self.technical_indicators.check_median_trend(
                 historical_data,
@@ -325,16 +372,21 @@ class EntryOnForecast(ExternalEntryConditionChecker):
         if forecast_model in ("", None):  # Explicitly handle empty string
             forecast_model = None
         elif forecast_model is not None and not isinstance(forecast_model, str):
-            logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
+            logger.warning(
+                f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check"
+            )
             forecast_model = None
         if forecast_model is not None:
             if forecast_model == "arima":
                 order = self.kwargs.get("order")
                 seasonal_order = self.kwargs.get("seasonal_order")
                 arima_trend = self.forecast_models.check_arima_trend(
-                    monthly_data, current_price, 
-                    order=order if order is not None else (0, 1, 1), 
-                    seasonal_order=seasonal_order if seasonal_order is not None else (0, 1, 1)
+                    monthly_data,
+                    current_price,
+                    order=order if order is not None else (0, 1, 1),
+                    seasonal_order=(
+                        seasonal_order if seasonal_order is not None else (0, 1, 1)
+                    ),
                 )
                 logger.debug(f"ARIMA trend check: {arima_trend}")
                 if not arima_trend:
@@ -362,18 +414,33 @@ class EntryOnForecast(ExternalEntryConditionChecker):
                 if not nbeats_trend:
                     logger.info("Entry rejected - failed NBEATS trend check")
                     return False
-            elif forecast_model in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp", "knn"]:
-                ml_trend = self.forecast_models.check_ML_trend(monthly_data, classifier=forecast_model)
+            elif forecast_model in [
+                "svm",
+                "random_forest",
+                "logistic",
+                "gradient_boosting",
+                "gaussian_process",
+                "mlp",
+                "knn",
+            ]:
+                ml_trend = self.forecast_models.check_ML_trend(
+                    monthly_data, classifier=forecast_model
+                )
                 logger.debug(f"ML trend ({forecast_model}) check: {ml_trend}")
                 if not ml_trend:
-                    logger.info(f"Entry rejected - failed ML trend ({forecast_model}) check")
+                    logger.info(
+                        f"Entry rejected - failed ML trend ({forecast_model}) check"
+                    )
                     return False
             elif forecast_model == "oscillator":
                 osc_lags = self.kwargs.get("oscillator_lags")
-                oscillator_trend = self.forecast_models.check_seasonality_oscillator(
-                    monthly_data, 
-                    lags=osc_lags if osc_lags is not None else 3
-                ) if osc_lags is not None else True
+                oscillator_trend = (
+                    self.forecast_models.check_seasonality_oscillator(
+                        monthly_data, lags=osc_lags if osc_lags is not None else 3
+                    )
+                    if osc_lags is not None
+                    else True
+                )
                 logger.debug(f"Oscillator trend check: {oscillator_trend}")
                 if not oscillator_trend:
                     logger.info("Entry rejected - failed oscillator trend check")
@@ -413,45 +480,53 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
     def should_enter(self, strategy, manager, time) -> bool:
         time = pd.Timestamp(time)
         current_price = strategy.underlying_last
-        
+
         # Handle Kelly criterion with bypass
         # Validate Kelly params
         n_lookback = self.kwargs.get("n_lookback_kelly")
         fractional = self.kwargs.get("fractional_kelly")
-        
+
         if n_lookback in ("", None):  # Handle empty string as None
             n_lookback = None
         elif n_lookback is not None and not isinstance(n_lookback, int):
-            logger.warning(f"Invalid n_lookback_kelly type {type(n_lookback)}, expected int. Bypassing Kelly updates")
+            logger.warning(
+                f"Invalid n_lookback_kelly type {type(n_lookback)}, expected int. Bypassing Kelly updates"
+            )
             n_lookback = None
         if fractional in ("", None):  # Handle empty string as None
             fractional = None
         elif fractional is not None and not isinstance(fractional, (float, int)):
-            logger.warning(f"Invalid fractional_kelly type {type(fractional)}, expected float/int. Bypassing Kelly updates")
+            logger.warning(
+                f"Invalid fractional_kelly type {type(fractional)}, expected float/int. Bypassing Kelly updates"
+            )
             fractional = None
-        
+
         if n_lookback is not None and fractional is not None:
             if (
                 len(manager.closed_trades) >= n_lookback
-                and len(manager.closed_trades) % self.kwargs.get("kelly_update_interval", 1) == 0
+                and len(manager.closed_trades)
+                % self.kwargs.get("kelly_update_interval", 1)
+                == 0
             ):
                 kc = manager.calculate_kelly_criterion(n_lookback, fractional)
                 logger.debug(f"Calculated Kelly criterion: {kc}")
-                
+
                 if self.kwargs.get("min_position_size", None):
                     kc = max(kc, self.kwargs.get("min_position_size", 0))
                     logger.debug(f"Applied min position size constraint: {kc}")
-                
+
                 if self.kwargs.get("max_position_size", None):
                     kc = min(kc, self.kwargs.get("max_position_size", 0.1))
                     logger.debug(f"Applied max position size constraint: {kc}")
 
                 if isinstance(kc, float) and 1 > kc > 0:
                     manager.update_config(position_size=kc)
-                    logger.info(f"Updated position size to {kc} based on Kelly criterion")
+                    logger.info(
+                        f"Updated position size to {kc} based on Kelly criterion"
+                    )
         else:
             logger.debug("Bypassing Kelly criterion updates")
-        
+
         if not hasattr(self.data_processor, "ticker"):
             self.data_processor.ticker = strategy.symbol
 
@@ -472,7 +547,9 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         if lin_reg_lag in ("", None):  # Handle empty string as None
             lin_reg_lag = None
         elif lin_reg_lag is not None and not isinstance(lin_reg_lag, int):
-            logger.warning(f"Invalid linear_regression_lag type {type(lin_reg_lag)}, expected int. Bypassing check")
+            logger.warning(
+                f"Invalid linear_regression_lag type {type(lin_reg_lag)}, expected int. Bypassing check"
+            )
             lin_reg_lag = None
         if lin_reg_lag is not None:
             linear_trend = self.technical_indicators.check_linear_regression(
@@ -488,18 +565,22 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         # Check median trend with bypass and validation
         med_short = self.kwargs.get("median_trend_short_lag")
         med_long = self.kwargs.get("median_trend_long_lag")
-        
+
         if med_short in ("", None):  # Handle empty string as None
             med_short = None
         elif med_short is not None and not isinstance(med_short, int):
-            logger.warning(f"Invalid median_trend_short_lag type {type(med_short)}, expected int. Bypassing check")
+            logger.warning(
+                f"Invalid median_trend_short_lag type {type(med_short)}, expected int. Bypassing check"
+            )
             med_short = None
         if med_long in ("", None):  # Handle empty string as None
             med_long = None
         elif med_long is not None and not isinstance(med_long, int):
-            logger.warning(f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check")
+            logger.warning(
+                f"Invalid median_trend_long_lag type {type(med_long)}, expected int. Bypassing check"
+            )
             med_long = None
-            
+
         if med_short is not None and med_long is not None:
             median_trend = self.technical_indicators.check_median_trend(
                 historical_data,
@@ -518,23 +599,31 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
         if forecast_model in ("", None):  # Handle empty string explicitly
             forecast_model = None
         elif forecast_model is not None and not isinstance(forecast_model, str):
-            logger.warning(f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check")
+            logger.warning(
+                f"Invalid forecast_model type {type(forecast_model)}, expected str. Bypassing check"
+            )
             forecast_model = None
         if forecast_model is not None:
             if forecast_model == "arima":
                 order = self.kwargs.get("order")
                 seasonal_order = self.kwargs.get("seasonal_order")
                 arima_trend = self.forecast_models.check_arima_trend(
-                    monthly_data, current_price, 
-                    order=order if order is not None else (0, 1, 1), 
-                    seasonal_order=seasonal_order if seasonal_order is not None else (0, 1, 1)
+                    monthly_data,
+                    current_price,
+                    order=order if order is not None else (0, 1, 1),
+                    seasonal_order=(
+                        seasonal_order if seasonal_order is not None else (0, 1, 1)
+                    ),
                 )
                 order = self.kwargs.get("order")
                 seasonal_order = self.kwargs.get("seasonal_order")
                 arima_trend = self.forecast_models.check_arima_trend(
-                    monthly_data, current_price, 
-                    order=order if order is not None else (0, 1, 1), 
-                    seasonal_order=seasonal_order if seasonal_order is not None else (0, 1, 1)
+                    monthly_data,
+                    current_price,
+                    order=order if order is not None else (0, 1, 1),
+                    seasonal_order=(
+                        seasonal_order if seasonal_order is not None else (0, 1, 1)
+                    ),
                 )
                 logger.debug(f"ARIMA trend check: {arima_trend}")
                 if not arima_trend:
@@ -562,18 +651,33 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
                 if not nbeats_trend:
                     logger.info("Entry rejected - failed NBEATS trend check")
                     return False
-            elif forecast_model in ["svm", "random_forest", "logistic", "gradient_boosting", "gaussian_process", "mlp", "knn"]:
-                ml_trend = self.forecast_models.check_ML_trend(monthly_data, classifier=forecast_model)
+            elif forecast_model in [
+                "svm",
+                "random_forest",
+                "logistic",
+                "gradient_boosting",
+                "gaussian_process",
+                "mlp",
+                "knn",
+            ]:
+                ml_trend = self.forecast_models.check_ML_trend(
+                    monthly_data, classifier=forecast_model
+                )
                 logger.debug(f"ML trend ({forecast_model}) check: {ml_trend}")
                 if not ml_trend:
-                    logger.info(f"Entry rejected - failed ML trend ({forecast_model}) check")
+                    logger.info(
+                        f"Entry rejected - failed ML trend ({forecast_model}) check"
+                    )
                     return False
             elif forecast_model == "oscillator":
                 osc_lags = self.kwargs.get("oscillator_lags")
-                oscillator_trend = self.forecast_models.check_seasonality_oscillator(
-                    monthly_data, 
-                    lags=osc_lags if osc_lags is not None else 3
-                ) if osc_lags is not None else True
+                oscillator_trend = (
+                    self.forecast_models.check_seasonality_oscillator(
+                        monthly_data, lags=osc_lags if osc_lags is not None else 3
+                    )
+                    if osc_lags is not None
+                    else True
+                )
                 logger.debug(f"Oscillator trend check: {oscillator_trend}")
                 if not oscillator_trend:
                     logger.info("Entry rejected - failed oscillator trend check")

@@ -518,18 +518,13 @@ class DefaultEntryCondition(EntryConditionChecker):
     def __init__(self, **kwargs):
         self.composite = CompositeEntryCondition(
             [
-                CapitalRequirementCondition(),
+                
                 TimeBasedEntryCondition(
                     allowed_days=kwargs.get(
                         "allowed_days", ["Mon", "Tue", "Wed", "Thu", "Fri"]
                     ),
                     allowed_times=kwargs.get("allowed_times", ["09:45-15:45"]),
                     timezone=kwargs.get("timezone", "America/New_York"),
-                ),
-                PositionLimitCondition(),
-                RORThresholdCondition(),
-                ConflictCondition(
-                    check_closed_trades=kwargs.get("check_closed_trades", True)
                 ),
                 MedianCalculator(
                     window_size=kwargs.get("window_size", 7),
@@ -539,6 +534,13 @@ class DefaultEntryCondition(EntryConditionChecker):
                     k=kwargs.get("k", 1.4826),
                     max_iterations=kwargs.get("max_iterations", 5),
                 ),
+                CapitalRequirementCondition(),
+                PositionLimitCondition(),
+                RORThresholdCondition(),
+                ConflictCondition(
+                    check_closed_trades=kwargs.get("check_closed_trades", True)
+                ),
+                
                 TrailingStopEntry(
                     trailing_entry_direction=kwargs.get(
                         "trailing_entry_direction", "bullish"

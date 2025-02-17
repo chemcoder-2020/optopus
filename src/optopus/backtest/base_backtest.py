@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from ..trades.option_manager import OptionBacktester
-from ..trades.entry_conditions import MaxPositionLimitCondition, DailyLimitCondition, WeeklyLimitCondition
+from ..trades.entry_conditions import PositionLimitCondition
 import numpy as np
 import scipy.stats
 from loguru import logger
@@ -104,9 +104,8 @@ class BaseBacktest(ABC):
                     logger.warning(f"Data is empty for {time}. Skipping this update.")
                 continue
 
-
-            # if not (MaxPositionLimitCondition() * DailyLimitCondition() * WeeklyLimitCondition()).should_enter(None, backtester, time):
-            #     continue
+            if not PositionLimitCondition().should_enter(None, backtester, time):
+                continue
 
             # Create spread
             try:
@@ -269,7 +268,7 @@ class BaseBacktest(ABC):
         ) as progress_bar:
             # Store both time range and result together
             results_with_tr = Parallel(n_jobs=n_jobs)(
-                delayed(lambda tr: (tr, run_backtest_for_timerange(tr)))(tr) 
+                delayed(lambda tr: (tr, run_backtest_for_timerange(tr)))(tr)
                 for tr in ts_folds
             )
 
@@ -279,6 +278,7 @@ class BaseBacktest(ABC):
         # Create aggregated results from the ordered results
         results = [result for _, result in results_with_tr]
         from ..metrics import Aggregator
+
         aggregated_results = Aggregator.aggregate(results)
 
         logger.info("\nCross-Validation Results:")
@@ -336,14 +336,9 @@ class BaseBacktest(ABC):
         plt.close()
 
         # Create dict mapping time ranges to their results
-        time_range_results = {
-            tr: result for tr, result in zip(ts_folds, results)
-        }
-        
-        return {
-            "aggregated": aggregated_results,
-            "individual": time_range_results
-        }
+        time_range_results = {tr: result for tr, result in zip(ts_folds, results)}
+
+        return {"aggregated": aggregated_results, "individual": time_range_results}
 
 
 @contextlib.contextmanager
