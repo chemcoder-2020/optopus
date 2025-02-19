@@ -223,7 +223,7 @@ class OptionBacktester:
         self.active_trades.remove(trade)
         self.closed_trades.append(trade)
 
-        pl_change = trade.filter_pl
+        pl_change = trade.filter_pl if not np.isnan(trade.filter_pl) else 0
         recovered_capital = trade.get_required_capital()
 
         self.capital += pl_change
@@ -292,8 +292,8 @@ class OptionBacktester:
         Returns:
             float: Total profit and loss.
         """
-        return sum(
-            trade.filter_pl for trade in self.active_trades + self.closed_trades
+        return np.nansum(
+            [trade.filter_pl for trade in self.active_trades + self.closed_trades]
         )
 
     def get_closed_pl(self) -> float:
@@ -303,7 +303,7 @@ class OptionBacktester:
         Returns:
             float: Profit and loss from closed trades.
         """
-        return sum(trade.filter_pl for trade in self.closed_trades)
+        return np.nansum([trade.filter_pl for trade in self.closed_trades])
 
     def get_open_positions(self) -> int:
         """

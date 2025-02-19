@@ -207,7 +207,7 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         self.profit_target = profit_target
         self.median_calculator = MedianCalculator(
-            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"), replace_with_na=kwargs.get("replace_with_na", False)
+            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"), replace_with_na=kwargs.get("replace_with_na", True)
         )
         self.kwargs = kwargs
 
@@ -616,6 +616,7 @@ class DefaultExitCondition(ExitConditionChecker):
             profit_target=profit_target,
             window_size=kwargs.get("window_size", 10),
             method=kwargs.get("method", "HampelFilter"),
+            replace_with_na=kwargs.get("replace_with_na", True),
         )
         time_based_condition = TimeBasedCondition(
             exit_time_before_expiration=exit_time_before_expiration
