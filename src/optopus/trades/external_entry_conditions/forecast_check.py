@@ -13,47 +13,44 @@ class StatsForecastCheck(BaseComponent):
     def __init__(
         self,
         models,
+        trend_direction: str = "upward",
         **kwargs,
     ):
-        
-        self.kwargs = kwargs  # Store kwargs for statsforecast
+        self.models = models
+        self.trend_direction = trend_direction.lower()
+        self.kwargs = kwargs
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        from statsforecast import StatsForecast
-        from statsforecast.models import (
-            ARIMA,
-            SeasonalExponentialSmoothingOptimized,
-            RandomWalkWithDrift,
-            AutoARIMA,
-            AutoCES,
-        )
-        from sktime.transformations.series.boxcox import LogTransformer
-        from sktime.transformations.series.detrend import Detrender
-        from sktime.transformations.series.difference import Differencer
-        from sktime.forecasting.trend import TrendForecaster
-        from sklearn.linear_model import Ridge
-        from loguru import logger
-
         hist_data = manager.context["historical_data"]
-
-        # Compute indicator series with kwargs
-        indicator_series1 = self.indicator(hist_data, self.lag1, **self.kwargs)
-        indicator_series2 = self.indicator(hist_data, self.lag2, **self.kwargs)
-
-        # Check if we have enough data for requested indices
-        if len(indicator_series1) < abs(self.indicator_index1) or len(
-            indicator_series2
-        ) < abs(self.indicator_index2):
+        
+        if len(hist_data) < 2:  # Need at least 2 data points for forecasting
             return False
 
-        # Get values at specified positions (supports negative indexing)
-        short_value = indicator_series1.iloc[self.indicator_index1]
-        long_value = indicator_series2.iloc[self.indicator_index2]
-
-        # Compare values with debug logging
-        result = short_value > long_value
+        # Prepare data for statsforecast
+        df = hist_data[["CLOSE"]].reset_index()
+        df.columns = ["ds", "y"]
+        
+        # Initialize and fit statsforecast
+        sf = StatsForecast(
+            models=self.models,
+            freq=pd.infer_freq(hist_data.index) or "D",
+            **self.kwargs
+        )
+        
+        # Generate forecast
+        forecast = sf.fit_predict(df, h=1)
+        
+        # Get last known value and forecasted value
+        last_close = df["y"].iloc[-1]
+        forecasted_value = forecast.iloc[0]["yhat"]
+        
+        # Determine trend direction
+        detected_trend = "upward" if forecasted_value > last_close else "downward"
+        
+        # Compare with preferred trend
+        result = detected_trend == self.trend_direction
         logger.debug(
-            f"IndicatorStateCheck: {short_value:.4f} > {long_value:.4f} = {result} "
-            + f"(lag={self.lag1}/{self.lag2}, indices={self.indicator1_index}/{self.indicator2_index})"
+            f"StatsForecastCheck: {detected_trend} trend detected "
+            f"(Forecast: {forecasted_value:.2f} vs Last Close: {last_close:.2f})"
         )
         return result
