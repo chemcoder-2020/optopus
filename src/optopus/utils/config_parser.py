@@ -24,9 +24,15 @@ class IniConfigParser:
         if "delta" in key or "strike" in key:
             return param
             
-        # Handle Timedeltas
-        if "time" in key:
-            return pd.Timedelta(param)
+        # Handle date/datetime values
+        if '_date' in key.lower():
+            return pd.Timestamp(param)
+            
+        # Handle specific time formats
+        if 'time' in key.lower():
+            if 'exit_time_before_expiration' in key:
+                return pd.Timedelta(param)
+            return pd.to_datetime(param).time()
             
         # Try numeric conversions
         if "." in param:
