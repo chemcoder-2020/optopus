@@ -16,21 +16,39 @@ class IniConfigParser:
         self.parser = ConfigParser()
         self.parser.read(config_path)
 
-    def _parse_value(self, value: str) -> Any:
+    def _parse_value(self, key: str, value: str) -> Any:
         """Convert INI string values to appropriate Python types"""
-        try:
-            # Detect and parse special formats
-            if value.startswith("Timedelta("):
-                return pd.Timedelta(value.split("(", 1)[1].rstrip(")"))
-            if value.startswith("(") and value.endswith(")"):
-                return tuple(self._parse_value(v) for v in value[1:-1].split(","))
-            if value.lower() in ("true", "false"):
-                return value.lower() == "true"
-            if "." in value:
-                return float(value)
-            return int(value)
-        except (ValueError, AttributeError):
-            return value
+        param = value
+        
+        # Preserve strike/delta values as raw strings
+        if "delta" in key or "strike" in key:
+            return param
+            
+        # Handle Timedeltas
+        if "time" in key:
+            return pd.Timedelta(param)
+            
+        # Try numeric conversions
+        if "." in param:
+            try:
+                return float(param)
+            except ValueError:
+                pass
+        elif param.isnumeric():
+            return int(param)
+        
+        # Handle boolean values
+        if param.lower() in ["true", "false"]:
+            return param.lower() == "true"
+            
+        # Evaluate tuple-like expressions using ast.literal_eval
+        if "(" in param and ")" in param:
+            try:
+                return eval(param)
+            except:
+                return param
+                
+        return param
 
     def get_strategy_params(self) -> Dict[str, Any]:
         """Parse strategy-specific parameters from [STRATEGY_PARAMS] section"""
@@ -38,7 +56,7 @@ class IniConfigParser:
         params = {}
         if self.parser.has_section("STRATEGY_PARAMS"):
             for key, value in self.parser.items("STRATEGY_PARAMS"):
-                params[key] = self._parse_value(value)
+                params[key] = self._parse_value(key, value)
 
         # Parse exit scheme configuration from EXIT_CONDITION section
         if self.parser.has_section("EXIT_CONDITION"):
@@ -58,7 +76,7 @@ class IniConfigParser:
         if self.parser.has_section("BACKTESTER_CONFIG"):
             config_params.update(
                 {
-                    k: self._parse_value(v)
+                    k: self._parse_value(k, v)
                     for k, v in self.parser.items("BACKTESTER_CONFIG")
                 }
             )
@@ -80,7 +98,7 @@ class IniConfigParser:
         if not self.parser.has_section(section):
             return {"class": None, "params": {}}
 
-        params = {k: self._parse_value(v) for k, v in self.parser.items(section)}
+        params = {k: self._parse_value(k, v) for k, v in self.parser.items(section)}
         condition_class = params.pop("class", None)
 
         # Safely evaluate class reference
