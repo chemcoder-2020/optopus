@@ -29,10 +29,11 @@ class IniConfigParser:
             return pd.Timestamp(param)
 
         # Handle specific time formats
-        if "time" in key.lower():
-            if "exit_time_before_expiration" in key:
-                return pd.Timedelta(param)
-            return pd.to_datetime(param).time()
+        if "exit_time_before_expiration" in key.lower():
+            return pd.Timedelta(param)
+
+        if "allowed_times" in key.lower():
+            return eval(param)
 
         # Try numeric conversions
         if "." in param:
@@ -61,7 +62,7 @@ class IniConfigParser:
 
         params = {}
         if self.parser.has_section("STRATEGY_PARAMS"):
-            for key, value in self.parser["STRATEGY_PARAMS"]._options():
+            for key, value in self.parser.items("STRATEGY_PARAMS", raw=True):
                 params[key] = self._parse_value(key, value)
 
         # Parse exit scheme configuration from EXIT_CONDITION section
@@ -78,7 +79,7 @@ class IniConfigParser:
         """Parse general configuration parameters from [GENERAL] section"""
         params = {}
         if self.parser.has_section("GENERAL"):
-            for key, value in self.parser["GENERAL"]._options():
+            for key, value in self.parser.items("GENERAL", raw=True):
                 params[key] = self._parse_value(key, value)
         return params
 
@@ -112,7 +113,9 @@ class IniConfigParser:
         if not self.parser.has_section(section):
             return {"class": None, "params": {}}
 
-        params = {k: self._parse_value(k, v) for k, v in self.parser.items(section)}
+        params = {
+            k: self._parse_value(k, v) for k, v in self.parser.items(section, raw=True)
+        }
         condition_class = params.pop("class", None)
 
         # Safely evaluate class reference
@@ -123,4 +126,3 @@ class IniConfigParser:
             raise ValueError(f"Invalid class reference: {condition_class}")
 
         return {"class": cls, "params": params}
-
