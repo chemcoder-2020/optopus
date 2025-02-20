@@ -72,12 +72,16 @@ class IniConfigParser:
                 "params": exit_config["params"],
             }
 
-        # Parse general configuration parameters
+        # Parse general section parameters
+        self._parse_general_section(params)
+
+        return params
+
+    def _parse_general_section(self, params: Dict[str, Any]) -> None:
+        """Parse general configuration parameters from [GENERAL] section"""
         if self.parser.has_section("GENERAL"):
             for key, value in self.parser.items("GENERAL"):
                 params[key] = self._parse_value(key, value)
-
-        return params
 
     def get_config(self) -> Config:
         """Parse and return Config dataclass from INI file"""
