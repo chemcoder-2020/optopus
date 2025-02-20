@@ -2,7 +2,9 @@ from configparser import ConfigParser
 import pandas as pd
 from typing import Dict, Any
 import importlib
-from optopus.trades.option_manager import Config  # Import from existing codebase
+from optopus.trades.option_manager import Config
+from ..trades.entry_conditions import EntryConditionChecker, DefaultEntryCondition
+from ..trades.external_entry_conditions import ExternalEntryConditionChecker
 
 
 class IniConfigParser:
