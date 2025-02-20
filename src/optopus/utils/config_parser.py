@@ -19,21 +19,21 @@ class IniConfigParser:
     def _parse_value(self, key: str, value: str) -> Any:
         """Convert INI string values to appropriate Python types"""
         param = value
-        
+
         # Preserve strike/delta values as raw strings
         if "delta" in key or "strike" in key:
             return param
-            
+
         # Handle date/datetime values
-        if '_date' in key.lower():
+        if "_date" in key.lower():
             return pd.Timestamp(param)
-            
+
         # Handle specific time formats
-        if 'time' in key.lower():
-            if 'exit_time_before_expiration' in key:
+        if "time" in key.lower():
+            if "exit_time_before_expiration" in key:
                 return pd.Timedelta(param)
             return pd.to_datetime(param).time()
-            
+
         # Try numeric conversions
         if "." in param:
             try:
@@ -42,18 +42,18 @@ class IniConfigParser:
                 pass
         elif param.isnumeric():
             return int(param)
-        
+
         # Handle boolean values
         if param.lower() in ["true", "false"]:
             return param.lower() == "true"
-            
+
         # Evaluate tuple-like expressions using ast.literal_eval
         if "(" in param and ")" in param:
             try:
                 return eval(param)
             except:
                 return param
-                
+
         return param
 
     def get_strategy_params(self) -> Dict[str, Any]:
@@ -61,7 +61,7 @@ class IniConfigParser:
 
         params = {}
         if self.parser.has_section("STRATEGY_PARAMS"):
-            for key, value in self.parser.items("STRATEGY_PARAMS"):
+            for key, value in self.parser["STRATEGY_PARAMS"]._options():
                 params[key] = self._parse_value(key, value)
 
         # Parse exit scheme configuration from EXIT_CONDITION section
@@ -72,16 +72,15 @@ class IniConfigParser:
                 "params": exit_config["params"],
             }
 
-        # Parse general section parameters
-        self._parse_general_section(params)
-
         return params
 
-    def _parse_general_section(self, params: Dict[str, Any]) -> None:
+    def get_general_params(self) -> Dict[str, Any]:
         """Parse general configuration parameters from [GENERAL] section"""
+        params = {}
         if self.parser.has_section("GENERAL"):
-            for key, value in self.parser.items("GENERAL"):
+            for key, value in self.parser["GENERAL"]._options():
                 params[key] = self._parse_value(key, value)
+        return params
 
     def get_config(self) -> Config:
         """Parse and return Config dataclass from INI file"""
@@ -125,13 +124,3 @@ class IniConfigParser:
 
         return {"class": cls, "params": params}
 
-    @staticmethod
-    def test():
-        """Example usage/test"""
-        parser = IniConfigParser("config.ini")
-
-        config = parser.get_config()
-        print("Config:", config)
-
-        strategy_params = parser.get_strategy_params()
-        print("Strategy Params:", strategy_params)
