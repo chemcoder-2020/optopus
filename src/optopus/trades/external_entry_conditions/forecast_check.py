@@ -1,4 +1,5 @@
 from .base import BaseComponent
+from statsforecast import StatsForecast
 import pandas as pd
 from loguru import logger
 
