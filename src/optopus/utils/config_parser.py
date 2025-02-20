@@ -119,11 +119,14 @@ class IniConfigParser:
         }
         condition_class = params.pop("class", None)
 
-        # Safely evaluate class reference
-
-        try:
-            cls = eval(condition_class) if condition_class else None
-        except (NameError, SyntaxError):
-            raise ValueError(f"Invalid class reference: {condition_class}")
+        # Dynamically import class using importlib
+        cls = None
+        if condition_class:
+            try:
+                module_path, class_name = condition_class.rsplit('.', 1)
+                module = importlib.import_module(module_path)
+                cls = getattr(module, class_name)
+            except (ValueError, AttributeError, ModuleNotFoundError) as e:
+                raise ValueError(f"Failed to import condition class '{condition_class}': {str(e)}")
 
         return {"class": cls, "params": params}
