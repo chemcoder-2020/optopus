@@ -61,7 +61,7 @@ class IniConfigParser:
 
         params = {}
         if self.parser.has_section("STRATEGY_PARAMS"):
-            for key, value in self.parser["STRATEGY_PARAMS"]._options():
+            for key, value in self.parser.items("STRATEGY_PARAMS"):
                 params[key] = self._parse_value(key, value)
 
         # Parse exit scheme configuration from EXIT_CONDITION section
@@ -71,6 +71,11 @@ class IniConfigParser:
                 "class": exit_config["class"],
                 "params": exit_config["params"],
             }
+
+        # Parse general configuration parameters
+        if self.parser.has_section("GENERAL"):
+            for key, value in self.parser.items("GENERAL"):
+                params[key] = self._parse_value(key, value)
 
         return params
 
