@@ -34,16 +34,16 @@ class IniConfigParser:
         params = {}
         if self.parser.has_section("STRATEGY_PARAMS"):
             for key, value in self.parser.items("STRATEGY_PARAMS"):
-                parsed_value = self._parse_value(value)
-                
-                # Handle exit scheme configuration
-                if key == "exit_scheme":
-                    params[key] = {
-                        "class": eval(parsed_value["class"]),
-                        "params": parsed_value["params"]
-                    }
-                else:
-                    params[key] = parsed_value
+                params[key] = self._parse_value(value)
+
+        # Parse exit scheme configuration from EXIT_CONDITION section
+        if self.parser.has_section("EXIT_CONDITION"):
+            exit_config = self._parse_condition_section("EXIT_CONDITION")
+            params["exit_scheme"] = {
+                "class": exit_config["class"],
+                "params": exit_config["params"]
+            }
+            
         return params
 
     def get_config(self) -> Config:
@@ -65,17 +65,6 @@ class IniConfigParser:
             "EXTERNAL_ENTRY_CONDITION"
         )
 
-        # Parse exit condition params
-        exit_params = {}
-        if self.parser.has_section("EXIT_CONDITION"):
-            exit_params = {
-                k: self._parse_value(v)
-                for k, v in self.parser.items("EXIT_CONDITION")
-            }
-            exit_params.pop("class", None)  # Remove class key if exists
-
-        config_params["exit_scheme"] = exit_params
-        
         return Config(**config_params)
 
     def _parse_condition_section(self, section: str) -> Dict[str, Any]:
