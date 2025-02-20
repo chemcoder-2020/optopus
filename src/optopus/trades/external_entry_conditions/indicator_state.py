@@ -5,9 +5,17 @@ from loguru import logger
 
 class IndicatorStateCheck(BaseComponent):
     """Check if short-term indicator is above long-term indicator.
+    Args:
+        indicator: Indicator function. Params need to be passed: high, low, close, open, volume, length
+        lag1: Short-term indicator lag
+        lag2: Long-term indicator lag
+        indicator_index1: Index of short-term indicator value
+        indicator_index2: Index of long-term indicator value
+    Kwargs:
+        kwargs: Kwargs for indicator function
 
     Returns True if:
-    - Short-term indicator is above long-term indicator
+        - Short-term indicator is above long-term indicator
     """
 
     def __init__(
@@ -30,8 +38,24 @@ class IndicatorStateCheck(BaseComponent):
         hist_data = manager.context["historical_data"]
 
         # Compute indicator series with kwargs
-        indicator_series1 = self.indicator(hist_data, self.lag1, **self.kwargs)
-        indicator_series2 = self.indicator(hist_data, self.lag2, **self.kwargs)
+        indicator_series1 = self.indicator(
+            high=hist_data["high"],
+            low=hist_data["low"],
+            close=hist_data["close"],
+            open=hist_data["open"],
+            volume=hist_data["volume"],
+            length=self.lag1,
+            **self.kwargs,
+        )
+        indicator_series2 = self.indicator(
+            high=hist_data["high"],
+            low=hist_data["low"],
+            close=hist_data["close"],
+            open=hist_data["open"],
+            volume=hist_data["volume"],
+            length=self.lag2,
+            **self.kwargs,
+        )
 
         # Check if we have enough data for requested indices
         if len(indicator_series1) < abs(self.indicator_index1) or len(
@@ -45,8 +69,4 @@ class IndicatorStateCheck(BaseComponent):
 
         # Compare values with debug logging
         result = short_value > long_value
-        logger.debug(
-            f"IndicatorStateCheck: {short_value:.4f} > {long_value:.4f} = {result} "
-            + f"(lag={self.lag1}/{self.lag2}, indices={self.indicator1_index}/{self.indicator2_index})"
-        )
         return result
