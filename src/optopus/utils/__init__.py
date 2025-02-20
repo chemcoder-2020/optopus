@@ -10,6 +10,7 @@ __all__ = [
     'validate_option_data',
     '_add_missing_columns',
     '_convert_column_type',
-    'DataProcessor'
+    'DataProcessor',
+    'IniConfigParser',
     "HampelFilterNumpy"
 ]
