@@ -417,6 +417,7 @@ class TradingManager(OptionBacktester):
         if order_to_cancel:
             order_to_cancel.cancel()
             self.active_orders.pop(i)
+            self._update_trade_counts()
             return True
         else:
             logger.warning(f"Order with ID {order_id} not found.")
@@ -435,6 +436,7 @@ class TradingManager(OptionBacktester):
             self.closed_orders.append(order_to_close)
             self.active_orders.remove(order_to_close)
             self.available_to_trade += order_to_close.get_required_capital()
+            self._update_trade_counts()
             return True
         else:
             logger.warning(f"Order with ID {order_id} not found.")
@@ -446,6 +448,7 @@ class TradingManager(OptionBacktester):
             :
         ]:  # Iterate over a copy to avoid modifying the list while iterating
             self.close_order(order.order_id.split("/")[-1])
+        self._update_trade_counts()
 
     def override_order(self, order_id: str) -> bool:
         """Override an order by its ID, removing it from all lists."""
@@ -458,6 +461,7 @@ class TradingManager(OptionBacktester):
         if order_to_override:
             self.active_orders.pop(i)
             self.available_to_trade += order_to_override.get_required_capital()
+            self._update_trade_counts()
             return True
 
         for i, order in enumerate(self.closed_orders):
@@ -468,6 +472,7 @@ class TradingManager(OptionBacktester):
         if order_to_override:
             self.closed_orders.pop(i)
             self.available_to_trade += order_to_override.get_required_capital()
+            self._update_trade_counts()
             return True
 
         # self.active_trades = self.active_orders
