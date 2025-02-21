@@ -17,16 +17,22 @@ class CloseToCloseVolatilityDecreaseCheck(BaseComponent):
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         hist_data = manager.context["historical_data"]
-        if len(hist_data) < self.lag + 1:
+        required_periods = self.lag + (1 if self.zero_drift else 2)
+        if len(hist_data) < required_periods:
             return False
 
-        # Calculate close-to-close log returns
         close_prices = hist_data["close"]
-        mu_cc = np.sqrt(np.log(close_prices / close_prices.shift(1)).rolling(self.lag-1).var(ddof=0))
-        log_returns = np.log(close_prices / close_prices.shift(1)) if self.zero_drift else np.log(close_prices / close_prices.shift(1)) - mu_cc
         
-        # Calculate rolling volatility (std dev of log returns)
-        volatility = log_returns.rolling(self.lag).var(ddof=0) if self.zero_drift else log_returns.rolling(self.lag-1).var(ddof=0)
+        if self.zero_drift:
+            # Zero drift assumption (original Parkinson)
+            log_returns = np.log(close_prices / close_prices.shift(1))
+            volatility = log_returns.rolling(self.lag).var(ddof=0)
+        else:
+            # Non-zero drift adjustment (Yang-Zhang style)
+            log_returns = np.log(close_prices / close_prices.shift(1))
+            mu_cc = log_returns.rolling(self.lag-1).mean()
+            adj_returns = log_returns - mu_cc
+            volatility = adj_returns.rolling(self.lag-1).var(ddof=1)
 
         # Get current and previous values
         vol_current = volatility.iloc[-1]
@@ -43,4 +49,4 @@ class CloseToCloseVolatilityDecreaseCheck(BaseComponent):
         return vol_current < vol_prev
 
     def __repr__(self):
-        return f"CloseToCloseVolatilityDecreaseCheck(lag={self.lag})"
+        return f"CloseToCloseVolatilityDecreaseCheck(lag={self.lag}, zero_drift={self.zero_drift})"
