@@ -15,14 +15,14 @@ def copy_template_files(project_name, strategy):
     strategy_template_dir = os.path.join(templates_base_dir, strategy)
     common_files_to_copy = [
         "backtest.py",
+        "backtest_cross_validate.py",
         "bot.py",
         "entry_condition.py",
+        "external_entry_condition.py",
         "exit_condition.py",
-        "backtest_cross_validate.py",
     ]
     strategy_files_to_copy = [
         "strategy_selection.py",
-        "config.py",
         "config.ini",
     ]
 

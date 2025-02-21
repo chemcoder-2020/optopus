@@ -1,16 +1,21 @@
 from strategy_selection import BacktestStrategy
 from loguru import logger
 
-from config import (
-    DATA_FOLDER,
-    START_DATE,
-    END_DATE,
-    TRADING_START_TIME,
-    TRADING_END_TIME,
-    DEBUG,
-    STRATEGY_PARAMS,
-    BACKTESTER_CONFIG,
-)
+from optopus.utils.config_parser import IniConfigParser
+
+parser = IniConfigParser("config.ini")
+config = parser.get_config()  # Returns Config dataclass instance
+strategy_params = parser.get_strategy_params()  # Returns dict of strategy parameters
+general_params = parser.get_general_params()
+
+DATA_FOLDER = general_params["data_folder"]
+START_DATE = general_params["start_date"]
+END_DATE = general_params["end_date"]
+TRADING_START_TIME = general_params["trading_start_time"]
+TRADING_END_TIME = general_params["trading_end_time"]
+DEBUG = general_params["debug"]
+STRATEGY_PARAMS = strategy_params
+BACKTESTER_CONFIG = config
 
 logger.disable("optopus")
 
