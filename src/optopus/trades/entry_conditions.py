@@ -536,23 +536,38 @@ class SequentialPipelineCondition(EntryConditionChecker):
 
     def should_enter(self, strategy, manager, time) -> bool:
         if not self.steps:
+            logger.info("SequentialPipeline: No steps configured, denying entry")
             return False
 
-        result = self.steps[0][0].should_enter(strategy, manager, time)
+        # Evaluate first step
+        first_condition = self.steps[0][0]
+        result = first_condition.should_enter(strategy, manager, time)
+        logger.info(f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}")
 
-        for condition, logic in self.steps[1:]:
+        # Evaluate remaining steps
+        for i, (condition, logic) in enumerate(self.steps[1:], start=2):
+            condition_name = condition.__class__.__name__
+            
             if logic not in self.LOGIC_MAP:
                 raise ValueError(f"Invalid logic operator: {logic}")
 
             current = condition.should_enter(strategy, manager, time)
-            result = self.LOGIC_MAP[logic](result, current)
+            new_result = self.LOGIC_MAP[logic](result, current)
+            
+            logger.info(f"SequentialPipeline Step {i}/{len(self.steps)} ({condition_name}) "
+                        f"with logic '{logic}': {result} {logic} {current} => {new_result}")
+            
+            result = new_result
 
             # Short-circuit evaluation
             if logic == "AND" and not result:
+                logger.info("Short-circuiting due to AND logic with False result")
                 break
             if logic == "OR" and result:
+                logger.info("Short-circuiting due to OR logic with True result")
                 break
 
+        logger.info(f"Final SequentialPipeline result: {result}")
         return result
 
 
