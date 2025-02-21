@@ -40,7 +40,7 @@ class YangZhangVolatilityDecreaseCheck(BaseComponent):
         sigma_rs_sq = rs_terms.rolling(self.lag-1).mean()
         
         # Calculate Yang-Zhang volatility
-        k = 0.34 / (1.34 + (self.lag/(self.lag-1)))
+        k = 0.34 / (1.34 + (self.lag/(self.lag-2)))
         yang_zhang = np.sqrt(sigma_co_sq + k * sigma_oc_sq + (1 - k) * sigma_rs_sq)
         
         # Get current and previous values

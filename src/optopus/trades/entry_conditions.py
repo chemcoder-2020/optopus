@@ -355,7 +355,7 @@ class TimeBasedEntryCondition(EntryConditionChecker):
         if self.allowed_day_numbers:
             day_of_week = current_time.dayofweek
             if day_of_week not in self.allowed_day_numbers:
-                logger.warning(f"Entry not allowed on {current_time.day_name()}")
+                logger.info(f"Entry not allowed on {current_time.day_name()}. Rejecting entry on TimeBasedEntryCondition")
                 return False
 
         # Check allowed time ranges
@@ -368,8 +368,8 @@ class TimeBasedEntryCondition(EntryConditionChecker):
                     break
 
             if not in_window:
-                logger.warning(
-                    f"Current time {curr_time.strftime('%H:%M:%S')} UTC not in allowed ranges"
+                logger.info(
+                    f"Current time {curr_time.strftime('%H:%M:%S')} not in allowed ranges. Rejecting entry on TimeBasedEntryCondition"
                 )
                 return False
 
@@ -592,6 +592,7 @@ class DefaultEntryCondition(EntryConditionChecker):
     def __init__(self, **kwargs):
         self.pipeline = SequentialPipelineCondition(
             steps=[
+                (CapitalRequirementCondition(), "AND"),
                 (
                     TimeBasedEntryCondition(
                         allowed_days=kwargs.get(
@@ -613,7 +614,6 @@ class DefaultEntryCondition(EntryConditionChecker):
                     ),
                     "AND",
                 ),
-                (CapitalRequirementCondition(), "AND"),
                 (PositionLimitCondition(), "AND"),
                 (RORThresholdCondition(), "AND"),
                 (

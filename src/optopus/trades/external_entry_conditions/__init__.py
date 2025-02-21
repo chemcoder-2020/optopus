@@ -4,6 +4,7 @@ from .base import (
     CompositePipelineCondition,
 )
 from .atr_decrease import VolatilityDecreaseCheck
+from .close_to_close_volatility import CloseToCloseVolatilityDecreaseCheck
 from .entry_on_forecast import EntryOnForecast
 from .entry_on_forecast_plus_kelly import EntryOnForecastPlusKellyCriterion
 from .forecast_check import StatsForecastCheck, VolatilityForecastCheck
@@ -19,6 +20,7 @@ from .standard_deviation_decrease import StdevVolatilityDecreaseCheck
 __all__ = [
     "BaseComponent",
     "CompositePipelineCondition",
+    "CloseToCloseVolatilityDecreaseCheck",
     "EntryOnForecast",
     "EntryOnForecastPlusKellyCriterion",
     "ExternalEntryConditionChecker",
