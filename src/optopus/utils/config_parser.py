@@ -6,6 +6,7 @@ from ..trades.option_manager import Config
 from ..trades.entry_conditions import *
 from ..trades.external_entry_conditions import *
 from ..trades.exit_conditions import *
+from loguru import logger
 
 
 class IniConfigParser:
@@ -109,7 +110,7 @@ class IniConfigParser:
         return Config(**config_params)
 
     def _parse_condition_section(self, section: str) -> Dict[str, Any]:
-        """Parse entry/external entry condition configuration"""
+        """Parse entry/external entry condition/exit condition configuration"""
         if not self.parser.has_section(section):
             return {"class": None, "params": {}}
 
@@ -122,10 +123,34 @@ class IniConfigParser:
         cls = None
         if condition_class:
             try:
-                module_path, class_name = condition_class.rsplit('.', 1)
+                if section == "EXIT_CONDITION":
+                    module_path = "optopus.trades.exit_conditions"
+                elif section == "ENTRY_CONDITION":
+                    module_path = "optopus.trades.entry_conditions"
+                elif section == "EXTERNAL_ENTRY_CONDITION":
+                    module_path = "optopus.trades.external_entry_conditions"
+                else:
+                    raise ValueError(f"Unknown section: {section}")
                 module = importlib.import_module(module_path)
-                cls = getattr(module, class_name)
+                cls = getattr(module, condition_class)
             except (ValueError, AttributeError, ModuleNotFoundError) as e:
-                raise ValueError(f"Failed to import condition class '{condition_class}': {str(e)}")
+                logger.error(
+                    f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Trying to import from custom module."
+                )
+                try:
+                    if section == "EXIT_CONDITION":
+                        module_path = "exit_condition"
+                    elif section == "ENTRY_CONDITION":
+                        module_path = "entry_condition"
+                    elif section == "EXTERNAL_ENTRY_CONDITION":
+                        module_path = "external_entry_condition"
+                    else:
+                        raise ValueError(f"Unknown section: {section}")
+                    module = importlib.import_module(module_path)
+                    cls = getattr(module, condition_class)
+                except (ValueError, AttributeError, ModuleNotFoundError) as e:
+                    raise ValueError(
+                        f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}"
+                    )
 
         return {"class": cls, "params": params}
