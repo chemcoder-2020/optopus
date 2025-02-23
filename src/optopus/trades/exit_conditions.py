@@ -186,6 +186,83 @@ class MedianCalculator:
         return median_return
 
 
+class PremiumFilter:
+    """
+    Class for detecting outliers in premium values using HampelFilter. Updates strategy's filtered PL
+    and return percentage while maintaining premium history.
+
+    Attributes:
+        window_size (int): The size of the rolling window.
+        filter (HampelFilterNumpy): Hampel filter for outlier detection.
+        premiums (list): List of raw premiums.
+    """
+
+    def __init__(self, window_size=5, n_sigma=3, k=1.4826, max_iterations=5):
+        """
+        Initialize the PremiumFilter.
+
+        Args:
+            window_size (int): Size of the rolling window for outlier detection.
+            n_sigma (float): Number of standard deviations for outlier threshold.
+            k (float): Scale factor for MAD calculation.
+            max_iterations (int): Maximum iterations for Hampel filter convergence.
+        """
+        self.window_size = window_size
+        self.filter = HampelFilterNumpy(
+            window_size=window_size,
+            n_sigma=n_sigma,
+            k=k,
+            max_iterations=max_iterations,
+            replace_with_na=True
+        )
+        self.premiums = []
+
+    def add_premium(self, mark: float):
+        """
+        Add a new premium to the rolling window.
+
+        Args:
+            mark (float): The new premium mark to add
+        """
+        self.premiums.append(mark)
+        if len(self.premiums) > self.window_size + 1:
+            self.premiums.pop(0)
+
+    def check_outlier(self, strategy) -> bool:
+        """
+        Check if current premium's return percentage is an outlier. Updates strategy's
+        filtered metrics with the cleaned values.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to check
+
+        Returns:
+            bool: True if NOT an outlier (valid value), False if outlier
+        """
+        current_return = strategy.return_percentage()
+        self.add_premium(current_return)
+
+        if len(self.premiums) < self.filter.window_size + 1:
+            # Not enough data yet - assume valid
+            strategy.filter_return_percentage = current_return
+            strategy.filter_pl = strategy.total_pl()
+            strategy.premium_log = self.premiums.copy()
+            return True
+
+        # Apply Hampel filter (outliers will be replaced with NaNs)
+        filtered_returns = self.filter.fit_transform(np.array([self.premiums]))
+        
+        # Check if last value is NaN (indicates outlier)
+        is_valid = not np.isnan(filtered_returns[0][-1])
+        
+        # Store results in strategy
+        strategy.premium_log = self.premiums.copy()
+        strategy.filter_return_percentage = filtered_returns[0][-1] if is_valid else current_return
+        strategy.filter_pl = strategy.entry_net_premium * strategy.contracts * strategy.filter_return_percentage
+        
+        return is_valid
+
+
 class ProfitTargetCondition(ExitConditionChecker):
     """
     Exit condition based on a profit target.
