@@ -3,35 +3,6 @@ import pandas as pd
 from .base_metric import BaseMetric
 
 
-class TotalReturn(BaseMetric):
-    """Calculates total return percentage from a series of returns"""
-
-    def calculate(self, returns: np.ndarray, window: int = 10) -> dict:
-
-        if returns.size < window + 1:
-            return {"total_return": 0.0}
-
-        returns = returns.copy()
-        returns = self.detect_outliers(returns, window_size=window)
-
-        total_return = np.exp(np.sum(returns)) - 1
-        return {"total_return": float(total_return)}
-
-
-class AnnualizedReturn(BaseMetric):
-    """Calculates annualized return from daily returns"""
-
-    def calculate(self, returns: np.ndarray, window: int = 10) -> dict:
-        if returns.size < window + 1:
-            return {"annualized_return": 0.0}
-        returns = returns.copy()
-        returns = self.detect_outliers(returns, window_size=window)
-
-        cumulative_return = np.exp(np.sum(returns))
-        days = len(returns)
-        annualized_return = cumulative_return ** (252 / days) - 1
-        return {"annualized_return": float(annualized_return)}
-
 
 class CAGR(BaseMetric):
     """Calculates Compound Annual Growth Rate (CAGR)"""
@@ -85,7 +56,7 @@ class MonthlyReturn(BaseMetric):
         closed_pl_series = closed_pl_series.copy()
 
         # Resample to monthly and calculate changes
-        monthly_pl = closed_pl_series.resample("M").last().diff().dropna()
+        monthly_pl = closed_pl_series.groupby(pd.Grouper(freq="M")).sum()
 
         if non_zero_only:
             monthly_pl = monthly_pl[monthly_pl != 0]
@@ -94,6 +65,32 @@ class MonthlyReturn(BaseMetric):
             "avg_monthly_pl": float(monthly_pl.mean()) if not monthly_pl.empty else 0.0
         }
 
+class YearlyReturn(BaseMetric):
+    """Calculates average yearly profit/loss from performance data"""
+
+    def calculate(
+        self, closed_pl_series: pd.Series, non_zero_only: bool = False
+    ) -> dict:
+        """
+        Args:
+            closed_pl_series (pd.Series): Series of closed P/L values with datetime index
+            non_zero_only (bool): If True, average only months with non-zero P/L
+
+        Returns:
+            Dictionary with average yearly P/L
+        """
+
+        closed_pl_series = closed_pl_series.copy()
+
+        # Resample to yearly and calculate changes
+        yearly_pls = closed_pl_series.groupby(pd.Grouper(freq="Y")).sum()
+
+        if non_zero_only:
+            yearly_pls = yearly_pls[yearly_pls != 0]
+
+        return {
+            "median_yearly_pl": float(yearly_pls.median()) if not yearly_pls.empty else 0.0
+        }
 
 class PositiveMonthlyProbability(BaseMetric):
     """Calculates probability of positive monthly P/L"""

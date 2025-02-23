@@ -17,6 +17,7 @@ from ..metrics import (
     ProfitFactor,
     CAGR,
     MonthlyReturn,
+    YearlyReturn,
     PositiveMonthlyProbability,
 )
 
@@ -602,18 +603,26 @@ class OptionBacktester:
         try:
             monthly_return_calculator = MonthlyReturn()
             metrics["avg_monthly_pl"] = monthly_return_calculator.calculate(
-                df["closed_pl"]
+                closed_trades_df.set_index("exit_time")["closed_pl"]
             )["avg_monthly_pl"]
         except Exception as e:
             logger.error(f"Error calculating Average Monthly P/L: {str(e)}")
         try:
             metrics["avg_monthly_pl_nonzero"] = monthly_return_calculator.calculate(
-                df["closed_pl"], non_zero_only=True
+                closed_trades_df.set_index("exit_time")["closed_pl"], non_zero_only=True
             )["avg_monthly_pl"]
         except Exception as e:
             logger.error(
                 f"Error calculating Average Monthly P/L (Non-Zero Months): {str(e)}"
             )
+        try:
+            yearly_return_calculator = YearlyReturn()
+            metrics["median_yearly_pl"] = yearly_return_calculator.calculate(
+                closed_trades_df.set_index("exit_time")["closed_pl"], non_zero_only=True
+            )["median_yearly_pl"]
+            metrics['median_yearly_return'] = metrics['median_yearly_pl'] / self.config.initial_capital
+        except Exception as e:
+            logger.error(f"Error calculating Average Monthly P/L: {str(e)}")
         try:
             wins = [t.won for t in self.closed_trades]
             winrate_calculator = WinRate()
@@ -709,6 +718,10 @@ class OptionBacktester:
                 print(f"Profit Factor: {metrics['profit_factor']:.2f}")
             if metrics.get('cagr') is not None:
                 print(f"CAGR: {metrics['cagr']:.2%}")
+            if metrics.get('median_yearly_pl') is not None:
+                print(f"Median Yearly P/L: ${metrics['median_yearly_pl']:.2f}")
+            if metrics.get('median_yearly_return') is not None:
+                print(f"Median Yearly Return: {metrics['median_yearly_return']:.2%}")
             if metrics.get('avg_monthly_pl') is not None:
                 print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
             if metrics.get('avg_monthly_pl_nonzero') is not None:

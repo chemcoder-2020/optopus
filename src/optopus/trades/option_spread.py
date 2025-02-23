@@ -264,6 +264,7 @@ class OptionStrategy:
 
     def _check_exit_conditions(self, option_chain_df):
         """Check and apply exit conditions."""
+        # TODO: add pre-process for premium filtering here.
         current_return = self.return_percentage()
 
         # Update highest return for trailing stop

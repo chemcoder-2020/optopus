@@ -48,7 +48,7 @@ logger.info(f"Strategy Parameters: {STRATEGY_PARAMS}")
 cv = backtest.cross_validate(20, 1.1)
 logger.info("\nCross-Validation Results:")
 logger.info("==========================")
-for metric, stats in cv.items():
+for metric, stats in cv['aggregated'].items():
     if "true_ratio" in stats:
         logger.info(f"\n{metric}:")
         logger.info(f"  Mean: {stats['mean']:.4f}")
