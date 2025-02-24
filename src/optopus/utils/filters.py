@@ -63,11 +63,10 @@ class HampelFilterNumpy:
         # Make copy so original not edited
         vals = pd.Series(np.array(X).flatten())
         # Hampel Filter
-        L = 1.4826
         rolling_median = vals.rolling(k).median()
         difference = np.abs(rolling_median - vals)
-        median_abs_deviation = difference.rolling(k).median()
-        threshold = t0 * L * median_abs_deviation
+        median_abs_deviation = difference.rolling(self.window_size).median()
+        threshold = self.n_sigma * self.k * median_abs_deviation
         outlier_idx = difference > threshold
         vals[outlier_idx] = np.nan
         return vals
