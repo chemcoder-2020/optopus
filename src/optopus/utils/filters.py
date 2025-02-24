@@ -1,9 +1,23 @@
 import numpy as np
 import pandas as pd
+from abc import ABC, abstractmethod
 
 
-class HampelFilterNumpy:
-    """Scikit-learn style Hampel filter wrapper for the NumPy implementation."""
+class Filter(ABC):
+    @abstractmethod
+    def transform(self, X):
+        pass
+
+    @abstractmethod
+    def fit(self, X):
+        pass
+
+    @abstractmethod
+    def fit_transform(self, X):
+        pass
+
+
+class HampelFilterNumpy(Filter):
 
     def __init__(
         self,
@@ -57,7 +71,7 @@ class HampelFilterNumpy:
 
             prev_bad_count = current_bad_count
 
-        return y.reshape(-1, 1)
+        return y.reshape(-1, 1).flatten()
 
     def pandas_transform(self, X):
         # Make copy so original not edited
@@ -74,8 +88,8 @@ class HampelFilterNumpy:
             if outlier_idx == 0:
                 vals[outlier_idx] = np.nan
             else:
-                vals[outlier_idx] = vals[outlier_idx-1]
-        return vals
+                vals[outlier_idx] = vals[outlier_idx - 1]
+        return np.array(vals).reshape(-1, 1).flatten()
 
     def transform(self, X):
         if self.implementation == "numpy":
