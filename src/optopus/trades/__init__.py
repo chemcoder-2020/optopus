@@ -16,10 +16,10 @@ from .entry_conditions import (
 from .exit_conditions import (
     ExitConditionChecker,
     ProfitTargetCondition,
-    StopLossCondition,
+    # StopLossCondition,
     TimeBasedCondition,
-    TrailingStopCondition,
-    CompositeExitCondition,
+    # TrailingStopCondition,
+    # CompositeExitCondition,
     DefaultExitCondition
 )
 from .external_entry_conditions import ExternalEntryConditionChecker, EntryOnForecast
@@ -42,10 +42,10 @@ __all__ = [
     # "DefaultEntryCondition",
     "ExitConditionChecker",
     "ProfitTargetCondition",
-    "StopLossCondition",
+    # "StopLossCondition",
     "TimeBasedCondition",
-    "TrailingStopCondition",
-    "CompositeExitCondition",
+    # "TrailingStopCondition",
+    # "CompositeExitCondition",
     "DefaultExitCondition",
     "ExternalEntryConditionChecker",
     "EntryOnForecast",
