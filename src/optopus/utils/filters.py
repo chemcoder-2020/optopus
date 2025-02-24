@@ -63,7 +63,7 @@ class HampelFilterNumpy:
         # Make copy so original not edited
         vals = pd.Series(np.array(X).flatten())
         # Hampel Filter
-        rolling_median = vals.rolling(k).median()
+        rolling_median = vals.rolling(self.window_size).median()
         difference = np.abs(rolling_median - vals)
         median_abs_deviation = difference.rolling(self.window_size).median()
         threshold = self.n_sigma * self.k * median_abs_deviation
