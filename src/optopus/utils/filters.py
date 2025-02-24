@@ -68,7 +68,13 @@ class HampelFilterNumpy:
         median_abs_deviation = difference.rolling(self.window_size).median()
         threshold = self.n_sigma * self.k * median_abs_deviation
         outlier_idx = difference > threshold
-        vals[outlier_idx] = np.nan
+        if self.replace_with_na:
+            vals[outlier_idx] = np.nan
+        else:
+            if outlier_idx == 0:
+                vals[outlier_idx] = np.nan
+            else:
+                vals[outlier_idx] = vals[outlier_idx-1]
         return vals
 
     def transform(self, X):
