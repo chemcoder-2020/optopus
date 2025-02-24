@@ -544,8 +544,11 @@ class SequentialPipelineCondition(EntryConditionChecker):
         result = first_condition.should_enter(strategy, manager, time)
         logger.info(f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}")
         if not result:
-            logger.info("SequentialPipeline: First step failed, denying entry")
-            return False
+            if self.steps[0][1] == "AND":
+                logger.info("SequentialPipeline: First step failed, denying entry")
+                return False
+            else:
+                logger.info("SequentialPipeline: First step failed, still evaluating remaining steps")
 
         # Evaluate remaining steps
         for i, (condition, logic) in enumerate(self.steps[1:], start=2):
