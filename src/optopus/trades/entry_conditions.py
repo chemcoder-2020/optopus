@@ -85,7 +85,7 @@ class MedianCalculator(EntryConditionChecker):
                 f"Filtered mark is 0. Probably not enough data for MedianCalculator's window size of {self.window_size}"
             )
             return False
-        elif filtered_mark == np.nan:
+        elif np.isnan(filtered_mark):
             logger.warning(
                 f"Filtered mark is NaN. The filter {self.method} has detected an outlying price. Returning False and replacing premium list with previous value."
             )
