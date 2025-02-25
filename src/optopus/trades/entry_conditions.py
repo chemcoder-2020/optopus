@@ -734,7 +734,7 @@ class DefaultEntryCondition(EntryConditionChecker):
                     PremiumProcessCondition(
                         window_size=kwargs.get("window_size", 3),
                         bid_mark_fluctuation=kwargs.get("fluctuation", 0.1),
-                        method=kwargs.get("filter_method", "HampelFilterNumpy"),
+                        filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
                         n_sigma=kwargs.get("n_sigma", 3),
                         k=kwargs.get("k", 1.4826),
                         max_iterations=kwargs.get("max_iterations", 5),
