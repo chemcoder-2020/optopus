@@ -36,8 +36,8 @@ class IndicatorStateCheck(BaseComponent):
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         hist_data = manager.context["historical_data"]
+        logger.debug("IndicatorStateCheck: Starting indicator check with lag1: {}, lag2: {}".format(self.lag1, self.lag2))
 
-        # Compute indicator series with kwargs
         indicator_series1 = self.indicator(
             high=hist_data["high"],
             low=hist_data["low"],
@@ -57,16 +57,14 @@ class IndicatorStateCheck(BaseComponent):
             **self.kwargs,
         )
 
-        # Check if we have enough data for requested indices
-        if len(indicator_series1) < abs(self.indicator_index1) or len(
-            indicator_series2
-        ) < abs(self.indicator_index2):
+        if len(indicator_series1) < abs(self.indicator_index1) or len(indicator_series2) < abs(self.indicator_index2):
+            logger.warning("IndicatorStateCheck: Not enough data for indices. indicator_series1 length: {}, indicator_index1: {}, indicator_series2 length: {}, indicator_index2: {}".format(len(indicator_series1), self.indicator_index1, len(indicator_series2), self.indicator_index2))
             return False
 
-        # Get values at specified positions (supports negative indexing)
         short_value = indicator_series1.iloc[self.indicator_index1]
         long_value = indicator_series2.iloc[self.indicator_index2]
 
-        # Compare values with debug logging
+        logger.debug("IndicatorStateCheck: Comparing short_value: {} with long_value: {}".format(short_value, long_value))
         result = short_value > long_value
+        logger.debug("IndicatorStateCheck: Result is {}".format(result))
         return result
