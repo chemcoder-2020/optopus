@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 import datetime
 import pandas as pd
-from typing import Union, TYPE_CHECKING, List, Tuple
+from typing import Union, TYPE_CHECKING, List, Tuple, Type
 from loguru import logger
 import numpy as np
+import importlib
 from ..utils.heapmedian import ContinuousMedian
-from ..utils.filters import HampelFilterNumpy
+from ..utils.filters import HampelFilterNumpy, Filter
 
 
 if TYPE_CHECKING:
@@ -29,6 +30,77 @@ class EntryConditionChecker(ABC):
         time: Union[datetime, str, pd.Timestamp],
     ) -> bool:
         pass
+
+
+class Preprocessor(ABC):
+    @abstractmethod
+    def preprocess(self, data):
+        pass
+
+
+class PremiumListInit(Preprocessor):
+    def preprocess(self, strategy, manager):
+        if not hasattr(manager, "context"):
+            manager.context = {}
+
+        if "premiums" not in manager.context:
+            manager.context["premiums"] = []
+
+        logger.debug("Premium log initialized for manager")
+        return True
+
+
+class PremiumFilter(Preprocessor):
+    def __init__(
+        self,
+        filter_method: Union[Filter, Type[Filter], str] = HampelFilterNumpy,
+        **kwargs,
+    ):
+        if isinstance(filter_method, str):
+            filter_module = importlib.import_module("optopus.utils.filters")
+            filter_method = getattr(filter_module, filter_method)
+        elif isinstance(filter_method, type) and issubclass(filter_method, Filter):
+            filter_method = filter_method
+        else:
+            raise ValueError(
+                "filter_method must be a Filter class or a string name of a Filter class"
+            )
+
+        self.filter_method = filter_method
+
+        self.premium_filter = self.filter_method(**kwargs)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def preprocess(self, strategy, manager):
+        """
+        Check if current premium's return percentage is an outlier. Updates strategy's filtered metrics with the cleaned values.
+
+        Args:
+            strategy (OptionStrategy): The option strategy to check
+        """
+        bid = strategy.current_bid
+        ask = strategy.current_ask
+        mark = (ask + bid) / 2  # if bid != 0 else ask
+        manager.context["premiums"].append(mark)
+        if len(manager.context["premiums"]) > self.window_size + 1:
+            manager.context["premiums"].pop(0)
+
+        if len(manager.context["premiums"]) < self.window_size + 1:
+            logger.debug(
+                f"Manager's premiums context has less than {self.window_size + 1} values, skipping filter - assume valid data"
+            )
+            return mark
+
+        filtered_returns = self.premium_filter.fit_transform(manager.context["premiums"])
+
+        return filtered_returns[-1]
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs})"
+        )
 
 
 class MedianCalculator(EntryConditionChecker):
@@ -99,6 +171,36 @@ class MedianCalculator(EntryConditionChecker):
         return np.isclose(mark, filtered_mark, rtol=self.fluctuation) and np.isclose(
             bid, mark, rtol=self.fluctuation
         )
+
+class PremiumProcessCondition(EntryConditionChecker):
+    def __init__(self, bid_mark_fluctuation=0.1, **kwargs):
+        self.premium_filter = PremiumFilter(**kwargs)
+        self.premium_init = PremiumListInit()
+        self.bid_mark_fluctuation = bid_mark_fluctuation
+        self.kwargs = kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+            
+    def should_enter(self, strategy, manager, time) -> bool:
+        # Init the premium context
+        self.premium_init.preprocess(strategy, manager)
+
+        # Apply the filter
+        filtered_mark = self.premium_filter.preprocess(strategy, manager)
+
+        # Check if the mark is close to the bid
+        bid = strategy.current_bid
+        if not np.isclose(filtered_mark, bid, rtol=self.bid_mark_fluctuation):
+            logger.warning(
+                f"Premium is not close to the bid. Filtered mark: {filtered_mark}, Bid: {bid}, Fluctuation: {self.bid_mark_fluctuation}"
+            )
+            return False
+
+        logger.info(
+            f"Passed PremiumProcessCondition check. Filtered mark: {filtered_mark}, Bid: {bid}, Fluctuation: {self.bid_mark_fluctuation}"
+        )
+
+        return True
 
 
 class CapitalRequirementCondition(EntryConditionChecker):
@@ -355,7 +457,9 @@ class TimeBasedEntryCondition(EntryConditionChecker):
         if self.allowed_day_numbers:
             day_of_week = current_time.dayofweek
             if day_of_week not in self.allowed_day_numbers:
-                logger.info(f"Entry not allowed on {current_time.day_name()}. Rejecting entry on TimeBasedEntryCondition")
+                logger.info(
+                    f"Entry not allowed on {current_time.day_name()}. Rejecting entry on TimeBasedEntryCondition"
+                )
                 return False
 
         # Check allowed time ranges
@@ -542,27 +646,33 @@ class SequentialPipelineCondition(EntryConditionChecker):
         # Evaluate first step
         first_condition = self.steps[0][0]
         result = first_condition.should_enter(strategy, manager, time)
-        logger.info(f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}")
+        logger.info(
+            f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}"
+        )
         if not result:
             if self.steps[0][1] == "AND":
                 logger.info("SequentialPipeline: First step failed, denying entry")
                 return False
             else:
-                logger.info("SequentialPipeline: First step failed, still evaluating remaining steps")
+                logger.info(
+                    "SequentialPipeline: First step failed, still evaluating remaining steps"
+                )
 
         # Evaluate remaining steps
         for i, (condition, logic) in enumerate(self.steps[1:], start=2):
             condition_name = condition.__class__.__name__
-            
+
             if logic not in self.LOGIC_MAP:
                 raise ValueError(f"Invalid logic operator: {logic}")
 
             current = condition.should_enter(strategy, manager, time)
             new_result = self.LOGIC_MAP[logic](result, current)
-            
-            logger.info(f"SequentialPipeline Step {i}/{len(self.steps)} ({condition_name}) "
-                        f"with logic '{logic}': {result} {logic} {current} => {new_result}")
-            
+
+            logger.info(
+                f"SequentialPipeline Step {i}/{len(self.steps)} ({condition_name}) "
+                f"with logic '{logic}': {result} {logic} {current} => {new_result}"
+            )
+
             result = new_result
 
             # Short-circuit evaluation
@@ -609,14 +719,26 @@ class DefaultEntryCondition(EntryConditionChecker):
                     ),
                     "AND",
                 ),
+                # (
+                #     MedianCalculator(
+                #         window_size=kwargs.get("window_size", 7),
+                #         fluctuation=kwargs.get("fluctuation", 0.1),
+                #         method=kwargs.get("filter_method", "HampelFilter"),
+                #         n_sigma=kwargs.get("n_sigma", 3),
+                #         k=kwargs.get("k", 1.4826),
+                #         max_iterations=kwargs.get("max_iterations", 5),
+                #     ),
+                #     "AND",
+                # ),
                 (
-                    MedianCalculator(
-                        window_size=kwargs.get("window_size", 7),
-                        fluctuation=kwargs.get("fluctuation", 0.1),
-                        method=kwargs.get("filter_method", "HampelFilter"),
+                    PremiumProcessCondition(
+                        window_size=kwargs.get("window_size", 3),
+                        bid_mark_fluctuation=kwargs.get("fluctuation", 0.1),
+                        method=kwargs.get("filter_method", "HampelFilterNumpy"),
                         n_sigma=kwargs.get("n_sigma", 3),
                         k=kwargs.get("k", 1.4826),
                         max_iterations=kwargs.get("max_iterations", 5),
+                        implementation=kwargs.get("implementation", "pandas"),
                     ),
                     "AND",
                 ),
