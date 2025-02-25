@@ -85,10 +85,8 @@ class HampelFilterNumpy(Filter):
         if self.replace_with_na:
             vals[outlier_idx] = np.nan
         else:
-            if outlier_idx == 0:
-                vals[outlier_idx] = np.nan
-            else:
-                vals[outlier_idx] = vals[outlier_idx - 1]
+            vals[outlier_idx] = np.nan
+            vals = vals.ffill()
         return np.array(vals).reshape(-1, 1).flatten()
 
     def transform(self, X):
