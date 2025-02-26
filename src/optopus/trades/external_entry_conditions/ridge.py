@@ -21,8 +21,9 @@ class RidgeCheck(BaseComponent):
         model = Ridge()
         model.fit(X, y)
         # Require positive slope for upward trend
-        if model.coef_[0] > 0:
-            logger.info(f"RidgeCheck passed. Slope {model.coef_[0]:.4f} > 0")
+        y_pred = model.predict(X)
+        if y_pred[-1] - y_pred[-2] > 0:
+            logger.info(f"RidgeCheck passed. Current Value > Previous Value")
             return True
         return False
 
