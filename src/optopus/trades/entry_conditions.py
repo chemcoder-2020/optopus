@@ -67,6 +67,7 @@ class PremiumFilter(Preprocessor):
             )
 
         self.filter_method = filter_method
+        self.kwargs = kwargs
 
         self.premium_filter = self.filter_method(**kwargs)
 
@@ -93,7 +94,9 @@ class PremiumFilter(Preprocessor):
             )
             return mark
 
-        filtered_returns = self.premium_filter.fit_transform(manager.context["premiums"])
+        filtered_returns = self.premium_filter.fit_transform(
+            manager.context["premiums"]
+        )
 
         return filtered_returns[-1]
 
@@ -172,15 +175,18 @@ class MedianCalculator(EntryConditionChecker):
             bid, mark, rtol=self.fluctuation
         )
 
+
 class PremiumProcessCondition(EntryConditionChecker):
-    def __init__(self, bid_mark_fluctuation=0.1, **kwargs):
-        self.premium_filter = PremiumFilter(**kwargs)
+    def __init__(
+        self, bid_mark_fluctuation=0.1, filter_method="HampelFilterNumpy", **kwargs
+    ):
+        self.premium_filter = PremiumFilter(filter_method=filter_method, **kwargs)
         self.premium_init = PremiumListInit()
         self.bid_mark_fluctuation = bid_mark_fluctuation
         self.kwargs = kwargs
         for key, value in kwargs.items():
             setattr(self, key, value)
-            
+
     def should_enter(self, strategy, manager, time) -> bool:
         # Init the premium context
         self.premium_init.preprocess(strategy, manager)
@@ -732,9 +738,9 @@ class DefaultEntryCondition(EntryConditionChecker):
                 # ),
                 (
                     PremiumProcessCondition(
+                        filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
                         window_size=kwargs.get("window_size", 3),
                         bid_mark_fluctuation=kwargs.get("fluctuation", 0.1),
-                        filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
                         n_sigma=kwargs.get("n_sigma", 3),
                         k=kwargs.get("k", 1.4826),
                         max_iterations=kwargs.get("max_iterations", 5),

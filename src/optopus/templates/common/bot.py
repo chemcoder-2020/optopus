@@ -41,7 +41,6 @@ config.client_id = os.getenv("SCHWAB_CLIENT_ID")
 config.client_secret = os.getenv("SCHWAB_CLIENT_SECRET")
 config.redirect_uri = os.getenv("SCHWAB_REDIRECT_URI")
 config.token_file = os.path.join(basename, "token.json")
-trading_manager = TradingManager(config)
 
 # Initialize the trading manager
 if os.path.exists(f"{cwd}/trading_manager60dte.pkl"):

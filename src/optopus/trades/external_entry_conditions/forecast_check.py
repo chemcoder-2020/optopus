@@ -27,7 +27,10 @@ class StatsForecastCheck(BaseComponent):
         from statsforecast import StatsForecast
         import statsforecast.models as sm
         logger.debug("StatsForecastCheck: Starting forecast check using model {} and context {}.".format(self.model, self.context))
-        hist_data = manager.context[self.context]
+        if isinstance(manager.context[self.context], pd.Series):
+            hist_data = manager.context[self.context].to_frame()
+        else:
+            hist_data = manager.context[self.context]
 
         if len(hist_data) < 2:  # Need at least 2 data points for forecasting
             logger.warning("StatsForecastCheck: Not enough data for forecasting. Data count: {}".format(len(hist_data)))

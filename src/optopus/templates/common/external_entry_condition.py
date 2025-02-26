@@ -40,7 +40,8 @@ import pandas_ta as pt
 #                 lag=self.c2c_window,
 #                 zero_drift=self.zero_drift,
 #             ),
-#             self.ohlc,
+#             ohlc_data=kwargs.get("ohlc"),
+#             ticker=kwargs.get("ticker")
 #         )
 
 #     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
