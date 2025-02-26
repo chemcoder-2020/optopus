@@ -20,9 +20,11 @@ class RidgeCheck(BaseComponent):
         y = recent_data.values
         model = Ridge()
         model.fit(X, y)
+        # Require positive slope for upward trend
         if model.coef_[0] > 0:
-            logger.info("RidgeCheck passed. Slope > 0")
-        return model.coef_[0] > 0
+            logger.info(f"RidgeCheck passed. Slope {model.coef_[0]:.4f} > 0")
+            return True
+        return False
 
     def __repr__(self):
-        return f"RidgeCheck(lag={self.lag}"
+        return f"RidgeCheck(lag={self.lag})"
