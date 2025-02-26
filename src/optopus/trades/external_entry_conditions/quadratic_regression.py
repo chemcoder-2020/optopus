@@ -16,15 +16,17 @@ class QuadraticRegressionCheck(BaseComponent):
         recent_data = historical_data["close"].iloc[-self.lag :]
         x = np.arange(self.lag)
         y = recent_data.values
-        
+
         # Fit quadratic regression (degree=2)
         coefficients = np.polyfit(x, y, 2)
         a, b, c = coefficients  # ax² + bx + c
-        
-        # Parabole opens upwards if leading coefficient is positive
-        if a > 0:
-            logger.info("QuadraticRegressionCheck passed. Parabola opening upwards")
-        return a > 0
+        p = np.polynomial.polynomial.Polynomial([c, b, a])
+        result = p(x[-1]) - p(x[-2])
+        logger.info(f"QuadraticRegressionCheck: {result}")
+
+        if result > 0:
+            logger.info("QuadraticRegressionCheck passed.")
+        return result > 0
 
     def __repr__(self):
         return f"QuadraticRegressionCheck(lag={self.lag})"
