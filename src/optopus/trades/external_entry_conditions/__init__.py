@@ -16,6 +16,7 @@ from .indicator_state import IndicatorStateCheck
 from .linear_regression import LinearRegressionCheck
 from .parkinson_volatility_decrease import ParkinsonVolatilityDecreaseCheck
 from .quadratic_regression import QuadraticRegressionCheck
+from .ridge import RidgeCheck
 from .rogers_satchell_volatility_decrease import RogersSatchellVolatilityDecreaseCheck
 from .standard_deviation_decrease import StdevVolatilityDecreaseCheck
 from .yang_zhang_volatility_decrease import YangZhangVolatilityDecreaseCheck
@@ -34,6 +35,7 @@ __all__ = [
     "LinearRegressionCheck",
     "ParkinsonVolatilityDecreaseCheck",
     "QuadraticRegressionCheck",
+    "RidgeCheck",
     "RogersSatchellVolatilityDecreaseCheck", 
     "StatsForecastCheck",
     "StdevVolatilityDecreaseCheck",
