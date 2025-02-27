@@ -15,6 +15,7 @@ from .profit_target import ProfitTargetCondition
 from .stoploss import StopLossCondition
 from .time_based import TimeBasedCondition
 from .trailing_stoploss import TrailingStopCondition
+from .trailing_exit import TrailingStopExitCondition
 
 
 __all__ = [
@@ -33,4 +34,5 @@ __all__ = [
     "StopLossCondition",
     "TimeBasedCondition",
     "TrailingStopCondition",
+    "TrailingStopExitCondition",
 ]
