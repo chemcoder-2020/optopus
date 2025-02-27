@@ -2,6 +2,8 @@ from configparser import ConfigParser
 import pandas as pd
 from typing import Dict, Any
 import importlib
+import difflib
+import inspect
 from ..trades.option_manager import Config
 from ..trades.entry_conditions import *
 from ..trades.external_entry_conditions import *
@@ -118,39 +120,86 @@ class IniConfigParser:
             k: self._parse_value(k, v) for k, v in self.parser.items(section, raw=True)
         }
         condition_class = params.pop("class", None)
+        
+        if not condition_class:
+            return {"class": None, "params": params}
 
-        # Dynamically import class using importlib
-        cls = None
-        if condition_class:
+        # Map sections to their base classes and modules
+        SECTION_CONFIG = {
+            "EXIT_CONDITION": {
+                "module": "optopus.trades.exit_conditions.base",
+                "base_class": "ExitConditionChecker"
+            },
+            "ENTRY_CONDITION": {
+                "module": "optopus.trades.entry_conditions.base", 
+                "base_class": "EntryConditionChecker"
+            },
+            "EXTERNAL_ENTRY_CONDITION": {
+                "module": "optopus.trades.external_entry_conditions.base",
+                "base_class": "ExternalEntryConditionChecker"
+            }
+        }
+
+        valid_classes = []
+        suggestions = []
+        module_path = None
+        base_class = None
+
+        try:
+            if section not in SECTION_CONFIG:
+                raise ValueError(f"Unsupported configuration section: {section}")
+
+            config = SECTION_CONFIG[section]
+            module_path = config["module"]
+            base_class_name = config["base_class"]
+
+            # Import base class module
+            base_module = importlib.import_module(module_path)
+            base_class = getattr(base_module, base_class_name)
+
+            # Try importing from standard module first
+            module = importlib.import_module(module_path.replace(".base", ""))
+            cls = getattr(module, condition_class)
+            
+            # Validate class hierarchy
+            if not issubclass(cls, base_class):
+                raise TypeError(f"{condition_class} is not a subclass of {base_class_name}")
+
+            valid_classes = [
+                name for name, obj in inspect.getmembers(module, inspect.isclass)
+                if issubclass(obj, base_class) and obj != base_class
+            ]
+
+        except Exception as e:
+            # If standard import fails, try custom modules
             try:
-                if section == "EXIT_CONDITION":
-                    module_path = "optopus.trades.exit_conditions"
-                elif section == "ENTRY_CONDITION":
-                    module_path = "optopus.trades.entry_conditions"
-                elif section == "EXTERNAL_ENTRY_CONDITION":
-                    module_path = "optopus.trades.external_entry_conditions"
-                else:
-                    raise ValueError(f"Unknown section: {section}")
-                module = importlib.import_module(module_path)
+                custom_module_path = section.lower().replace("_", "")
+                module = importlib.import_module(custom_module_path)
                 cls = getattr(module, condition_class)
-            except (ValueError, AttributeError, ModuleNotFoundError) as e:
-                logger.error(
-                    f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Trying to import from custom module."
-                )
-                try:
-                    if section == "EXIT_CONDITION":
-                        module_path = "exit_condition"
-                    elif section == "ENTRY_CONDITION":
-                        module_path = "entry_condition"
-                    elif section == "EXTERNAL_ENTRY_CONDITION":
-                        module_path = "external_entry_condition"
-                    else:
-                        raise ValueError(f"Unknown section: {section}")
-                    module = importlib.import_module(module_path)
-                    cls = getattr(module, condition_class)
-                except (ValueError, AttributeError, ModuleNotFoundError) as e:
-                    raise ValueError(
-                        f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}"
+                valid_classes = inspect.getmembers(module, inspect.isclass)
+            except Exception as secondary_error:
+                # Generate suggestions from valid classes
+                if valid_classes:
+                    suggestions = difflib.get_close_matches(
+                        condition_class,
+                        valid_classes,
+                        n=3,
+                        cutoff=0.6
                     )
+                
+                suggestion_msg = ""
+                if suggestions:
+                    suggestion_msg = f" Did you mean: {', '.join(suggestions)}?"
+                
+                available_msg = ""
+                if valid_classes:
+                    available_msg = f"\nAvailable options: {', '.join(sorted(valid_classes))}"
+                elif module_path:
+                    available_msg = f"\nNo valid condition classes found in {module_path}"
+
+                raise ValueError(
+                    f"Failed to load condition class '{condition_class}'.{suggestion_msg}"
+                    f"{available_msg}\nOriginal error: {str(e)}"
+                ) from secondary_error
 
         return {"class": cls, "params": params}
