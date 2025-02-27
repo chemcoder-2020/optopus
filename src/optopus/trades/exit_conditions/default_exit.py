@@ -8,7 +8,7 @@ from .base import (
 )
 from typing import Union
 import pandas as pd
-import datetime
+from datetime import datetime
 
 
 class PipelineDefaultExit(CompositePipelineCondition):
