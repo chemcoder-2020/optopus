@@ -156,8 +156,8 @@ class TrailingStopExitCondition(ExitConditionChecker):
             preprocessor.preprocess(strategy)
         
         # Check both conditions with OR logic
-        return (self.trailing_condition.should_exit(strategy, current_time, option_chain_df) or \
-               self.time_condition.should_exit(strategy, current_time, option_chain_df)
+        return (self.trailing_condition.should_exit(strategy, current_time, option_chain_df) or 
+                self.time_condition.should_exit(strategy, current_time, option_chain_df))
 
     def update(self, **kwargs):
         """Update parameters for both conditions and filter"""
