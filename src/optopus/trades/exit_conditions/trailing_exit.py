@@ -43,7 +43,15 @@ class PipelineTrailingStopExit(CompositePipelineCondition):
         # Configure preprocessing
         preprocessors = [
             PremiumListInit(),
-            PremiumFilter(window_size=window_size, n_sigma=n_sigma),
+            PremiumFilter(
+                filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
+                window_size=window_size,
+                n_sigma=n_sigma,
+                k=kwargs.get("k", 1.4826),
+                max_iterations=kwargs.get("max_iterations", 5),
+                replace_with_na=kwargs.get("replace_with_na", True),
+                implementation=kwargs.get("implementation", "pandas"),
+            ),
         ]
 
         super().__init__(pipeline=pipeline, preprocessors=preprocessors, **kwargs)
@@ -73,8 +81,21 @@ class PipelineTrailingStopExit(CompositePipelineCondition):
         for preprocessor in self.preprocessors:
             if isinstance(preprocessor, PremiumFilter):
                 preprocessor.update(
+                    filter_method=kwargs.get(
+                        "filter_method", preprocessor.filter_method
+                    ),
                     window_size=kwargs.get("window_size", preprocessor.window_size),
                     n_sigma=kwargs.get("n_sigma", preprocessor.n_sigma),
+                    k=kwargs.get("k", preprocessor.k),
+                    max_iterations=kwargs.get(
+                        "max_iterations", preprocessor.max_iterations
+                    ),
+                    replace_with_na=kwargs.get(
+                        "replace_with_na", preprocessor.replace_with_na
+                    ),
+                    implementation=kwargs.get(
+                        "implementation", preprocessor.implementation
+                    ),
                 )
 
     def __repr__(self):
@@ -111,7 +132,15 @@ class TrailingStopExitCondition(ExitConditionChecker):
         )
         self.preprocessors = [
             PremiumListInit(),
-            PremiumFilter(window_size=window_size, n_sigma=n_sigma),
+            PremiumFilter(
+                filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
+                window_size=window_size,
+                n_sigma=n_sigma,
+                k=kwargs.get("k", 1.4826),
+                max_iterations=kwargs.get("max_iterations", 5),
+                replace_with_na=kwargs.get("replace_with_na", True),
+                implementation=kwargs.get("implementation", "pandas"),
+            ),
         ]
 
     def should_exit(
@@ -150,10 +179,21 @@ class TrailingStopExitCondition(ExitConditionChecker):
         for preprocessor in self.preprocessors:
             if isinstance(preprocessor, PremiumFilter):
                 preprocessor.update(
-                    window_size=kwargs.get(
-                        "filter_window_size", preprocessor.window_size
+                    filter_method=kwargs.get(
+                        "filter_method", preprocessor.filter_method
                     ),
-                    n_sigma=kwargs.get("filter_n_sigma", preprocessor.n_sigma),
+                    window_size=kwargs.get("window_size", preprocessor.window_size),
+                    n_sigma=kwargs.get("n_sigma", preprocessor.n_sigma),
+                    k=kwargs.get("k", preprocessor.k),
+                    max_iterations=kwargs.get(
+                        "max_iterations", preprocessor.max_iterations
+                    ),
+                    replace_with_na=kwargs.get(
+                        "replace_with_na", preprocessor.replace_with_na
+                    ),
+                    implementation=kwargs.get(
+                        "implementation", preprocessor.implementation
+                    ),
                 )
 
     def __repr__(self):
@@ -169,11 +209,20 @@ class TrailingStopExitCondition(ExitConditionChecker):
 
 class FaultyTrailingStopExitCondition(ExitConditionChecker):
     def __init__(
-        self, profit_target: float, trigger: float, stop_loss: float, exit_time_before_expiration: pd.Timedelta, **kwargs
+        self,
+        profit_target: float,
+        trigger: float,
+        stop_loss: float,
+        exit_time_before_expiration: pd.Timedelta,
+        **kwargs,
     ):
         self.flow = CompositePipelineCondition(
-            pipeline=TrailingStopCondition(profit_target=profit_target, trigger=trigger, stop_loss=stop_loss)
-            | TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration),
+            pipeline=TrailingStopCondition(
+                profit_target=profit_target, trigger=trigger, stop_loss=stop_loss
+            )
+            | TimeBasedCondition(
+                exit_time_before_expiration=exit_time_before_expiration
+            ),
             preprocessors=[
                 PremiumListInit(),
                 PremiumFilter(
