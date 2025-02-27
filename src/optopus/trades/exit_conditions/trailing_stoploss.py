@@ -20,7 +20,6 @@ class TrailingStopCondition(BaseComponent):
         profit_target: float = 80,
         trigger: float = 40,
         stop_loss: float = 15,
-        exit_upon_positive_return: bool = False,
         **kwargs,
     ):
         """
@@ -36,7 +35,6 @@ class TrailingStopCondition(BaseComponent):
         self.profit_target = profit_target
         self.trigger = trigger
         self.stop_loss = stop_loss
-        self.exit_upon_positive_return = exit_upon_positive_return
         self.kwargs = kwargs
 
         # Set all kwargs as attributes
@@ -62,9 +60,6 @@ class TrailingStopCondition(BaseComponent):
         self.profit_target = float(kwargs.get("profit_target", self.profit_target))
         self.trigger = float(kwargs.get("trigger", self.trigger))
         self.stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
-        self.exit_upon_positive_return = kwargs.get(
-            "exit_upon_positive_return", self.exit_upon_positive_return
-        )
 
     def should_exit(
         self,
@@ -112,8 +107,6 @@ class TrailingStopCondition(BaseComponent):
             if not should_exit:
                 return False
                 
-            if self.exit_upon_positive_return:
-                return return_percentage > 0
             return True
 
         return False
