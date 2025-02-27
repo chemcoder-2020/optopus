@@ -20,25 +20,28 @@ class TrailingStopCondition(BaseComponent):
         profit_target: float = 80,
         trigger: float = 40,
         stop_loss: float = 15,
+        exit_upon_positive_return: bool = False,
         **kwargs,
     ):
         """
         Initialize the TrailingStopCondition.
 
         Args:
+            profit_target (float): Percentage return to take profit at
             trigger (float): The trigger percentage for the trailing stop
             stop_loss (float): The stop loss percentage
+            exit_upon_positive_return (bool): Only exit if current return is positive
             **kwargs: Additional keyword arguments that will be set as attributes
         """
         self.profit_target = profit_target
         self.trigger = trigger
         self.stop_loss = stop_loss
+        self.exit_upon_positive_return = exit_upon_positive_return
         self.kwargs = kwargs
 
         # Set all kwargs as attributes
         for key, value in kwargs.items():
-            if key != "window_size":
-                setattr(self, key, value)
+            setattr(self, key, value)
 
     def __repr__(self):
         """
@@ -56,13 +59,12 @@ class TrailingStopCondition(BaseComponent):
         Args:
             **kwargs: Keyword arguments for the attributes to update.
         """
-        profit_target = float(kwargs.get("profit_target", self.profit_target))
-        trigger = float(kwargs.get("trigger", self.trigger))
-        stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
-
-        self.profit_target = profit_target
-        self.trigger = trigger
-        self.stop_loss = stop_loss
+        self.profit_target = float(kwargs.get("profit_target", self.profit_target))
+        self.trigger = float(kwargs.get("trigger", self.trigger))
+        self.stop_loss = float(kwargs.get("stop_loss", self.stop_loss))
+        self.exit_upon_positive_return = kwargs.get(
+            "exit_upon_positive_return", self.exit_upon_positive_return
+        )
 
     def should_exit(
         self,
@@ -82,32 +84,36 @@ class TrailingStopCondition(BaseComponent):
             bool: True if the trailing stop condition is met, False otherwise.
         """
 
+        # Initialize highest return if needed
+        if not hasattr(strategy, "highest_return"):
+            strategy.highest_return = 0
+            
+        # Get current return percentage
         if not hasattr(strategy, "filter_return_percentage"):
             return_percentage = strategy.return_percentage()
         else:
             return_percentage = strategy.filter_return_percentage
         
+        # Update highest return with safety check
         if not np.isnan(return_percentage):
             strategy.highest_return = max(strategy.highest_return, return_percentage)
 
-        logger.info(f"Updated strategy highest return to {strategy.highest_return}")
+        logger.debug(f"Current return: {return_percentage}% | Highest: {strategy.highest_return}%")
 
-        profit_hit = return_percentage >= self.profit_target
-        if profit_hit:
+        # Check profit target
+        if return_percentage >= self.profit_target:
+            logger.info(f"Profit target {self.profit_target}% hit at {return_percentage}%")
             return True
-        
+            
+        # Check trailing stop conditions
         if strategy.highest_return >= self.trigger:
             pullback = strategy.highest_return - return_percentage
-            logger.info(f"Trailing Stop Pullback: {pullback}% : {strategy.highest_return} -> {return_percentage}")
-            main_condition = pullback >= self.stop_loss
-            if main_condition and not self.exit_upon_positive_return:
-                return True
-            elif main_condition and self.exit_upon_positive_return:
-                if return_percentage > 0:
-                    return True
-                else:
-                    return False
-            else:
+            should_exit = pullback >= self.stop_loss
+            if not should_exit:
                 return False
-        else:
-            return False
+                
+            if self.exit_upon_positive_return:
+                return return_percentage > 0
+            return True
+
+        return False
