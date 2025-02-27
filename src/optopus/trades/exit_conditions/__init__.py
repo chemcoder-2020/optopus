@@ -10,7 +10,7 @@ from .base import (
     PremiumFilter,
     MedianCalculator,
 )
-from .default_exit import DefaultExitCondition
+from .default_exit import DefaultExitCondition, PipelineDefaultExit
 from .profit_target import ProfitTargetCondition
 from .stoploss import StopLossCondition
 from .time_based import TimeBasedCondition
@@ -28,6 +28,7 @@ __all__ = [
     "MedianCalculator",
     "NotComponent",
     "OrComponent",
+    "PipelineDefaultExit",
     "PipelineTrailingStopExit",
     "PremiumFilter",
     "PremiumListInit",
