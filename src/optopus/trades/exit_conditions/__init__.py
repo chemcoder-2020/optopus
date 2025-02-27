@@ -15,7 +15,7 @@ from .profit_target import ProfitTargetCondition
 from .stoploss import StopLossCondition
 from .time_based import TimeBasedCondition
 from .trailing_stoploss import TrailingStopCondition
-from .trailing_exit import TrailingStopExitCondition
+from .trailing_exit import TrailingStopExitCondition, PipelineTrailingStopExit
 
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     "MedianCalculator",
     "NotComponent",
     "OrComponent",
+    "PipelineTrailingStopExit",
     "PremiumFilter",
     "PremiumListInit",
     "ProfitTargetCondition",
