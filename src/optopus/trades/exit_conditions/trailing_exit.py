@@ -1,6 +1,5 @@
 from .base import (
     CompositePipelineCondition,
-    BaseComponent,
     PremiumListInit,
     PremiumFilter,
     ExitConditionChecker,
@@ -9,6 +8,7 @@ from .time_based import TimeBasedCondition
 from .trailing_stoploss import TrailingStopCondition
 import pandas as pd
 from typing import Union
+from datetime import datetime
 
 
 class PipelineTrailingStopExit(CompositePipelineCondition):
