@@ -1,6 +1,6 @@
 from .base import EntryConditionChecker, SequentialPipelineCondition
 from .time_check import TimeBasedEntryCondition
-from .premium_check import PremiumProcessCondition
+from .premium_process_check import PremiumProcessCondition
 from .capital_check import CapitalRequirementCondition
 from .position_limit_check import PositionLimitCondition
 from .ror_threshold_check import RORThresholdCondition
