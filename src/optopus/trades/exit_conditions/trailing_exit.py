@@ -165,3 +165,44 @@ class TrailingStopExitCondition(ExitConditionChecker):
             f"exit_time={self.time_condition.exit_time_before_expiration}, "
             f"filter={self.preprocessors[1]})"
         )
+
+
+class FaultyTrailingStopExitCondition(ExitConditionChecker):
+    def __init__(
+        self, profit_target: float, trigger: float, stop_loss: float, exit_time_before_expiration: pd.Timedelta, **kwargs
+    ):
+        self.flow = CompositePipelineCondition(
+            pipeline=TrailingStopCondition(profit_target=profit_target, trigger=trigger, stop_loss=stop_loss)
+            | TimeBasedCondition(exit_time_before_expiration=exit_time_before_expiration),
+            preprocessors=[
+                PremiumListInit(),
+                PremiumFilter(
+                    filter_method=kwargs.get("filter_method"),
+                    window_size=kwargs.get("window_size"),
+                    n_sigma=kwargs.get("n_sigma", 3),
+                    k=kwargs.get("k", 1.4826),
+                    max_iterations=kwargs.get("max_iterations", 5),
+                    replace_with_na=kwargs.get("replace_with_na", True),
+                    implementation=kwargs.get("implementation", "pandas"),
+                ),
+            ],
+            **kwargs,
+        )
+        self.profit_target = profit_target
+        self.trigger = trigger
+        self.stop_loss = stop_loss
+        self.exit_time_before_expiration = exit_time_before_expiration
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def should_exit(
+        self,
+        strategy,
+        current_time: Union[datetime, str, pd.Timestamp],
+        option_chain_df: pd.DataFrame,
+    ) -> bool:
+        return self.flow.should_exit(
+            strategy=strategy,
+            current_time=current_time,
+            option_chain_df=option_chain_df,
+        )

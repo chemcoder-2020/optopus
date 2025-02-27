@@ -15,7 +15,7 @@ from .profit_target import ProfitTargetCondition
 from .stoploss import StopLossCondition
 from .time_based import TimeBasedCondition
 from .trailing_stoploss import TrailingStopCondition
-from .trailing_exit import TrailingStopExitCondition, PipelineTrailingStopExit
+from .trailing_exit import TrailingStopExitCondition, PipelineTrailingStopExit, FaultyTrailingStopExitCondition
 
 
 __all__ = [
@@ -25,6 +25,7 @@ __all__ = [
     "CompositeExitCondition",
     "DefaultExitCondition",
     "ExitConditionChecker",
+    "FaultyTrailingStopExitCondition",
     "MedianCalculator",
     "NotComponent",
     "OrComponent",
