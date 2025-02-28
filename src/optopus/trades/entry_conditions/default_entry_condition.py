@@ -5,7 +5,7 @@ from .capital_check import CapitalRequirementCondition
 from .position_limit_check import PositionLimitCondition
 from .ror_threshold_check import RORThresholdCondition
 from .conflict_check import ConflictCondition
-from .trailing_stop import TrailingStopEntry
+from .trailing_entry_check import TrailingStopEntry
 
 
 class DefaultEntryCondition(EntryConditionChecker):
