@@ -7,6 +7,7 @@ from ..trades.entry_conditions import *
 from ..trades.external_entry_conditions import *
 from ..trades.exit_conditions import *
 from loguru import logger
+import inspect
 
 
 class IniConfigParser:
@@ -132,10 +133,11 @@ class IniConfigParser:
                 else:
                     raise ValueError(f"Unknown section: {section}")
                 module = importlib.import_module(module_path)
-                cls = getattr(module, condition_class)
+                class_members = dict(inspect.getmembers(module, inspect.isclass))
+                cls = class_members[condition_class]
             except (ValueError, AttributeError, ModuleNotFoundError) as e:
                 logger.error(
-                    f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Trying to import from custom module."
+                    f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Avaible classes: {class_members.keys()}. Now trying to import from custom module."
                 )
                 try:
                     if section == "EXIT_CONDITION":
@@ -147,10 +149,11 @@ class IniConfigParser:
                     else:
                         raise ValueError(f"Unknown section: {section}")
                     module = importlib.import_module(module_path)
-                    cls = getattr(module, condition_class)
+                    class_members = dict(inspect.getmembers(module, inspect.isclass))
+                    cls = class_members[condition_class]
                 except (ValueError, AttributeError, ModuleNotFoundError) as e:
                     raise ValueError(
-                        f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}"
+                        f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Avaible classes: {class_members.keys()}"
                     )
 
         return {"class": cls, "params": params}
