@@ -135,7 +135,7 @@ class IniConfigParser:
                 module = importlib.import_module(module_path)
                 class_members = dict(inspect.getmembers(module, inspect.isclass))
                 cls = class_members[condition_class]
-            except (ValueError, AttributeError, ModuleNotFoundError) as e:
+            except (ValueError, AttributeError, ModuleNotFoundError, KeyError) as e:
                 logger.error(
                     f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Avaible classes: {class_members.keys()}. Now trying to import from custom module."
                 )
@@ -151,7 +151,7 @@ class IniConfigParser:
                     module = importlib.import_module(module_path)
                     class_members = dict(inspect.getmembers(module, inspect.isclass))
                     cls = class_members[condition_class]
-                except (ValueError, AttributeError, ModuleNotFoundError) as e:
+                except (ValueError, AttributeError, ModuleNotFoundError, KeyError) as e:
                     raise ValueError(
                         f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Avaible classes: {class_members.keys()}"
                     )
