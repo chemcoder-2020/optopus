@@ -16,11 +16,13 @@ class StatsForecastCheck(BaseComponent):
         model: str = "ARIMA",
         context: str = "historical_data",
         trend_direction: str = "upward",
+        use_mstl: bool = False,
         **kwargs,
     ):
         self.model = model
         self.context = context
         self.trend_direction = trend_direction.lower()
+        self.use_mstl = use_mstl
         self.kwargs = kwargs
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
@@ -68,7 +70,7 @@ class StatsForecastCheck(BaseComponent):
             seasonal_lengths = [7, 30]
 
         trend_forecaster = model(**self.kwargs)
-        if self.kwargs.get("use_mstl", False):
+        if self.use_mstl:
             mstl_scheme = MSTL(seasonal_lengths, trend_forecaster=trend_forecaster)
             sf = StatsForecast(
                 models=[mstl_scheme],
@@ -81,7 +83,7 @@ class StatsForecastCheck(BaseComponent):
             )
 
         # Generate forecast
-        if self.kwargs.get("use_mstl", False):
+        if self.use_mstl:
             forecast = sf.fit_predict(df=df, h=1)["MSTL"]
         else:
             forecast = sf.fit_predict(df=df, h=1)[sf.models[0].__str__()]
