@@ -68,16 +68,23 @@ class StatsForecastCheck(BaseComponent):
             seasonal_lengths = [7, 30]
 
         trend_forecaster = model(**self.kwargs)
-        # mstl_scheme = MSTL(seasonal_lengths, trend_forecaster=trend_forecaster)
-        sf = StatsForecast(
-            models=[trend_forecaster],
-            freq=freq,
-            # freq=pd.infer_freq(hist_data.index) or "D",
-        )
+        if self.kwargs.get("use_mstl", False):
+            mstl_scheme = MSTL(seasonal_lengths, trend_forecaster=trend_forecaster)
+            sf = StatsForecast(
+                models=[mstl_scheme],
+                freq=freq,
+            )
+        else:
+            sf = StatsForecast(
+                models=[trend_forecaster],
+                freq=freq,
+            )
 
         # Generate forecast
-        forecast = sf.fit_predict(df=df, h=1)[sf.models[0].__str__()]
-        # forecast = sf.fit_predict(df=df, h=1)["MSTL"]
+        if self.kwargs.get("use_mstl", False):
+            forecast = sf.fit_predict(df=df, h=1)["MSTL"]
+        else:
+            forecast = sf.fit_predict(df=df, h=1)[sf.models[0].__str__()]
 
         # Get last known value and forecasted value
         last_close = df["y"].iloc[-1]
