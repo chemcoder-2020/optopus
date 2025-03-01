@@ -48,6 +48,7 @@ if os.path.exists(f"{cwd}/trading_manager60dte.pkl"):
 else:
     trading_manager = TradingManager(config)
 
+trading_manager.config = config
 
 trading_manager.auth_refresh()
 

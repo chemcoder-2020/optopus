@@ -26,14 +26,27 @@ class StatsForecastCheck(BaseComponent):
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         from statsforecast import StatsForecast
         import statsforecast.models as sm
-        logger.debug("StatsForecastCheck: Starting forecast check using model {} and context {}.".format(self.model, self.context))
+        from statsforecast.models import MSTL
+        import importlib
+
+        module = importlib.import_module("statsforecast.models")
+
+        logger.debug(
+            "StatsForecastCheck: Starting forecast check using model {} and context {}.".format(
+                self.model, self.context
+            )
+        )
         if isinstance(manager.context[self.context], pd.Series):
             hist_data = manager.context[self.context].to_frame()
         else:
             hist_data = manager.context[self.context]
 
         if len(hist_data) < 2:  # Need at least 2 data points for forecasting
-            logger.warning("StatsForecastCheck: Not enough data for forecasting. Data count: {}".format(len(hist_data)))
+            logger.warning(
+                "StatsForecastCheck: Not enough data for forecasting. Data count: {}".format(
+                    len(hist_data)
+                )
+            )
             return False
 
         # Prepare data for statsforecast
@@ -46,13 +59,25 @@ class StatsForecastCheck(BaseComponent):
         )
 
         # Initialize and fit statsforecast
+        model = getattr(module, self.model)
+        if self.context == "monthly_data":
+            freq = "M"
+            seasonal_lengths = [12, 4]
+        else:
+            freq = "B"
+            seasonal_lengths = [7, 30]
+
+        trend_forecaster = model(**self.kwargs)
+        # mstl_scheme = MSTL(seasonal_lengths, trend_forecaster=trend_forecaster)
         sf = StatsForecast(
-            models=[eval("sm." + self.model)(**self.kwargs)],
-            freq=pd.infer_freq(hist_data.index) or "D",
+            models=[trend_forecaster],
+            freq=freq,
+            # freq=pd.infer_freq(hist_data.index) or "D",
         )
 
         # Generate forecast
         forecast = sf.fit_predict(df=df, h=1)[sf.models[0].__str__()]
+        # forecast = sf.fit_predict(df=df, h=1)["MSTL"]
 
         # Get last known value and forecasted value
         last_close = df["y"].iloc[-1]
@@ -91,15 +116,23 @@ class VolatilityForecastCheck(BaseComponent):
         from sktime.forecasting.arch import StatsForecastGARCH, StatsForecastARCH
         import numpy as np
 
-        logger.debug("VolatilityForecastCheck: Starting forecast check using model {} and context {}.".format(self.model, self.context))
+        logger.debug(
+            "VolatilityForecastCheck: Starting forecast check using model {} and context {}.".format(
+                self.model, self.context
+            )
+        )
         hist_data = manager.context[self.context]
 
         if len(hist_data) < 2:  # Need at least 2 data points for forecasting
-            logger.warning("VolatilityForecastCheck: Not enough data for forecasting. Data count: {}".format(len(hist_data)))
+            logger.warning(
+                "VolatilityForecastCheck: Not enough data for forecasting. Data count: {}".format(
+                    len(hist_data)
+                )
+            )
             return False
 
         # Prepare data for statsforecast
-        returns = np.log(hist_data['close'] / hist_data['close'].shift(1))
+        returns = np.log(hist_data["close"] / hist_data["close"].shift(1))
 
         # Initialize and fit model
         sf = eval(self.model)(**self.kwargs)
@@ -112,7 +145,5 @@ class VolatilityForecastCheck(BaseComponent):
         result = forecasted_value > 0
         pos_return = "Positive" if result else "Negative"
 
-        logger.debug(
-            f"VolatilityForecastCheck: {pos_return} return forecasted "
-        )
+        logger.debug(f"VolatilityForecastCheck: {pos_return} return forecasted ")
         return result
