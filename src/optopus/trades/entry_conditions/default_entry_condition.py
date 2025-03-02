@@ -36,7 +36,17 @@ class DefaultEntryCondition(EntryConditionChecker):
                 ),
                 (CapitalRequirementCondition(), "AND"),
                 (PositionLimitCondition(), "AND"),
-                (RORThresholdCondition(), "AND"),
+                (
+                    RORThresholdCondition(
+                        filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
+                        window_size=kwargs.get("window_size", 3),
+                        n_sigma=kwargs.get("n_sigma", 3),
+                        k=kwargs.get("k", 1.4826),
+                        max_iterations=kwargs.get("max_iterations", 5),
+                        implementation=kwargs.get("implementation", "pandas"),
+                    ),
+                    "AND",
+                ),
                 (
                     ConflictCondition(
                         check_closed_trades=kwargs.get("check_closed_trades", True)
