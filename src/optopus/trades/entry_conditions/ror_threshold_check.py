@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Union
 from loguru import logger
 import pandas as pd
+from .ror_filter import RORFilter
+from .ror_list_init import RORListInit
 
 if TYPE_CHECKING:
     from ..option_manager import OptionBacktester
@@ -17,6 +19,13 @@ class RORThresholdCondition(EntryConditionChecker):
             Checks if the return over risk meets the configured threshold.
     """
 
+    def __init__(self, filter_method="HampelFilterNumpy", **kwargs):
+        self.ror_filter = RORFilter(filter_method=filter_method, **kwargs)
+        self.ror_init = RORListInit()
+        self.kwargs = kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     def should_enter(
         self,
         strategy,
@@ -27,7 +36,13 @@ class RORThresholdCondition(EntryConditionChecker):
             logger.info("ROR threshold check skipped: No threshold configured")
             return True
 
-        ror = strategy.return_over_risk()
+        # Init the premium context
+        self.ror_init.preprocess(strategy, manager)
+
+        # Apply the filter
+        ror = self.ror_filter.preprocess(strategy, manager)
+
+        # ror = strategy.return_over_risk()
         meets_threshold = ror >= manager.config.ror_threshold
 
         if meets_threshold:

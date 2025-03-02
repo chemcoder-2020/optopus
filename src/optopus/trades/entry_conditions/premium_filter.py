@@ -3,6 +3,7 @@ from ...utils.filters import HampelFilterNumpy, Filter
 from typing import Union, Type
 from loguru import logger
 import importlib
+import numpy as np
 
 
 class PremiumFilter(Preprocessor):
@@ -45,9 +46,9 @@ class PremiumFilter(Preprocessor):
 
         if len(manager.context["premiums"]) < self.window_size + 1:
             logger.debug(
-                f"Manager's premiums context has less than {self.window_size + 1} values, skipping filter - assume valid data"
+                f"Manager's premiums context has less than {self.window_size + 1} values, skipping filter - returning NaN"
             )
-            return mark
+            return np.nan
 
         filtered_returns = self.premium_filter.fit_transform(
             manager.context["premiums"]
