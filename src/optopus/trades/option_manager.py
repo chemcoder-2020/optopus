@@ -193,37 +193,15 @@ class OptionBacktester:
             return False
 
         # Check external entry conditions first if configured
-        # if self.config.external_entry_condition is not None:
-        #     external_met = self.config.external_entry_condition.should_enter(
-        #         time=self.last_update_time, strategy=new_spread, manager=self
-        #     )
-        #     if not external_met:
-        #         logger.info(f"External conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
-        #         return False
-        #     logger.info(f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}")
-
-        # # Check standard entry conditions (required for both cases)
-        # standard_met = self.config.entry_condition.should_enter(
-        #     strategy=new_spread, manager=self, time=self.last_update_time
-        # )
-
-        # if not standard_met:
-        #     logger.info(f"Standard conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
-        #     return False
-
-        # logger.info(f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}")
-
         if self.config.external_entry_condition is not None:
             external_met = self.config.external_entry_condition.should_enter(
                 time=self.last_update_time, strategy=new_spread, manager=self
             )
             if not external_met:
                 logger.info(f"External conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
-            else:
-                logger.info(f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}")
-        else:
-            external_met = True
-        
+                return False
+            logger.info(f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}")
+
         # Check standard entry conditions (required for both cases)
         standard_met = self.config.entry_condition.should_enter(
             strategy=new_spread, manager=self, time=self.last_update_time
@@ -231,15 +209,11 @@ class OptionBacktester:
 
         if not standard_met:
             logger.info(f"Standard conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
-        else:
-            logger.info(f"Standard conditions met for {new_spread.symbol} {new_spread.strategy_type}")
-        
-        if external_met and standard_met:
-            logger.info(f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}")
-            
-        return external_met and standard_met
+            return False
 
-        # return True
+        logger.info(f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}")
+
+        return True
 
     def close_trade(self, trade: OptionStrategy) -> None:
         """
