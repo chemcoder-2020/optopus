@@ -5,6 +5,7 @@ from loguru import logger
 import pandas as pd
 from .ror_filter import RORFilter
 from .ror_list_init import RORListInit
+import numpy as np
 
 if TYPE_CHECKING:
     from ..option_manager import OptionBacktester
