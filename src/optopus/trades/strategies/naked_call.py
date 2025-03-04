@@ -74,10 +74,19 @@ class NakedCall(OptionStrategy):
             **kwargs,
         )
 
-        expiration_date = converter.get_closest_expiration(expiration)
+        expiration_date = converter.get_closest_expiration(
+            expiration,
+            max_extra_days=max_extra_days
+        )
 
         # Get strike price using the converter
-        strike_value = cls.get_strike_value(converter, strike, expiration_date, "CALL")
+        strike_value = cls.get_strike_value(
+            converter, 
+            strike, 
+            expiration_date, 
+            "CALL",
+            max_extra_days=max_extra_days
+        )
 
         call_leg = OptionLeg(
             symbol,
