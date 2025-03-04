@@ -111,7 +111,7 @@ class TradingManager(OptionBacktester):
                     self.active_orders.remove(order)
 
             self._update_trade_counts()
-            
+
             self.last_update_time = current_time
 
             # Record performance data after update
@@ -133,10 +133,10 @@ class TradingManager(OptionBacktester):
                 "time": current_time,
                 "total_pl": total_pl,
                 "closed_pl": closed_pl,
-                "active_positions": active_positions
+                "active_positions": active_positions,
             }
         )
-    
+
     def plot_performance(self):
         """
         Generate performance visualizations.
@@ -291,7 +291,7 @@ class TradingManager(OptionBacktester):
             )
 
         return pd.DataFrame(data, columns=columns)
-    
+
     def get_active_orders_dataframe(self) -> pd.DataFrame:
         """
         Returns a DataFrame containing important information about the active orders.
@@ -559,88 +559,99 @@ class TradingManager(OptionBacktester):
                 strike_count=STRATEGY_PARAMS.get("chain_strike_count", 50),
             )
             bar = option_chain_df["QUOTE_READTIME"].iloc[0]
-            
+
             if self.trade_type == "Vertical Spread":
                 strategy = VerticalSpread.create_vertical_spread(
                     symbol=self.config.ticker,
-                    option_type=STRATEGY_PARAMS["option_type"],
-                    long_strike=STRATEGY_PARAMS["long_delta"],
-                    short_strike=STRATEGY_PARAMS["short_delta"],
-                    expiration=STRATEGY_PARAMS["dte"],
-                    contracts=STRATEGY_PARAMS["contracts"],
-                    commission=STRATEGY_PARAMS["commission"],
+                    option_type=STRATEGY_PARAMS.get("option_type"),
+                    long_strike=STRATEGY_PARAMS.get("long_delta"),
+                    short_strike=STRATEGY_PARAMS.get("short_delta"),
+                    expiration=STRATEGY_PARAMS.get("dte"),
+                    contracts=STRATEGY_PARAMS.get("contracts"),
+                    commission=STRATEGY_PARAMS.get("commission", 0.5),
+                    max_extra_days=STRATEGY_PARAMS.get("max_extra_days", None),
                     entry_time=bar,
                     option_chain_df=option_chain_df,
-                    exit_scheme=STRATEGY_PARAMS["exit_scheme"],
+                    exit_scheme=STRATEGY_PARAMS.get("exit_scheme"),
                 )
             elif self.trade_type == "Naked Put":
                 from .strategies.naked_put import NakedPut
+
                 strategy = NakedPut.create_naked_put(
                     symbol=self.config.ticker,
-                    strike=STRATEGY_PARAMS["strike"],
-                    expiration=STRATEGY_PARAMS["dte"],
-                    contracts=STRATEGY_PARAMS["contracts"],
-                    commission=STRATEGY_PARAMS["commission"],
+                    strike=STRATEGY_PARAMS.get("strike"),
+                    expiration=STRATEGY_PARAMS.get("dte"),
+                    contracts=STRATEGY_PARAMS.get("contracts"),
+                    commission=STRATEGY_PARAMS.get("commission", 0.5),
+                    max_extra_days=STRATEGY_PARAMS.get("max_extra_days", None),
                     entry_time=bar,
                     option_chain_df=option_chain_df,
-                    exit_scheme=STRATEGY_PARAMS["exit_scheme"],
-                    strategy_side=STRATEGY_PARAMS["strategy_side"],
+                    exit_scheme=STRATEGY_PARAMS.get("exit_scheme"),
+                    strategy_side=STRATEGY_PARAMS.get("strategy_side"),
                 )
             elif self.trade_type == "Naked Call":
                 from .strategies.naked_call import NakedCall
+
                 strategy = NakedCall.create_naked_call(
                     symbol=self.config.ticker,
-                    strike=STRATEGY_PARAMS["strike"],
-                    expiration=STRATEGY_PARAMS["dte"],
-                    contracts=STRATEGY_PARAMS["contracts"],
-                    commission=STRATEGY_PARAMS["commission"],
+                    strike=STRATEGY_PARAMS.get("strike"),
+                    expiration=STRATEGY_PARAMS.get("dte"),
+                    contracts=STRATEGY_PARAMS.get("contracts"),
+                    commission=STRATEGY_PARAMS.get("commission", 0.5),
+                    max_extra_days=STRATEGY_PARAMS.get("max_extra_days", None),
                     entry_time=bar,
                     option_chain_df=option_chain_df,
-                    exit_scheme=STRATEGY_PARAMS["exit_scheme"],
-                    strategy_side=STRATEGY_PARAMS["strategy_side"],
+                    exit_scheme=STRATEGY_PARAMS.get("exit_scheme"),
+                    strategy_side=STRATEGY_PARAMS.get("strategy_side"),
                 )
             elif self.trade_type == "Iron Condor":
                 from .strategies.iron_condor import IronCondor
+
                 strategy = IronCondor.create_iron_condor(
                     symbol=self.config.ticker,
-                    put_long_strike=STRATEGY_PARAMS["put_long_strike"],
-                    put_short_strike=STRATEGY_PARAMS["put_short_strike"],
-                    call_short_strike=STRATEGY_PARAMS["call_short_strike"],
-                    call_long_strike=STRATEGY_PARAMS["call_long_strike"],
-                    expiration=STRATEGY_PARAMS["dte"],
-                    contracts=STRATEGY_PARAMS["contracts"],
-                    commission=STRATEGY_PARAMS["commission"],
+                    put_long_strike=STRATEGY_PARAMS.get("put_long_strike"),
+                    put_short_strike=STRATEGY_PARAMS.get("put_short_strike"),
+                    call_short_strike=STRATEGY_PARAMS.get("call_short_strike"),
+                    call_long_strike=STRATEGY_PARAMS.get("call_long_strike"),
+                    expiration=STRATEGY_PARAMS.get("dte"),
+                    contracts=STRATEGY_PARAMS.get("contracts"),
+                    commission=STRATEGY_PARAMS.get("commission", 0.5),
+                    max_extra_days=STRATEGY_PARAMS.get("max_extra_days", None),
                     entry_time=bar,
                     option_chain_df=option_chain_df,
-                    exit_scheme=STRATEGY_PARAMS["exit_scheme"],
+                    exit_scheme=STRATEGY_PARAMS.get("exit_scheme"),
                 )
             elif self.trade_type == "Iron Butterfly":
                 from .strategies.iron_butterfly import IronButterfly
+
                 strategy = IronButterfly.create_iron_butterfly(
                     symbol=self.config.ticker,
-                    lower_strike=STRATEGY_PARAMS["lower_strike"],
-                    middle_strike=STRATEGY_PARAMS["middle_strike"],
-                    upper_strike=STRATEGY_PARAMS["upper_strike"],
-                    expiration=STRATEGY_PARAMS["dte"],
-                    strategy_side=STRATEGY_PARAMS["strategy_side"],
-                    contracts=STRATEGY_PARAMS["contracts"],
-                    commission=STRATEGY_PARAMS["commission"],
+                    lower_strike=STRATEGY_PARAMS.get("lower_strike"),
+                    middle_strike=STRATEGY_PARAMS.get("middle_strike"),
+                    upper_strike=STRATEGY_PARAMS.get("upper_strike"),
+                    expiration=STRATEGY_PARAMS.get("dte"),
+                    strategy_side=STRATEGY_PARAMS.get("strategy_side"),
+                    contracts=STRATEGY_PARAMS.get("contracts"),
+                    commission=STRATEGY_PARAMS.get("commission", 0.5),
+                    max_extra_days=STRATEGY_PARAMS.get("max_extra_days", None),
                     entry_time=bar,
                     option_chain_df=option_chain_df,
-                    exit_scheme=STRATEGY_PARAMS["exit_scheme"],
+                    exit_scheme=STRATEGY_PARAMS.get("exit_scheme"),
                 )
             elif self.trade_type == "Straddle":
                 from .strategies.straddle import Straddle
+
                 strategy = Straddle.create_straddle(
                     symbol=self.config.ticker,
-                    strike=STRATEGY_PARAMS["strike"],
-                    expiration=STRATEGY_PARAMS["dte"],
-                    contracts=STRATEGY_PARAMS["contracts"],
-                    commission=STRATEGY_PARAMS["commission"],
+                    strike=STRATEGY_PARAMS.get("strike"),
+                    expiration=STRATEGY_PARAMS.get("dte"),
+                    contracts=STRATEGY_PARAMS.get("contracts"),
+                    commission=STRATEGY_PARAMS.get("commission", 0.5),
+                    max_extra_days=STRATEGY_PARAMS.get("max_extra_days", None),
                     entry_time=bar,
                     option_chain_df=option_chain_df,
-                    exit_scheme=STRATEGY_PARAMS["exit_scheme"],
-                    strategy_side=STRATEGY_PARAMS["strategy_side"],
+                    exit_scheme=STRATEGY_PARAMS.get("exit_scheme"),
+                    strategy_side=STRATEGY_PARAMS.get("strategy_side"),
                 )
             else:
                 logger.warning(f"Unsupported trade type: {self.trade_type}")

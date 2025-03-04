@@ -65,6 +65,7 @@ class BacktestIronCondor(BaseBacktest):
                 profit_target=self.strategy_params.get("profit_target"),
                 stop_loss=self.strategy_params.get("stop_loss"),
                 commission=self.strategy_params.get("commission", 0.5),
+                max_extra_days=self.strategy_params.get("max_extra_days", None),
                 exit_scheme=self.strategy_params.get("exit_scheme"),
             )
             return new_spread

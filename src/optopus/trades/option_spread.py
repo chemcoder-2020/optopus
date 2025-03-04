@@ -507,7 +507,8 @@ class OptionStrategy:
                     if abs(offset) < 1:
                         # ATM relative strike with delta
                         return converter.get_desired_strike(
-                            expiration_date, option_type, offset, by="delta"
+                            expiration_date, option_type, offset, by="delta",
+                            max_extra_days=max_extra_days
                         )
                     else:
                         return converter.get_desired_strike(
@@ -515,6 +516,7 @@ class OptionStrategy:
                             option_type,
                             reference_strike + offset,
                             by="strike",
+                            max_extra_days=max_extra_days
                         )
                 except ValueError:
                     raise ValueError(f"Invalid strike input: {strike_input}")
@@ -522,7 +524,8 @@ class OptionStrategy:
                 try:
                     strike_price = float(strike_input)
                     return converter.get_desired_strike(
-                        expiration_date, option_type, strike_price, by="strike"
+                        expiration_date, option_type, strike_price, by="strike",
+                        max_extra_days=max_extra_days
                     )
                 except ValueError:
                     if strike_input.upper() == "ATM":

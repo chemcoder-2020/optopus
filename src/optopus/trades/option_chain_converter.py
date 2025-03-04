@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
     # Example usage of get_closest_expiration
     target_date_int = 30  # 30 days from QUOTE_READTIME
-    closest_expiration_int = converter.get_closest_expiration(target_date_int)
+    closest_expiration_int = converter.get_closest_expiration(target_date_int, max_extra_days=5)
     print(f"Closest expiration (int): {closest_expiration_int}")
 
     target_date_str = "2024-10-06"  # Specific date

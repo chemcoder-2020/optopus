@@ -109,8 +109,8 @@ class DefaultExitCondition(ExitConditionChecker):
             preprocessors=[
                 PremiumListInit(),
                 PremiumFilter(
-                    filter_method=kwargs.get("filter_method"),
-                    window_size=kwargs.get("window_size"),
+                    filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
+                    window_size=kwargs.get("window_size", 3),
                     n_sigma=kwargs.get("n_sigma", 3),
                     k=kwargs.get("k", 1.4826),
                     max_iterations=kwargs.get("max_iterations", 5),

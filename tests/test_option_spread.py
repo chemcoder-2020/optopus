@@ -50,7 +50,7 @@ class TestOptionStrategy(unittest.TestCase):
             put_short_strike="-0.3",
             call_short_strike="+0.3",
             call_long_strike="+5",
-            expiration="2024-10-31",
+            expiration="2024-09-06",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
