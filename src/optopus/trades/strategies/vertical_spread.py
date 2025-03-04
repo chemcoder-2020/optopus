@@ -25,6 +25,7 @@ class VerticalSpread(OptionStrategy):
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
+        max_extra_days: int | None = None,
         commission: float = 0.5,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
             "class": DefaultExitCondition,
