@@ -14,9 +14,9 @@ class OptionChainConverter:
         self.option_chain_df["QUOTE_READTIME"] = self._convert_to_eastern_tz_naive(
             self.option_chain_df["QUOTE_READTIME"]
         )
-        self.option_chain_df["EXPIRE_DATE"] = pd.to_datetime(self._convert_to_eastern_tz_naive(
-            self.option_chain_df["EXPIRE_DATE"]
-        ).date)
+        self.option_chain_df["EXPIRE_DATE"] = pd.to_datetime(
+            self._convert_to_eastern_tz_naive(self.option_chain_df["EXPIRE_DATE"]).date
+        )
 
     def _convert_to_eastern_tz_naive(self, dt_series: pd.Series) -> pd.Series:
         """
@@ -42,25 +42,18 @@ class OptionChainConverter:
         if isinstance(target_date, int):
             target_date = t0 + timedelta(days=target_date)
         elif isinstance(target_date, str):
-            target_date = (
-                pd.to_datetime(target_date, utc=True)
-                .astimezone(pytz.timezone("US/Eastern"))
-                .replace(tzinfo=None)
-            )
+            target_date = pd.to_datetime(target_date)
         elif isinstance(target_date, datetime):
-            target_date = (
-                pd.Timestamp(target_date)
-                .tz_localize("UTC")
-                .astimezone(pytz.timezone("US/Eastern"))
-                .replace(tzinfo=None)
-            )
+            target_date = pd.Timestamp(target_date)
+            if target_date.tz is None:
+                pass
+            else:
+                target_date = target_date.astimezone(
+                    pytz.timezone("US/Eastern")
+                ).replace(tzinfo=None)
         elif isinstance(target_date, pd.Timestamp):
             if target_date.tz is None:
-                target_date = (
-                    target_date.tz_localize("UTC")
-                    .astimezone(pytz.timezone("US/Eastern"))
-                    .replace(tzinfo=None)
-                )
+                pass
             else:
                 target_date = target_date.astimezone(
                     pytz.timezone("US/Eastern")
@@ -69,7 +62,9 @@ class OptionChainConverter:
         target_date = pd.Timestamp(target_date.date())
         expirations = self.option_chain_df["EXPIRE_DATE"].unique()
         # Filter expirations to only include those that are at least target_date days from t0
-        valid_expirations = [exp for exp in expirations if pd.Timestamp(exp.date()) >= target_date]
+        valid_expirations = [
+            exp for exp in expirations if pd.Timestamp(exp.date()) >= target_date
+        ]
         if not valid_expirations:
             raise ValueError(
                 "No valid expiration dates found that meet the target date criteria."
@@ -144,7 +139,6 @@ class OptionChainConverter:
 
         return relative_strike
 
-    
     def get_desired_strike(
         self,
         expiration: int | pd.Timestamp | str | datetime,
@@ -212,6 +206,10 @@ if __name__ == "__main__":
 
     # Initialize the OptionChainConverter
     converter = OptionChainConverter(option_chain_df)
+
+    converter.get_desired_strike(
+        pd.Timestamp("2024-09-06"), "CALL", 0, by="atm_percent"
+    )
 
     # Example usage of get_closest_expiration
     target_date_int = 30  # 30 days from QUOTE_READTIME
