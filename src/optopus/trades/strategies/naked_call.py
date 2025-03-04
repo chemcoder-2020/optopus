@@ -23,6 +23,7 @@ class NakedCall(OptionStrategy):
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
         strategy_side: str = "DEBIT",
+        max_extra_days: int | None = None,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
             'class': DefaultExitCondition,
             'params': {
