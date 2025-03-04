@@ -84,6 +84,7 @@ class IronButterfly(OptionStrategy):
                 trailing_stop=trailing_stop,
                 commission=commission,
                 exit_scheme=exit_scheme,
+                max_extra_days=max_extra_days,
                 **kwargs,
             )
         else:

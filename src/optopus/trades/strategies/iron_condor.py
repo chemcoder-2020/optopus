@@ -81,10 +81,14 @@ class IronCondor(OptionStrategy):
             **kwargs,
         )
 
-        expiration_date = converter.get_closest_expiration(expiration)
+        expiration_date = converter.get_closest_expiration(
+            expiration, 
+            max_extra_days=max_extra_days
+        )
 
         put_short_strike_value = strategy.get_strike_value(
-            converter, put_short_strike, expiration_date, "PUT"
+            converter, put_short_strike, expiration_date, "PUT",
+            max_extra_days=max_extra_days
         )
         put_long_strike_value = strategy.get_strike_value(
             converter,
@@ -97,6 +101,7 @@ class IronCondor(OptionStrategy):
                 and (put_long_strike[0] == "+" or put_long_strike[0] == "-")
                 else None
             ),
+            max_extra_days=max_extra_days
         )
 
         # Get call strikes

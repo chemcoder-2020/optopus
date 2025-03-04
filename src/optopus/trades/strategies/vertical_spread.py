@@ -79,11 +79,15 @@ class VerticalSpread(OptionStrategy):
             **kwargs,
         )
 
-        expiration_date = converter.get_closest_expiration(expiration)
+        expiration_date = converter.get_closest_expiration(
+            expiration,
+            max_extra_days=max_extra_days
+        )
 
         # Get strike prices using the converter
         short_strike_value = strategy.get_strike_value(
-            converter, short_strike, expiration_date, option_type
+            converter, short_strike, expiration_date, option_type,
+            max_extra_days=max_extra_days
         )
 
         long_strike_value = strategy.get_strike_value(

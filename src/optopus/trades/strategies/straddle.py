@@ -76,11 +76,18 @@ class Straddle(OptionStrategy):
             **kwargs,
         )
 
-        expiration_date = converter.get_closest_expiration(expiration)
+        expiration_date = converter.get_closest_expiration(
+            expiration,
+            max_extra_days=max_extra_days
+        )
 
         # Get strike prices using the converter
         call_strike_value = cls.get_strike_value(
-            converter, strike, expiration_date, "CALL"
+            converter, 
+            strike, 
+            expiration_date, 
+            "CALL",
+            max_extra_days=max_extra_days
         )
         put_strike_value = cls.get_strike_value(
             converter, call_strike_value, expiration_date, "PUT"
