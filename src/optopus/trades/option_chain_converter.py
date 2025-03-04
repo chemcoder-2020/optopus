@@ -28,12 +28,13 @@ class OptionChainConverter:
         return pd.DatetimeIndex(dt_series).tz_localize(None)
 
     def get_closest_expiration(
-        self, target_date: int | pd.Timestamp | str | datetime
+        self, target_date: int | pd.Timestamp | str | datetime, max_extra_days: int | None = None
     ) -> pd.Timestamp:
         """
         Get the closest expiration date to the target date.
 
         :param target_date: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
+        :param max_extra_days: Maximum number of extra days allowed beyond target_date. If None, no upper limit. Defaults to None.
         :return: Closest expiration date as pd.Timestamp.
         :raises ValueError: If no valid expiration dates are found.
         """
@@ -61,10 +62,16 @@ class OptionChainConverter:
 
         target_date = pd.Timestamp(target_date.date())
         expirations = self.option_chain_df["EXPIRE_DATE"].unique()
-        # Filter expirations to only include those that are at least target_date days from t0
-        valid_expirations = [
-            exp for exp in expirations if pd.Timestamp(exp.date()) >= target_date
-        ]
+        
+        # Modified expiration filtering logic
+        if max_extra_days is not None:
+            upper_bound = target_date + pd.Timedelta(days=max_extra_days)
+            valid_expirations = [
+                exp for exp in expirations
+                if (exp >= target_date) and (exp <= upper_bound)
+            ]
+        else:
+            valid_expirations = [exp for exp in expirations if exp >= target_date]
         if not valid_expirations:
             raise ValueError(
                 "No valid expiration dates found that meet the target date criteria."
