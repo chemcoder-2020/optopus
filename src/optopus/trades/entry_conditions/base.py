@@ -72,8 +72,8 @@ class CompositeEntryCondition(EntryConditionChecker):
 
 
 class SequentialPipelineCondition(EntryConditionChecker):
-    """Process conditions sequentially with configurable logic operators"""
-
+    """Process conditions sequentially with configurable logic operators and optional short-circuiting"""
+    
     LOGIC_MAP = {
         "AND": lambda a, b: a and b,
         "OR": lambda a, b: a or b,
@@ -81,13 +81,19 @@ class SequentialPipelineCondition(EntryConditionChecker):
         "NAND": lambda a, b: not (a and b),
     }
 
-    def __init__(self, steps: List[Tuple[EntryConditionChecker, str]]):
+    def __init__(self, steps: List[Tuple[EntryConditionChecker, str, bool]]):
         """
         Args:
-            steps: List of (condition, logic_operator) tuples.
-                First condition's operator is ignored
+            steps: List of (condition, logic_operator, enable_short_circuit) tuples.
+                First condition's operator is ignored.
+                enable_short_circuit (bool): Whether to allow short-circuit evaluation for this step
         """
-        self.steps = steps
+        # Convert legacy 2-tuple steps to 3-tuple format
+        self.steps = [
+            (cond, logic, sc_flag) if len(step) == 3 else (cond, logic, True)
+            for step in steps
+            for (cond, logic, *sc_flag) in [step + (True,)]  # Handle legacy 2-tuples
+        ]
 
     def should_enter(self, strategy, manager, time) -> bool:
         if not self.steps:
@@ -95,11 +101,9 @@ class SequentialPipelineCondition(EntryConditionChecker):
             return False
 
         # Evaluate first step
-        first_condition = self.steps[0][0]
+        first_condition, _, _ = self.steps[0]
         result = first_condition.should_enter(strategy, manager, time)
-        logger.info(
-            f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}"
-        )
+        logger.info(f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}")
         if not result:
             if self.steps[0][1] == "AND":
                 logger.info("SequentialPipeline: First step failed, denying entry")
@@ -110,9 +114,9 @@ class SequentialPipelineCondition(EntryConditionChecker):
                 )
 
         # Evaluate remaining steps
-        for i, (condition, logic) in enumerate(self.steps[1:], start=2):
+        for i, (condition, logic, enable_sc) in enumerate(self.steps[1:], start=2):
             condition_name = condition.__class__.__name__
-
+            
             if logic not in self.LOGIC_MAP:
                 raise ValueError(f"Invalid logic operator: {logic}")
 
@@ -121,18 +125,19 @@ class SequentialPipelineCondition(EntryConditionChecker):
 
             logger.info(
                 f"SequentialPipeline Step {i}/{len(self.steps)} ({condition_name}) "
-                f"with logic '{logic}': {result} {logic} {current} => {new_result}"
+                f"with logic '{logic}' (SC: {enable_sc}): {result} {logic} {current} => {new_result}"
             )
 
             result = new_result
 
-            # Short-circuit evaluation
-            if logic == "AND" and not result:
-                logger.info("Short-circuiting due to AND logic with False result")
-                break
-            if logic == "OR" and result:
-                logger.info("Short-circuiting due to OR logic with True result")
-                break
+            # Only check short-circuit if enabled for this step
+            if enable_sc:
+                if logic == "AND" and not result:
+                    logger.info("Short-circuiting due to AND logic with False result")
+                    break
+                if logic == "OR" and result:
+                    logger.info("Short-circuiting due to OR logic with True result")
+                    break
 
         logger.info(f"Final SequentialPipeline result: {result}")
         return result
