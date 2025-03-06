@@ -33,6 +33,7 @@ class DefaultEntryCondition(EntryConditionChecker):
                         replace_with_na=kwargs.get("replace_with_na", True),
                     ),
                     "AND",
+                    False,
                 ),
                 (
                     PremiumProcessCondition(

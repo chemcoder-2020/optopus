@@ -36,59 +36,65 @@ class IndicatorStateCheck(BaseComponent):
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         hist_data = manager.context["historical_data"]
-        logger.debug(
+        logger.info(
             "IndicatorStateCheck: Starting indicator check with lag1: {}, lag2: {}".format(
                 self.lag1, self.lag2
             )
         )
+        try:
 
-        indicator_series1 = self.indicator(
-            high=hist_data["high"],
-            low=hist_data["low"],
-            close=hist_data["close"],
-            open=hist_data["open"],
-            volume=hist_data["volume"],
-            length=self.lag1,
-            **self.kwargs,
-        )
-        indicator_series2 = self.indicator(
-            high=hist_data["high"],
-            low=hist_data["low"],
-            close=hist_data["close"],
-            open=hist_data["open"],
-            volume=hist_data["volume"],
-            length=self.lag2,
-            **self.kwargs,
-        )
+            indicator_series1 = self.indicator(
+                high=hist_data["high"],
+                low=hist_data["low"],
+                close=hist_data["close"],
+                open=hist_data["open"],
+                volume=hist_data["volume"],
+                length=self.lag1,
+                **self.kwargs,
+            )
+            indicator_series2 = self.indicator(
+                high=hist_data["high"],
+                low=hist_data["low"],
+                close=hist_data["close"],
+                open=hist_data["open"],
+                volume=hist_data["volume"],
+                length=self.lag2,
+                **self.kwargs,
+            )
 
-        if len(indicator_series1) < abs(self.indicator_index1) or len(
-            indicator_series2
-        ) < abs(self.indicator_index2):
-            logger.warning(
-                "IndicatorStateCheck: Not enough data for indices. indicator_series1 length: {}, indicator_index1: {}, indicator_series2 length: {}, indicator_index2: {}".format(
-                    len(indicator_series1),
-                    self.indicator_index1,
-                    len(indicator_series2),
-                    self.indicator_index2,
+            if len(indicator_series1) < abs(self.indicator_index1) or len(
+                indicator_series2
+            ) < abs(self.indicator_index2):
+                logger.warning(
+                    "IndicatorStateCheck: Not enough data for indices. indicator_series1 length: {}, indicator_index1: {}, indicator_series2 length: {}, indicator_index2: {}".format(
+                        len(indicator_series1),
+                        self.indicator_index1,
+                        len(indicator_series2),
+                        self.indicator_index2,
+                    )
+                )
+                return False
+
+            short_value = indicator_series1.iloc[self.indicator_index1]
+            long_value = indicator_series2.iloc[self.indicator_index2]
+
+            manager.context["indicators"][
+                f"{self.indicator.__name__}_{self.lag1}_{self.indicator_index1}"
+            ] = short_value
+            manager.context["indicators"][
+                f"{self.indicator.__name__}_{self.lag2}_{self.indicator_index2}"
+            ] = long_value
+
+            logger.info(
+                "IndicatorStateCheck: Comparing short_value: {} with long_value: {}".format(
+                    short_value, long_value
                 )
             )
-            return False
-
-        short_value = indicator_series1.iloc[self.indicator_index1]
-        long_value = indicator_series2.iloc[self.indicator_index2]
-
-        manager.context["indicators"][
-            f"{self.indicator.__name__}_{self.lag1}_{self.indicator_index1}"
-        ] = short_value
-        manager.context["indicators"][
-            f"{self.indicator.__name__}_{self.lag2}_{self.indicator_index2}"
-        ] = long_value
-
-        logger.debug(
-            "IndicatorStateCheck: Comparing short_value: {} with long_value: {}".format(
-                short_value, long_value
+            result = short_value > long_value
+            logger.info("IndicatorStateCheck: Result is {}".format(result))
+        except Exception as e:
+            logger.error(
+                f"IndicatorStateCheck: Error checking indicator state: {str(e)}"
             )
-        )
-        result = short_value > long_value
-        logger.debug("IndicatorStateCheck: Result is {}".format(result))
+            result = False
         return result

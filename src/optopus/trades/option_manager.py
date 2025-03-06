@@ -202,34 +202,53 @@ class OptionBacktester:
 
         # Check external entry conditions first if configured
         if self.config.external_entry_condition is not None:
-            external_met = self.config.external_entry_condition.should_enter(
-                time=self.last_update_time, strategy=new_spread, manager=self
-            )
+            try:
+                external_met = self.config.external_entry_condition.should_enter(
+                    time=self.last_update_time, strategy=new_spread, manager=self
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error checking external entry conditions for {new_spread.symbol} {new_spread.strategy_type}: {str(e)}"
+                )
+                external_met = False
             if not external_met:
                 logger.info(
                     f"External conditions not met for {new_spread.symbol} {new_spread.strategy_type}"
                 )
-                return False
+                # return False
             logger.info(
                 f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}"
             )
 
         # Check standard entry conditions (required for both cases)
-        standard_met = self.config.entry_condition.should_enter(
-            strategy=new_spread, manager=self, time=self.last_update_time
-        )
+        try:
+            standard_met = self.config.entry_condition.should_enter(
+                strategy=new_spread, manager=self, time=self.last_update_time
+            )
+        except Exception as e:
+            logger.error(
+                f"Error checking standard entry conditions for {new_spread.symbol} {new_spread.strategy_type}: {str(e)}"
+            )
+            standard_met = False
 
         if not standard_met:
             logger.info(
                 f"Standard conditions not met for {new_spread.symbol} {new_spread.strategy_type}"
             )
+            # return False
+
+        if external_met and standard_met:
+            logger.info(
+                f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}"
+            )
+            return True
+        else:
+            logger.info(
+                f"Conditions not met for {new_spread.symbol} {new_spread.strategy_type}"
+            )
             return False
 
-        logger.info(
-            f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}"
-        )
-
-        return True
+        # return True
 
     def close_trade(self, trade: OptionStrategy) -> None:
         """

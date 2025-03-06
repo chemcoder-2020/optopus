@@ -227,9 +227,13 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
 
         # Prepare market data
         current_price = strategy.underlying_last if strategy else None
-        hist_data, monthly_data = self.data_processor.prepare_historical_data(
-            time, current_price
-        )
+        try:
+            hist_data, monthly_data = self.data_processor.prepare_historical_data(
+                time, current_price
+            )
+        except Exception as e:
+            logger.error(f"Error preparing historical data: {e}")
+            return False
 
         # Initialize context if needed
         if not hasattr(manager, "context"):
@@ -253,9 +257,13 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         )
 
         # Evaluate the pipeline
-        result = self.pipeline.should_enter(
-            time=time, strategy=strategy, manager=manager
-        )
+        try:
+            result = self.pipeline.should_enter(
+                time=time, strategy=strategy, manager=manager
+            )
+        except Exception as e:
+            logger.error(f"Error evaluating pipeline: {e}")
+            result = False
         logger.debug(f"Pipeline evaluation result: {result}")
         return result
 
