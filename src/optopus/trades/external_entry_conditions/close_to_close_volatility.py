@@ -37,11 +37,8 @@ class CloseToCloseVolatilityDecreaseCheck(BaseComponent):
         # Get current and previous values
         vol_current = volatility.iloc[-1]
         vol_prev = volatility.iloc[-2]
-
-        if not hasattr(manager.context, "indicators"):
-            manager.context["indicators"] = {}
-        else:
-            manager.context["indicators"].update({f"c2c_vol_{self.lag}": vol_current})
+        
+        manager.context["indicators"][f"c2c_vol_{self.lag}"] = vol_current
 
         logger.info(
             f"Previous Close-to-Close Volatility: {vol_prev:.4f}; Current Close-to-Close Volatility: {vol_current:.4f}."

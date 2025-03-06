@@ -33,12 +33,7 @@ class ParkinsonVolatilityDecreaseCheck(BaseComponent):
         parkinson_current = parkinson.iloc[-1]
         parkinson_prev = parkinson.iloc[-2]
 
-        if not hasattr(manager.context, "indicators"):
-            manager.context["indicators"] = {}
-        else:
-            manager.context["indicators"].update(
-                {f"parkinson_vol_{self.lag}": parkinson_current}
-            )
+        manager.context["indicators"][f"parkinson_vol_{self.lag}"] = parkinson_current
 
         logger.info(
             f"Previous Parkinson Volatility: {parkinson_prev:.4f}; Current Parkinson Volatility: {parkinson_current:.4f}."

@@ -22,23 +22,18 @@ class GarmanKlassVolatilityDecreaseCheck(BaseComponent):
         df = hist_data[["high", "low", "close", "open"]]
 
         # Calculate Garman-Klass components
-        log_hl = np.log(df['high']/df['low'])
-        log_co = np.log(df['close']/df['open'])
-        
+        log_hl = np.log(df["high"] / df["low"])
+        log_co = np.log(df["close"] / df["open"])
+
         # Calculate volatility using Garman-Klass estimator
-        gk_terms = 0.5*(log_hl**2) - (2*np.log(2)-1)*(log_co**2)
+        gk_terms = 0.5 * (log_hl**2) - (2 * np.log(2) - 1) * (log_co**2)
         gk_volatility = np.sqrt(gk_terms.rolling(self.lag).mean())
 
         # Get current and previous values
         gk_current = gk_volatility.iloc[-1]
         gk_prev = gk_volatility.iloc[-2]
 
-        if not hasattr(manager.context, "indicators"):
-            manager.context["indicators"] = {}
-        else:
-            manager.context["indicators"].update(
-                {f"gk_vol_{self.lag}": gk_current}
-            )
+        manager.context["indicators"][f"gk_vol_{self.lag}"] = gk_current
 
         logger.info(
             f"Previous Garman-Klass Volatility: {gk_prev:.4f}; Current Garman-Klass Volatility: {gk_current:.4f}."

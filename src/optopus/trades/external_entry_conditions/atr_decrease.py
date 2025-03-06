@@ -22,11 +22,8 @@ class VolatilityDecreaseCheck(BaseComponent):
         tr = data[["tr0", "tr1", "tr2"]].max(axis=1)
 
         atr = pt.sma(tr, self.lag)
-
-        if not hasattr(manager.context, "indicators"):
-            manager.context["indicators"] = {}
-        else:
-            manager.context["indicators"].update({f"atr_{self.lag}": atr.iloc[-1]})
+        
+        manager.context["indicators"][f"atr_{self.lag}"] = atr.iloc[-1]
 
         assert time == manager.context.get(
             "bar"

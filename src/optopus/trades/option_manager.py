@@ -115,7 +115,9 @@ class OptionBacktester:
         self.available_to_trade = config.initial_capital
         self.active_trades: List[OptionStrategy] = []
         self.closed_trades: List[OptionStrategy] = []
-        self.last_update_time: Optional[datetime, pd.Timestamp] = None # pd.Timestamp.now(tz="America/New_York")
+        self.last_update_time: Optional[datetime, pd.Timestamp] = (
+            None  # pd.Timestamp.now(tz="America/New_York")
+        )
         self.trades_entered_today = 0
         self.trades_entered_this_week = 0
         self.performance_data = []
@@ -163,7 +165,9 @@ class OptionBacktester:
         """
         try:
             if not self._can_add_spread(new_spread):
-                logger.info(f"Rejecting {new_spread.symbol} {new_spread.strategy_type} - entry conditions not met")
+                logger.info(
+                    f"Rejecting {new_spread.symbol} {new_spread.strategy_type} - entry conditions not met"
+                )
                 return False
 
             required_capital = new_spread.get_required_capital()
@@ -172,7 +176,9 @@ class OptionBacktester:
             self.active_trades.append(new_spread)
             self.available_to_trade -= required_capital
             self._update_trade_counts()
-            logger.success(f"Added {new_spread.symbol} {new_spread.strategy_type} (Contracts: {new_spread.contracts}, Required Capital: ${required_capital:.2f}, Available: ${self.available_to_trade:.2f})")
+            logger.success(
+                f"Added {new_spread.symbol} {new_spread.strategy_type} (Contracts: {new_spread.contracts}, Required Capital: ${required_capital:.2f}, Available: ${self.available_to_trade:.2f})"
+            )
             return True
         except Exception as e:
             logger.error(f"Error adding spread: {str(e)}")
@@ -189,7 +195,9 @@ class OptionBacktester:
             bool: True if the spread can be added, False otherwise.
         """
         if self.capital <= 0:
-            logger.warning(f"Cannot add {new_spread.symbol} {new_spread.strategy_type}: no capital left")
+            logger.warning(
+                f"Cannot add {new_spread.symbol} {new_spread.strategy_type}: no capital left"
+            )
             return False
 
         # Check external entry conditions first if configured
@@ -198,9 +206,13 @@ class OptionBacktester:
                 time=self.last_update_time, strategy=new_spread, manager=self
             )
             if not external_met:
-                logger.info(f"External conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
+                logger.info(
+                    f"External conditions not met for {new_spread.symbol} {new_spread.strategy_type}"
+                )
                 return False
-            logger.info(f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}")
+            logger.info(
+                f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}"
+            )
 
         # Check standard entry conditions (required for both cases)
         standard_met = self.config.entry_condition.should_enter(
@@ -208,10 +220,14 @@ class OptionBacktester:
         )
 
         if not standard_met:
-            logger.info(f"Standard conditions not met for {new_spread.symbol} {new_spread.strategy_type}")
+            logger.info(
+                f"Standard conditions not met for {new_spread.symbol} {new_spread.strategy_type}"
+            )
             return False
 
-        logger.info(f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}")
+        logger.info(
+            f"All conditions met for {new_spread.symbol} {new_spread.strategy_type}"
+        )
 
         return True
 
@@ -251,13 +267,17 @@ class OptionBacktester:
         # Count trades entered on the same calendar date (including closed ones)
         if self.last_update_time:
             self.trades_entered_today = sum(
-                1 for trade in self.active_trades + self.closed_trades 
+                1
+                for trade in self.active_trades + self.closed_trades
                 if trade.entry_time.date() == self.last_update_time.date()
             )
-            
+
         # Weekly count remains active trades only
         self.trades_entered_this_week = sum(
-            1 for trade in self.active_trades if trade.entry_time.isocalendar()[1] != self.last_update_time.isocalendar()[1]
+            1
+            for trade in self.active_trades
+            if trade.entry_time.isocalendar()[1]
+            != self.last_update_time.isocalendar()[1]
         )
 
     def _check_conflict(self, new_spread: OptionStrategy) -> bool:
@@ -351,6 +371,7 @@ class OptionBacktester:
                 "closed_pl": closed_pl,
                 "underlying_last": underlying_last,
                 "active_positions": active_positions,
+                "indicators": {**self.context["indicators"]},
             }
         )
 
@@ -363,6 +384,16 @@ class OptionBacktester:
             return
 
         df = pd.DataFrame(self.performance_data)
+        if df["indicators"].dropna().empty:
+            logger.warning("No indicators data available for plotting.")
+            indicators = None
+            number_of_indicators = 0
+        else:
+            indicators = df["indicators"].apply(lambda x: pd.Series(x))
+            indicators["time"] = df["time"]
+            indicators.set_index("time", inplace=True)
+            number_of_indicators = len(indicators.columns)
+
         df.set_index("time", inplace=True)
 
         # Calculate drawdown
@@ -370,41 +401,51 @@ class OptionBacktester:
         df["drawdown"] = df["peak"] - df["total_pl"]
 
         # Create subplots
-        fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(
-            5, 1, figsize=(12, 24), sharex=True
+
+        fig, axes = plt.subplots(
+            5 + number_of_indicators, 1, figsize=(12, 24), sharex=True
         )
 
         # Plot Total P/L
-        ax1.plot(df.index, df["total_pl"], label="Total P/L")
-        ax1.set_title("Total P/L")
-        ax1.set_ylabel("P/L ($)")
-        ax1.legend()
+        axes[0].plot(df.index, df["total_pl"], label="Total P/L")
+        axes[0].set_title("Total P/L")
+        axes[0].set_ylabel("P/L ($)")
+        axes[0].legend()
 
         # Plot Closed P/L
-        ax2.plot(df.index, df["closed_pl"], label="Closed P/L")
-        ax2.set_title("Closed P/L")
-        ax2.set_ylabel("P/L ($)")
-        ax2.legend()
+        axes[1].plot(df.index, df["closed_pl"], label="Closed P/L")
+        axes[1].set_title("Closed P/L")
+        axes[1].set_ylabel("P/L ($)")
+        axes[1].legend()
 
         # Plot Drawdown
-        ax3.fill_between(df.index, df["drawdown"], label="Drawdown")
-        ax3.set_title("Drawdown")
-        ax3.set_ylabel("Drawdown ($)")
-        ax3.legend()
+        axes[2].fill_between(df.index, df["drawdown"], label="Drawdown")
+        axes[2].set_title("Drawdown")
+        axes[2].set_ylabel("Drawdown ($)")
+        axes[2].legend()
 
         # Plot Underlying Price
-        ax4.plot(df.index, df["underlying_last"], label="Underlying Price")
-        ax4.set_title("Underlying Price")
-        ax4.set_ylabel("Price ($)")
-        ax4.set_xlabel("Date")
-        ax4.legend()
+        axes[3].plot(df.index, df["underlying_last"], label="Underlying Price")
+        axes[3].set_title("Underlying Price")
+        axes[3].set_ylabel("Price ($)")
+        axes[3].set_xlabel("Date")
+        axes[3].legend()
 
         # Plot Active Positions
-        ax5.plot(df.index, df["active_positions"], label="Active Positions")
-        ax5.set_title("Active Positions")
-        ax5.set_ylabel("Positions")
-        ax5.set_xlabel("Date")
-        ax5.legend()
+        axes[4].plot(df.index, df["active_positions"], label="Active Positions")
+        axes[4].set_title("Active Positions")
+        axes[4].set_ylabel("Positions")
+        axes[4].set_xlabel("Date")
+        axes[4].legend()
+
+        # Plot Indicators
+        if indicators is not None:
+            for i, col in enumerate(indicators.columns):
+                axes[5 + i].plot(indicators.index, indicators[col], label=col)
+                axes[5 + i].set_title(f"Indicator: {col}")
+                axes[5 + i].set_ylabel(f"{col}")
+                axes[5 + i].set_xlabel("Date")
+                axes[5 + i].legend()
 
         plt.tight_layout()
         plt.show()
@@ -549,7 +590,9 @@ class OptionBacktester:
         )
         max_drawdown_dollars = max_drawdown_result["max_drawdown_dollars"]
         max_drawdown_percentage = max_drawdown_result["max_drawdown_percentage"]
-        max_drawdown_percentage_from_peak = max_drawdown_result["max_drawdown_percentage_from_peak"]
+        max_drawdown_percentage_from_peak = max_drawdown_result[
+            "max_drawdown_percentage_from_peak"
+        ]
 
         metrics = {
             "sharpe_ratio": None,
@@ -621,7 +664,9 @@ class OptionBacktester:
             metrics["median_yearly_pl"] = yearly_return_calculator.calculate(
                 closed_trades_df.set_index("exit_time")["closed_pl"], non_zero_only=True
             )["median_yearly_pl"]
-            metrics['median_yearly_return'] = metrics['median_yearly_pl'] / self.config.initial_capital
+            metrics["median_yearly_return"] = (
+                metrics["median_yearly_pl"] / self.config.initial_capital
+            )
         except Exception as e:
             logger.error(f"Error calculating Average Monthly P/L: {str(e)}")
         try:
@@ -713,50 +758,50 @@ class OptionBacktester:
         metrics = self.calculate_performance_metrics()
         if metrics:
             print("\nPerformance Summary:")
-            if metrics.get('sharpe_ratio') is not None:
+            if metrics.get("sharpe_ratio") is not None:
                 print(f"Sharpe Ratio: {metrics['sharpe_ratio']:.2f}")
-            if metrics.get('profit_factor') is not None:
+            if metrics.get("profit_factor") is not None:
                 print(f"Profit Factor: {metrics['profit_factor']:.2f}")
-            if metrics.get('cagr') is not None:
+            if metrics.get("cagr") is not None:
                 print(f"CAGR: {metrics['cagr']:.2%}")
-            if metrics.get('median_yearly_pl') is not None:
+            if metrics.get("median_yearly_pl") is not None:
                 print(f"Median Yearly P/L: ${metrics['median_yearly_pl']:.2f}")
-            if metrics.get('median_yearly_return') is not None:
+            if metrics.get("median_yearly_return") is not None:
                 print(f"Median Yearly Return: {metrics['median_yearly_return']:.2%}")
-            if metrics.get('avg_monthly_pl') is not None:
+            if metrics.get("avg_monthly_pl") is not None:
                 print(f"Average Monthly P/L: ${metrics['avg_monthly_pl']:.2f}")
-            if metrics.get('avg_monthly_pl_nonzero') is not None:
+            if metrics.get("avg_monthly_pl_nonzero") is not None:
                 print(
                     f"Average Monthly P/L (Non-Zero Months): ${metrics['avg_monthly_pl_nonzero']:.2f}"
                 )
-            if metrics.get('return_over_risk') is not None:
+            if metrics.get("return_over_risk") is not None:
                 print(f"Average Return over Risk: {metrics['return_over_risk']:.2%}")
-            if metrics.get('probability_of_positive_monthly_pl') is not None:
+            if metrics.get("probability_of_positive_monthly_pl") is not None:
                 print(
                     f"Probability of Positive Monthly P/L: {metrics['probability_of_positive_monthly_pl']:.2%}"
                 )
-            if metrics.get('probability_of_positive_monthly_closed_pl') is not None:
+            if metrics.get("probability_of_positive_monthly_closed_pl") is not None:
                 print(
                     f"Probability of Positive Monthly Closed P/L: {metrics['probability_of_positive_monthly_closed_pl']:.2%}"
                 )
-            if metrics.get('win_rate') is not None:
+            if metrics.get("win_rate") is not None:
                 print(f"Win Rate: {metrics['win_rate']:.2%}")
             print(
                 f"Kelly Criterion Recommendation: {self.calculate_kelly_criterion():.2%}"
             )
-            if metrics.get('risk_of_ruin') is not None:
+            if metrics.get("risk_of_ruin") is not None:
                 print(f"Risk of Ruin: {metrics['risk_of_ruin']:.2%}")
-            if metrics.get('max_drawdown_dollars') is not None:
+            if metrics.get("max_drawdown_dollars") is not None:
                 print(f"Max Drawdown (Dollars): ${metrics['max_drawdown_dollars']:.2f}")
-            if metrics.get('max_drawdown_percentage') is not None:
+            if metrics.get("max_drawdown_percentage") is not None:
                 print(
                     f"Max Drawdown (Percentage): {metrics['max_drawdown_percentage']:.2%}"
                 )
-            if metrics.get('max_drawdown_percentage_from_peak') is not None:
+            if metrics.get("max_drawdown_percentage_from_peak") is not None:
                 print(
                     f"Max Drawdown From Peak (Percentage): {metrics['max_drawdown_percentage_from_peak']:.2%}"
                 )
-            if metrics.get('average_dit') is not None:
+            if metrics.get("average_dit") is not None:
                 print(f"Average Days in Trade: {metrics['average_dit']:.2f}")
 
             # Print time range of closed positions

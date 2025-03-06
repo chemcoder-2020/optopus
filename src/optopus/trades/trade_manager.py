@@ -137,51 +137,6 @@ class TradingManager(OptionBacktester):
             }
         )
 
-    def plot_performance(self):
-        """
-        Generate performance visualizations.
-        """
-        if not self.performance_data:
-            logger.warning("No performance data available for plotting.")
-            return
-
-        df = pd.DataFrame(self.performance_data)
-        df.set_index("time", inplace=True)
-
-        # Calculate drawdown
-        df["peak"] = df["total_pl"].cummax()
-        df["drawdown"] = df["peak"] - df["total_pl"]
-
-        # Create subplots
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 24), sharex=True)
-
-        # Plot Total P/L
-        ax1.plot(df.index, df["total_pl"], label="Total P/L")
-        ax1.set_title("Total P/L")
-        ax1.set_ylabel("P/L ($)")
-        ax1.legend()
-
-        # Plot Closed P/L
-        ax2.plot(df.index, df["closed_pl"], label="Closed P/L")
-        ax2.set_title("Closed P/L")
-        ax2.set_ylabel("P/L ($)")
-        ax2.legend()
-
-        # Plot Drawdown
-        ax3.fill_between(df.index, df["drawdown"], label="Drawdown")
-        ax3.set_title("Drawdown")
-        ax3.set_ylabel("Drawdown ($)")
-        ax3.legend()
-
-        # Plot Active Positions
-        ax4.plot(df.index, df["active_positions"], label="Active Positions")
-        ax4.set_title("Active Positions")
-        ax4.set_ylabel("Positions")
-        ax4.legend()
-
-        plt.tight_layout()
-        plt.show()
-
     def get_active_orders(self) -> List[Order]:
         """
         Get the list of active orders.

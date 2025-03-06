@@ -86,7 +86,7 @@ class AndComponent(BaseComponent):
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         return self.left.should_enter(
             time=time, strategy=strategy, manager=manager
-        ) and self.right.should_enter(time=time, strategy=strategy, manager=manager)
+        ) & self.right.should_enter(time=time, strategy=strategy, manager=manager)
 
 
 class OrComponent(BaseComponent):
@@ -100,7 +100,7 @@ class OrComponent(BaseComponent):
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         return self.left.should_enter(
             time=time, strategy=strategy, manager=manager
-        ) or self.right.should_enter(time=time, strategy=strategy, manager=manager)
+        ) | self.right.should_enter(time=time, strategy=strategy, manager=manager)
 
 
 class NotComponent(BaseComponent):
@@ -235,6 +235,9 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         if not hasattr(manager, "context"):
             logger.debug("Creating new context in manager")
             manager.context = {}
+
+        if not hasattr(manager.context, "indicators"):
+            manager.context["indicators"] = {}
 
         # Store data in context for components
         manager.context.update(

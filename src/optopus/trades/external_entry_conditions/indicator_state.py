@@ -77,15 +77,12 @@ class IndicatorStateCheck(BaseComponent):
         short_value = indicator_series1.iloc[self.indicator_index1]
         long_value = indicator_series2.iloc[self.indicator_index2]
 
-        if not hasattr(manager.context, "indicators"):
-            manager.context["indicators"] = {}
-        else:
-            manager.context["indicators"].update(
-                {
-                    f"{self.indicator.__name__}_{self.lag1}_{self.indicator_index1}": short_value,
-                    f"{self.indicator.__name__}_{self.lag2}_{self.indicator_index2}": long_value,
-                }
-            )
+        manager.context["indicators"][
+            f"{self.indicator.__name__}_{self.lag1}_{self.indicator_index1}"
+        ] = short_value
+        manager.context["indicators"][
+            f"{self.indicator.__name__}_{self.lag2}_{self.indicator_index2}"
+        ] = long_value
 
         logger.debug(
             "IndicatorStateCheck: Comparing short_value: {} with long_value: {}".format(
