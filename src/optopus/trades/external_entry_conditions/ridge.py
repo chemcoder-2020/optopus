@@ -22,6 +22,12 @@ class RidgeCheck(BaseComponent):
         model.fit(X, y)
         # Require positive slope for upward trend
         y_pred = model.predict(X)
+        if not hasattr(manager.context, "indicators"):
+            manager.context["indicators"] = {}
+        else:
+            manager.context["indicators"].update(
+                {f"Ridge_{self.lag}": y_pred[-1] - y_pred[-2]}
+            )
         if y_pred[-1] - y_pred[-2] > 0:
             logger.info(f"RidgeCheck passed. Current Value > Previous Value")
             return True

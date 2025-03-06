@@ -36,7 +36,11 @@ class IndicatorStateCheck(BaseComponent):
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
         hist_data = manager.context["historical_data"]
-        logger.debug("IndicatorStateCheck: Starting indicator check with lag1: {}, lag2: {}".format(self.lag1, self.lag2))
+        logger.debug(
+            "IndicatorStateCheck: Starting indicator check with lag1: {}, lag2: {}".format(
+                self.lag1, self.lag2
+            )
+        )
 
         indicator_series1 = self.indicator(
             high=hist_data["high"],
@@ -57,14 +61,37 @@ class IndicatorStateCheck(BaseComponent):
             **self.kwargs,
         )
 
-        if len(indicator_series1) < abs(self.indicator_index1) or len(indicator_series2) < abs(self.indicator_index2):
-            logger.warning("IndicatorStateCheck: Not enough data for indices. indicator_series1 length: {}, indicator_index1: {}, indicator_series2 length: {}, indicator_index2: {}".format(len(indicator_series1), self.indicator_index1, len(indicator_series2), self.indicator_index2))
+        if len(indicator_series1) < abs(self.indicator_index1) or len(
+            indicator_series2
+        ) < abs(self.indicator_index2):
+            logger.warning(
+                "IndicatorStateCheck: Not enough data for indices. indicator_series1 length: {}, indicator_index1: {}, indicator_series2 length: {}, indicator_index2: {}".format(
+                    len(indicator_series1),
+                    self.indicator_index1,
+                    len(indicator_series2),
+                    self.indicator_index2,
+                )
+            )
             return False
 
         short_value = indicator_series1.iloc[self.indicator_index1]
         long_value = indicator_series2.iloc[self.indicator_index2]
 
-        logger.debug("IndicatorStateCheck: Comparing short_value: {} with long_value: {}".format(short_value, long_value))
+        if not hasattr(manager.context, "indicators"):
+            manager.context["indicators"] = {}
+        else:
+            manager.context["indicators"].update(
+                {
+                    f"{self.indicator.__name__}_{self.lag1}_{self.indicator_index1}": short_value,
+                    f"{self.indicator.__name__}_{self.lag2}_{self.indicator_index2}": long_value,
+                }
+            )
+
+        logger.debug(
+            "IndicatorStateCheck: Comparing short_value: {} with long_value: {}".format(
+                short_value, long_value
+            )
+        )
         result = short_value > long_value
         logger.debug("IndicatorStateCheck: Result is {}".format(result))
         return result

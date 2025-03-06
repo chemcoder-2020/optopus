@@ -22,7 +22,7 @@ class CloseToCloseVolatilityDecreaseCheck(BaseComponent):
             return False
 
         close_prices = hist_data["close"]
-        
+
         if self.zero_drift:
             # Zero drift assumption (original Parkinson)
             log_returns = np.log(close_prices / close_prices.shift(1))
@@ -30,13 +30,18 @@ class CloseToCloseVolatilityDecreaseCheck(BaseComponent):
         else:
             # Non-zero drift adjustment (Yang-Zhang style)
             log_returns = np.log(close_prices / close_prices.shift(1))
-            mu_cc = log_returns.rolling(self.lag-1).mean()
+            mu_cc = log_returns.rolling(self.lag - 1).mean()
             adj_returns = log_returns - mu_cc
-            volatility = adj_returns.rolling(self.lag-1).var(ddof=1)
+            volatility = adj_returns.rolling(self.lag - 1).var(ddof=1)
 
         # Get current and previous values
         vol_current = volatility.iloc[-1]
         vol_prev = volatility.iloc[-2]
+
+        if not hasattr(manager.context, "indicators"):
+            manager.context["indicators"] = {}
+        else:
+            manager.context["indicators"].update({f"c2c_vol_{self.lag}": vol_current})
 
         logger.info(
             f"Previous Close-to-Close Volatility: {vol_prev:.4f}; Current Close-to-Close Volatility: {vol_current:.4f}."

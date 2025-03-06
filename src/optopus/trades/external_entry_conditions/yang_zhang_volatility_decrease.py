@@ -47,6 +47,13 @@ class YangZhangVolatilityDecreaseCheck(BaseComponent):
         yz_current = yang_zhang.iloc[-1]
         yz_prev = yang_zhang.iloc[-2]
 
+        if not hasattr(manager.context, "indicators"):
+            manager.context["indicators"] = {}
+        else:
+            manager.context["indicators"].update(
+                {f"yz_vol_{self.lag}": yz_current}
+            )
+
         logger.info(
             f"Previous Yang-Zhang Volatility: {yz_prev:.4f}; Current Yang-Zhang Volatility: {yz_current:.4f}."
         )

@@ -33,6 +33,13 @@ class GarmanKlassVolatilityDecreaseCheck(BaseComponent):
         gk_current = gk_volatility.iloc[-1]
         gk_prev = gk_volatility.iloc[-2]
 
+        if not hasattr(manager.context, "indicators"):
+            manager.context["indicators"] = {}
+        else:
+            manager.context["indicators"].update(
+                {f"gk_vol_{self.lag}": gk_current}
+            )
+
         logger.info(
             f"Previous Garman-Klass Volatility: {gk_prev:.4f}; Current Garman-Klass Volatility: {gk_current:.4f}."
         )

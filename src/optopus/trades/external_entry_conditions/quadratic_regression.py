@@ -23,6 +23,12 @@ class QuadraticRegressionCheck(BaseComponent):
         p = np.polynomial.polynomial.Polynomial([c, b, a])
         result = p(x[-1]) - p(x[-2])
         logger.info(f"QuadraticRegressionCheck: {result}")
+        if not hasattr(manager.context, "indicators"):
+            manager.context["indicators"] = {}
+        else:
+            manager.context["indicators"].update(
+                {f"QuadraticRegression_{self.lag}": result}
+            )
 
         if result > 0:
             logger.info("QuadraticRegressionCheck passed.")
