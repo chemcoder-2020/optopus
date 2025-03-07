@@ -90,7 +90,7 @@ class SequentialPipelineCondition(EntryConditionChecker):
         """
         # Convert legacy 2-tuple steps to 3-tuple format
         self.steps = [
-            (cond, logic, sc_flag) if len(step) == 3 else (cond, logic, True)
+            (cond, logic, sc_flag[0]) if len(step) == 3 else (cond, logic, True)
             for step in steps
             for (cond, logic, *sc_flag) in [step + (True,)]  # Handle legacy 2-tuples
         ]

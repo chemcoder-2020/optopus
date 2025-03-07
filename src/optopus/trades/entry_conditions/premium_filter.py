@@ -41,8 +41,6 @@ class PremiumFilter(Preprocessor):
         ask = strategy.current_ask
         mark = (ask + bid) / 2  # if bid != 0 else ask
         manager.context["premiums"].append(mark)
-        if len(manager.context["premiums"]) > self.window_size + 1:
-            manager.context["premiums"].pop(0)
 
         if len(manager.context["premiums"]) < self.window_size + 1:
             logger.debug(
@@ -51,7 +49,7 @@ class PremiumFilter(Preprocessor):
             return np.nan
 
         filtered_returns = self.premium_filter.fit_transform(
-            manager.context["premiums"]
+            manager.context["premiums"][-self.window_size :]
         )
 
         return filtered_returns[-1]
