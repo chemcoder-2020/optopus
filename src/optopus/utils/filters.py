@@ -25,7 +25,7 @@ class HampelFilterNumpy(Filter):
         n_sigma=3,
         k=1.4826,
         max_iterations=3,
-        replace_with_na=False,
+        replace_with_na=True,
         implementation="pandas",
     ):
         self.window_size = window_size
@@ -75,20 +75,32 @@ class HampelFilterNumpy(Filter):
 
     def pandas_transform(self, X):
         # Make copy so original not edited
-        vals = pd.Series(np.array(X).flatten())
-        # Hampel Filter
-        difference = vals - vals.rolling(self.window_size).median()
-        median_abs_deviation = vals.rolling(window=self.window_size).apply(
-            lambda x: np.nanmedian(np.abs(x - np.nanmedian(x)))
-        )
-        threshold = self.n_sigma * self.k * median_abs_deviation
-        outlier_idx = difference > threshold
-        if self.replace_with_na:
-            vals[outlier_idx] = np.nan
+        X = pd.Series(np.array(X).flatten())
+        if len(X) < self.window_size:
+            return np.nan
         else:
-            vals[outlier_idx] = np.nan
-            vals = vals.ffill()
-        return np.array(vals).reshape(-1, 1).flatten()
+            X = X[-self.window_size :]
+            # Calculate median
+            median = np.nanmedian(X)
+
+            # Calculate Differences
+            difference = np.abs(X - median)
+            # Calculate MAD
+            mad = np.nanmedian(difference)
+
+            # Calculate threshold
+            threshold = self.n_sigma * self.k * mad
+
+            # Calculate outliers
+            outliers = difference > threshold
+
+            if self.replace_with_na:
+                X[outliers] = np.nan
+            else:
+                X[outliers] = np.nan
+                X = X.ffill()
+
+            return np.array(X).reshape(-1, 1).flatten()
 
     def transform(self, X):
         if self.implementation == "numpy":

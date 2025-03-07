@@ -42,14 +42,8 @@ class PremiumFilter(Preprocessor):
         mark = (ask + bid) / 2  # if bid != 0 else ask
         manager.context["premiums"].append(mark)
 
-        if len(manager.context["premiums"]) < self.window_size + 1:
-            logger.debug(
-                f"Manager's premiums context has less than {self.window_size + 1} values, skipping filter - returning NaN"
-            )
-            return np.nan
-
         filtered_returns = self.premium_filter.fit_transform(
-            manager.context["premiums"][-self.window_size :]
+            manager.context["premiums"]
         )
 
         return filtered_returns[-1]
