@@ -24,7 +24,7 @@ class HampelFilterNumpy(Filter):
         window_size=10,
         n_sigma=3,
         k=1.4826,
-        max_iterations=5,
+        max_iterations=3,
         replace_with_na=False,
         implementation="pandas",
     ):
@@ -77,9 +77,10 @@ class HampelFilterNumpy(Filter):
         # Make copy so original not edited
         vals = pd.Series(np.array(X).flatten())
         # Hampel Filter
-        rolling_median = vals.rolling(self.window_size).median()
-        difference = np.abs(rolling_median - vals)
-        median_abs_deviation = difference.rolling(self.window_size).median()
+        difference = vals - vals.rolling(self.window_size).median()
+        median_abs_deviation = vals.rolling(window=self.window_size).apply(
+            lambda x: np.nanmedian(np.abs(x - np.nanmedian(x)))
+        )
         threshold = self.n_sigma * self.k * median_abs_deviation
         outlier_idx = difference > threshold
         if self.replace_with_na:
@@ -93,7 +94,13 @@ class HampelFilterNumpy(Filter):
         if self.implementation == "numpy":
             return self.numpy_transform(X)
         elif self.implementation == "pandas":
-            return self.pandas_transform(X)
+            prev_X = X.copy()
+            for i in range(self.max_iterations):
+                X = self.pandas_transform(X)
+                if np.array_equal(X, prev_X):
+                    break
+
+            return X
 
     def fit_transform(self, X):
         return self.transform(X)
