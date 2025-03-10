@@ -1,12 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import List, Optional, Tuple, Union, Type
+from typing import List, Optional, Union, Type
 from .option_spread import OptionStrategy
 from datetime import datetime
 from loguru import logger
 from dataclasses import dataclass, field
 import numpy as np
-from scipy.stats import gaussian_kde
 from .entry_conditions import EntryConditionChecker, DefaultEntryCondition
 from .external_entry_conditions import ExternalEntryConditionChecker
 from ..metrics import (

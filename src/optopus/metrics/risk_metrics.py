@@ -79,7 +79,7 @@ class MaxDrawdown(BaseMetric):
     """Calculates maximum drawdown from cumulative returns"""
 
     def calculate(
-        self, pl_curve: np.ndarray, allocation: float, window: int = 10
+        self, pl_curve: np.ndarray, allocation: float, window: int = 3
     ) -> dict:
 
         # Apply rolling median

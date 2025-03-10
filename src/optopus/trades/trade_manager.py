@@ -115,27 +115,27 @@ class TradingManager(OptionBacktester):
             self.last_update_time = current_time
 
             # Record performance data after update
-            if isinstance(self.last_update_time, pd.Timestamp):
-                self._record_performance_data(current_time)
+            # if isinstance(self.last_update_time, pd.Timestamp):
+            #     self._record_performance_data(current_time)
 
-    def _record_performance_data(self, current_time):
-        """
-        Record performance data for the given time.
+    # def _record_performance_data(self, current_time):
+    #     """
+    #     Record performance data for the given time.
 
-        Parameters:
-        - current_time (datetime): The current time.
-        """
-        total_pl = self.get_total_pl()
-        closed_pl = self.get_closed_pl()
-        active_positions = len(self.active_trades)
-        self.performance_data.append(
-            {
-                "time": current_time,
-                "total_pl": total_pl,
-                "closed_pl": closed_pl,
-                "active_positions": active_positions,
-            }
-        )
+    #     Parameters:
+    #     - current_time (datetime): The current time.
+    #     """
+    #     total_pl = self.get_total_pl()
+    #     closed_pl = self.get_closed_pl()
+    #     active_positions = len(self.active_trades)
+    #     self.performance_data.append(
+    #         {
+    #             "time": current_time,
+    #             "total_pl": total_pl,
+    #             "closed_pl": closed_pl,
+    #             "active_positions": active_positions,
+    #         }
+    #     )
 
     def get_active_orders(self) -> List[Order]:
         """
@@ -436,8 +436,15 @@ class TradingManager(OptionBacktester):
         logger.warning(f"Order with ID {order_id} not found.")
         return False
 
-    def next(self, STRATEGY_PARAMS: dict) -> None:
+    def next(self, STRATEGY_PARAMS: dict, config: Config = None) -> None:
         """Update orders and check for new entries."""
+        # Safeguarding trade counts
+        self._update_trade_counts()
+
+        # Update config if needed
+        if config is not None:
+            self.config = config
+
         trade_type_required_keys = {
             "Vertical Spread": {
                 "option_type",
