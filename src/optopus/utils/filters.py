@@ -77,7 +77,7 @@ class HampelFilterNumpy(Filter):
         # Make copy so original not edited
         X = pd.Series(np.array(X).flatten())
         if len(X) < self.window_size:
-            return np.nan
+            return np.array([np.nan]).reshape(-1, 1).flatten()
         else:
             X = X[-self.window_size :]
             # Calculate median

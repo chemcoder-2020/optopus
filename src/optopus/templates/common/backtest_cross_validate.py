@@ -25,7 +25,7 @@ cwd = os.getcwd()
 basename = os.path.split(dname)[0]
 
 logger.add(
-    f"{cwd}/45dteCrossValidate.log",
+    f"{cwd}/CrossValidate.log",
     rotation="10 MB",
     retention="60 days",
     compression="zip",
