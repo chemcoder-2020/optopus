@@ -42,25 +42,31 @@ class IndicatorStateCheck(BaseComponent):
             )
         )
         try:
+            if self.lag1 > 1:
+                indicator_series1 = self.indicator(
+                    high=hist_data["high"],
+                    low=hist_data["low"],
+                    close=hist_data["close"],
+                    open=hist_data["open"],
+                    volume=hist_data["volume"],
+                    length=self.lag1,
+                    **self.kwargs,
+                )
+            else:
+                indicator_series1 = hist_data["close"].copy()
 
-            indicator_series1 = self.indicator(
-                high=hist_data["high"],
-                low=hist_data["low"],
-                close=hist_data["close"],
-                open=hist_data["open"],
-                volume=hist_data["volume"],
-                length=self.lag1,
-                **self.kwargs,
-            )
-            indicator_series2 = self.indicator(
-                high=hist_data["high"],
-                low=hist_data["low"],
-                close=hist_data["close"],
-                open=hist_data["open"],
-                volume=hist_data["volume"],
-                length=self.lag2,
-                **self.kwargs,
-            )
+            if self.lag2 > 1:
+                indicator_series2 = self.indicator(
+                    high=hist_data["high"],
+                    low=hist_data["low"],
+                    close=hist_data["close"],
+                    open=hist_data["open"],
+                    volume=hist_data["volume"],
+                    length=self.lag2,
+                    **self.kwargs,
+                )
+            else:
+                indicator_series2 = hist_data["close"].copy()
 
             if len(indicator_series1) < abs(self.indicator_index1) or len(
                 indicator_series2

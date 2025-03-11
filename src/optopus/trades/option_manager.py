@@ -200,6 +200,7 @@ class OptionBacktester:
             return False
 
         # Check external entry conditions first if configured
+        
         if self.config.external_entry_condition is not None:
             try:
                 external_met = self.config.external_entry_condition.should_enter(
@@ -217,6 +218,11 @@ class OptionBacktester:
                 # return False
             logger.info(
                 f"External conditions met for {new_spread.symbol} {new_spread.strategy_type}"
+            )
+        else:
+            external_met = True
+            logger.info(
+                f"No external entry conditions configured for {new_spread.symbol} {new_spread.strategy_type}"
             )
 
         # Check standard entry conditions (required for both cases)
@@ -389,7 +395,7 @@ class OptionBacktester:
                 "closed_pl": closed_pl,
                 "underlying_last": underlying_last,
                 "active_positions": active_positions,
-                "indicators": {**self.context["indicators"]},
+                "indicators": {**self.context.get("indicators", {})},
             }
         )
 

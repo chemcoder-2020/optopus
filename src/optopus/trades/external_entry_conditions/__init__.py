@@ -13,6 +13,7 @@ from .entry_on_forecast_plus_kelly import EntryOnForecastPlusKellyCriterion
 from .forecast_check import StatsForecastCheck, VolatilityForecastCheck
 from .garman_klass_volatility_decrease import GarmanKlassVolatilityDecreaseCheck
 from .indicator_state import IndicatorStateCheck
+from .indicator_threshold import IndicatorThresholdCheck
 from .linear_regression import LinearRegressionCheck
 from .parkinson_volatility_decrease import ParkinsonVolatilityDecreaseCheck
 from .quadratic_regression import QuadraticRegressionCheck
@@ -32,6 +33,7 @@ __all__ = [
     "ExternalEntryConditionChecker",
     "GarmanKlassVolatilityDecreaseCheck",
     "IndicatorStateCheck",
+    "IndicatorThresholdCheck",
     "LinearRegressionCheck",
     "ParkinsonVolatilityDecreaseCheck",
     "QuadraticRegressionCheck",
