@@ -17,23 +17,6 @@ class DataProcessor:
                 )
                 self.intraday_data.set_index("date", inplace=True)
 
-                # self.daily_data = (
-                #     self.ohlc.resample("D")
-                #     .apply(
-                #         {
-                #             "close": "last",
-                #             "open": "first",
-                #             "low": "min",
-                #             "high": "max",
-                #             "volume": "sum",
-                #         }
-                #     )
-                #     .dropna(subset="close")
-                # )
-                # self.daily_data.reset_index(inplace=True)
-                # self.daily_data.rename(columns={"date": "day"}, inplace=True)
-                # self.ohlc = self.ohlc.reset_index()
-
             else:
                 # Check if it's a brokerage name
                 if self.ohlc.lower() == "schwab":
@@ -100,7 +83,7 @@ class DataProcessor:
             historical_data = historical_data.asfreq("B").ffill()
 
         else:
-            current_intraday_data = self.intraday_data[:time]
+            current_intraday_data = self.intraday_data[:time][:-1] # if data time is labeled on right
             historical_data = current_intraday_data.resample("B").apply(
                 {
                     "close": "last",
