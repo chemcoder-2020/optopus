@@ -71,7 +71,7 @@ class DataProcessor:
             current_daily_data.reset_index(inplace=True)
             current_daily_data.rename(columns={"date": "day"}, inplace=True)
             historical_data = current_daily_data.set_index("day").iloc[-500:]
-            monthly_data = historical_data.resample("B").apply(
+            monthly_data = historical_data.resample("M").apply(
                 {
                     "close": "last",
                     "open": "first",
@@ -80,10 +80,9 @@ class DataProcessor:
                     "volume": "sum",
                 }
             ).dropna()
-            historical_data = historical_data.asfreq("B").ffill()
 
         else:
-            current_intraday_data = self.intraday_data[:time][:-1] # if data time is labeled on right
+            current_intraday_data = self.intraday_data[:time][:-1] # if data bar is labeled on left: 9:30 => 9:45 is labeled 9:30, for example
             historical_data = current_intraday_data.resample("B").apply(
                 {
                     "close": "last",
@@ -92,8 +91,8 @@ class DataProcessor:
                     "high": "max",
                     "volume": "sum",
                 }
-            )[-500:]
-            monthly_data = historical_data.resample("B").apply(
+            ).dropna()[-500:]
+            monthly_data = historical_data.resample("M").apply(
                 {
                     "close": "last",
                     "open": "first",
@@ -102,6 +101,5 @@ class DataProcessor:
                     "volume": "sum",
                 }
             ).dropna()
-            historical_data = historical_data.asfreq("B").ffill()
 
         return historical_data, monthly_data
