@@ -16,13 +16,14 @@ from .garman_klass_volatility_decrease import GarmanKlassVolatilityDecreaseCheck
 from .indicator_state import IndicatorStateCheck
 from .indicator_threshold import IndicatorThresholdCheck
 from .linear_regression import LinearRegressionCheck
+from .loess import LOESSCheck
 from .parkinson_volatility_decrease import ParkinsonVolatilityDecreaseCheck
 from .quadratic_regression import QuadraticRegressionCheck
+from .quadratic_indicator_regression import QuadraticIndicatorRegressionCheck
 from .ridge import RidgeCheck
 from .rogers_satchell_volatility_decrease import RogersSatchellVolatilityDecreaseCheck
 from .standard_deviation_decrease import StdevVolatilityDecreaseCheck
 from .yang_zhang_volatility_decrease import YangZhangVolatilityDecreaseCheck
-
 
 
 __all__ = [
@@ -37,10 +38,12 @@ __all__ = [
     "IndicatorStateCheck",
     "IndicatorThresholdCheck",
     "LinearRegressionCheck",
+    "LOESSCheck",
     "ParkinsonVolatilityDecreaseCheck",
+    "QuadraticIndicatorRegressionCheck",
     "QuadraticRegressionCheck",
     "RidgeCheck",
-    "RogersSatchellVolatilityDecreaseCheck", 
+    "RogersSatchellVolatilityDecreaseCheck",
     "StatsForecastCheck",
     "StdevVolatilityDecreaseCheck",
     "YangZhangVolatilityDecreaseCheck",

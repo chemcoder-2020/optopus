@@ -217,14 +217,15 @@ class OptionChainConverter:
 
 if __name__ == "__main__":
     # Load the test data
-    file_path = "/Users/traderHuy/Library/CloudStorage/OneDrive-Personal/Documents/optopus-dev/data/SPY_2024-09-06 15-30.parquet"
+    # file_path = "/Users/traderHuy/Library/CloudStorage/OneDrive-Personal/Documents/optopus-dev/data/SPY_2024-09-06 15-30.parquet"
+    file_path = "/Users/traderHuy/Library/CloudStorage/OneDrive-Personal/Documents/optopus-dev/data/SPY_2024-09-09 09-45.parquet"
     option_chain_df = pd.read_parquet(file_path)
 
     # Initialize the OptionChainConverter
     converter = OptionChainConverter(option_chain_df)
 
     converter.get_desired_strike(
-        pd.Timestamp("2024-09-06"), "CALL", 0, by="atm_percent"
+        pd.Timestamp("2024-09-09"), "PUT", -0.1, by="delta"
     )
 
     # Example usage of get_closest_expiration
