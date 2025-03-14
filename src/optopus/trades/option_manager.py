@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from typing import List, Optional, Union, Type
 from .option_spread import OptionStrategy
 from datetime import datetime
@@ -399,15 +401,27 @@ class OptionBacktester:
             }
         )
 
-    def plot_performance(self):
+    def plot_performance(self, interactive: bool = False):
         """
         Generate and display performance visualizations.
+        
+        Args:
+            interactive (bool): If True, shows interactive Plotly version. 
+                Default False shows matplotlib version.
         """
         if not self.performance_data:
             logger.warning("No performance data available for plotting.")
             return
 
         df = pd.DataFrame(self.performance_data)
+        
+        if interactive:
+            return self._plot_interactive_performance(df)
+        else:
+            return self._plot_static_performance(df)
+
+    def _plot_static_performance(self, df):
+        """Original matplotlib implementation"""
         if df["indicators"].dropna().empty:
             logger.warning("No indicators data available for plotting.")
             indicators = None
@@ -425,7 +439,6 @@ class OptionBacktester:
         df["drawdown"] = df["peak"] - df["total_pl"]
 
         # Create subplots
-
         fig, axes = plt.subplots(
             5 + number_of_indicators, 1, figsize=(12, 24), sharex=True
         )
@@ -473,6 +486,108 @@ class OptionBacktester:
 
         plt.tight_layout()
         plt.show()
+        return fig
+
+    def _plot_interactive_performance(self, df):
+        """Create interactive Plotly version with shared x-axis and crosshair"""
+        # Prepare data
+        df = df.copy()
+        df["peak"] = df["total_pl"].cummax()
+        df["drawdown"] = df["peak"] - df["total_pl"]
+        
+        # Create subplots
+        fig = make_subplots(
+            rows=5, 
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.05,
+            subplot_titles=[
+                "Total P/L", 
+                "Closed P/L",
+                "Drawdown",
+                "Underlying Price",
+                "Active Positions"
+            ]
+        )
+
+        # Add traces
+        fig.add_trace(
+            go.Scatter(x=df.index, y=df["total_pl"], name="Total P/L"),
+            row=1, col=1
+        )
+        
+        fig.add_trace(
+            go.Scatter(x=df.index, y=df["closed_pl"], name="Closed P/L"),
+            row=2, col=1
+        )
+        
+        fig.add_trace(
+            go.Scatter(
+                x=df.index, 
+                y=df["drawdown"],
+                fill='tozeroy',
+                name="Drawdown"
+            ),
+            row=3, col=1
+        )
+        
+        fig.add_trace(
+            go.Scatter(x=df.index, y=df["underlying_last"], name="Underlying Price"),
+            row=4, col=1
+        )
+        
+        fig.add_trace(
+            go.Scatter(x=df.index, y=df["active_positions"], name="Active Positions"),
+            row=5, col=1
+        )
+
+        # Add indicators if available
+        if not df["indicators"].dropna().empty:
+            indicators = df["indicators"].apply(pd.Series)
+            for col in indicators.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index, 
+                        y=indicators[col], 
+                        name=f"Indicator: {col}",
+                        showlegend=False
+                    ),
+                    row=6,  # Start new rows after existing ones
+                    col=1
+                )
+                fig.update_yaxes(title_text=col, row=6, col=1)
+                
+        # Formatting
+        fig.update_layout(
+            height=900,
+            title_text="Trading Performance",
+            hovermode="x unified",
+            spikedistance=1000,
+            hoverdistance=100
+        )
+        
+        # Crosshair configuration
+        fig.update_layout(
+            xaxis=dict(
+                showspikes=True,
+                spikemode="across",
+                spikesnap="cursor",
+                spikethickness=1
+            )
+        )
+        
+        # Apply crosshair to all subplots
+        for i in range(1, len(fig.layout.annotations)+1):
+            fig.update_xaxes(
+                showspikes=True,
+                spikemode="across",
+                spikedash="solid",
+                row=i, 
+                col=1
+            )
+            
+        fig.show()
+        return fig
 
     def get_closed_trades_df(self) -> pd.DataFrame:
         """
