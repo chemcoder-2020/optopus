@@ -202,7 +202,7 @@ class OptionBacktester:
             return False
 
         # Check external entry conditions first if configured
-        
+
         if self.config.external_entry_condition is not None:
             try:
                 external_met = self.config.external_entry_condition.should_enter(
@@ -404,9 +404,9 @@ class OptionBacktester:
     def plot_performance(self, interactive: bool = False):
         """
         Generate and display performance visualizations.
-        
+
         Args:
-            interactive (bool): If True, shows interactive Plotly version. 
+            interactive (bool): If True, shows interactive Plotly version.
                 Default False shows matplotlib version.
         """
         if not self.performance_data:
@@ -414,7 +414,7 @@ class OptionBacktester:
             return
 
         df = pd.DataFrame(self.performance_data)
-        
+
         if interactive:
             return self._plot_interactive_performance(df)
         else:
@@ -494,98 +494,91 @@ class OptionBacktester:
         df = df.copy()
         df["peak"] = df["total_pl"].cummax()
         df["drawdown"] = df["peak"] - df["total_pl"]
-        
+
         # Create subplots
         fig = make_subplots(
-            rows=5, 
+            rows=5,
             cols=1,
             shared_xaxes=True,
             vertical_spacing=0.05,
             subplot_titles=[
-                "Total P/L", 
+                "Total P/L",
                 "Closed P/L",
                 "Drawdown",
                 "Underlying Price",
-                "Active Positions"
-            ]
+                "Active Positions",
+            ],
         )
 
         # Add traces
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["total_pl"], name="Total P/L"),
-            row=1, col=1
+            go.Scatter(x=df.index, y=df["total_pl"], name="Total P/L"), row=1, col=1
         )
-        
+
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["closed_pl"], name="Closed P/L"),
-            row=2, col=1
+            go.Scatter(x=df.index, y=df["closed_pl"], name="Closed P/L"), row=2, col=1
         )
-        
+
         fig.add_trace(
-            go.Scatter(
-                x=df.index, 
-                y=df["drawdown"],
-                fill='tozeroy',
-                name="Drawdown"
-            ),
-            row=3, col=1
+            go.Scatter(x=df.index, y=df["drawdown"], fill="tozeroy", name="Drawdown"),
+            row=3,
+            col=1,
         )
-        
+
         fig.add_trace(
             go.Scatter(x=df.index, y=df["underlying_last"], name="Underlying Price"),
-            row=4, col=1
+            row=4,
+            col=1,
         )
-        
+
         fig.add_trace(
             go.Scatter(x=df.index, y=df["active_positions"], name="Active Positions"),
-            row=5, col=1
+            row=5,
+            col=1,
         )
 
         # Add indicators if available
         if not df["indicators"].dropna().empty:
             indicators = df["indicators"].apply(pd.Series)
-            for col in indicators.columns:
+            for i, col in enumerate(indicators.columns):
                 fig.add_trace(
                     go.Scatter(
-                        x=df.index, 
-                        y=indicators[col], 
+                        x=df.index,
+                        y=indicators[col],
                         name=f"Indicator: {col}",
-                        showlegend=False
+                        showlegend=False,
                     ),
-                    row=6,  # Start new rows after existing ones
-                    col=1
+                    row=6+i,  # Start new rows after existing ones
+                    col=1,
                 )
-                fig.update_yaxes(title_text=col, row=6, col=1)
-                
+                fig.update_yaxes(title_text=col, row=6+i, col=1)
+
         # Formatting
         fig.update_layout(
             height=900,
+            width=1600,
             title_text="Trading Performance",
             hovermode="x unified",
             spikedistance=1000,
-            hoverdistance=100
+            hoverdistance=100,
         )
-        
+
         # Crosshair configuration
         fig.update_layout(
             xaxis=dict(
                 showspikes=True,
                 spikemode="across",
                 spikesnap="cursor",
-                spikethickness=1
+                spikethickness=1,
             )
         )
-        
+
         # Apply crosshair to all subplots
-        for i in range(1, len(fig.layout.annotations)+1):
+        for i in range(1, len(fig.layout.annotations) + 1):
             fig.update_xaxes(
-                showspikes=True,
-                spikemode="across",
-                spikedash="solid",
-                row=i, 
-                col=1
+                showspikes=True, spikemode="across", spikedash="solid", row=i, col=1
             )
-            
+        fig.update_traces(xaxis="x1")
         fig.show()
         return fig
 
