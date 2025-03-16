@@ -151,7 +151,7 @@ class BaseBacktest(ABC):
             print(f"Number of closed positions: {backtester.get_closed_positions()}")
 
             if plot_performance:
-                backtester.plot_performance()
+                backtester.plot_performance(interactive=True)
             backtester.print_performance_summary()
         except Exception:
             pass

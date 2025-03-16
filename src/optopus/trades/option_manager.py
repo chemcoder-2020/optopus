@@ -131,6 +131,14 @@ class OptionBacktester:
             current_time (datetime): Current time for the update.
             option_chain_df (pd.DataFrame): DataFrame containing the option chain data.
         """
+        if not hasattr(self.context, "indicators"):
+            self.context["indicators"] = {}
+
+        self.context.update(
+            {
+                "option_chain_df": option_chain_df,
+            }
+        )
 
         try:
             current_time = pd.to_datetime(current_time)
@@ -564,6 +572,7 @@ class OptionBacktester:
         # Formatting and crosshair configuration
         fig.update_layout(
             height=900 + (200 * num_indicators),  # Dynamic height based on indicators
+            width=900,
             title_text="Trading Performance",
             hovermode="x unified",
             spikedistance=1000,
@@ -579,7 +588,7 @@ class OptionBacktester:
                 row=i, 
                 col=1
             )
-            
+        fig.update_traces(xaxis="x1")
         fig.show()
         return fig
 
