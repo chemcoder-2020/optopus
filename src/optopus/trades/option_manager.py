@@ -131,6 +131,8 @@ class OptionBacktester:
             current_time (datetime): Current time for the update.
             option_chain_df (pd.DataFrame): DataFrame containing the option chain data.
         """
+        if not hasattr(self, "context"):
+            self.context = {}
         if not hasattr(self.context, "indicators"):
             self.context["indicators"] = {}
 
