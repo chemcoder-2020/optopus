@@ -13,7 +13,6 @@ from optopus.trades.external_entry_conditions import (
     IndicatorStateCheck,
 )
 import pandas as pd
-import pandas_ta as pt
 
 # Uncomment the following line to use the Awesome Entry
 

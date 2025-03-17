@@ -502,6 +502,7 @@ class OptionBacktester:
         """Create interactive Plotly version with shared x-axis and crosshair"""
         # Prepare data
         df = df.copy()
+        df.set_index("time", inplace=True)
         df["peak"] = df["total_pl"].cummax()
         df["drawdown"] = df["peak"] - df["total_pl"]
 

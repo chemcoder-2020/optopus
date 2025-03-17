@@ -19,7 +19,6 @@ class VolatilityDecreaseCheck(BaseComponent):
         data["tr2"] = abs(low - close.shift())
         tr = data[["tr0", "tr1", "tr2"]].max(axis=1)
 
-        # Custom SMA implementation instead of pandas_ta
         atr = tr.rolling(window=self.lag).mean()
         
         manager.context["indicators"][f"atr_{self.lag}"] = atr.iloc[-1]
