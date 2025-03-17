@@ -8,8 +8,6 @@ class VolatilityDecreaseCheck(BaseComponent):
         self.lag = lag
 
     def should_enter(self, strategy, manager, time: pd.Timestamp) -> bool:
-        import pandas_ta as pt
-
         hist_data = manager.context["historical_data"]
 
         data = hist_data.copy()
@@ -21,7 +19,8 @@ class VolatilityDecreaseCheck(BaseComponent):
         data["tr2"] = abs(low - close.shift())
         tr = data[["tr0", "tr1", "tr2"]].max(axis=1)
 
-        atr = pt.sma(tr, self.lag)
+        # Custom SMA implementation instead of pandas_ta
+        atr = tr.rolling(window=self.lag).mean()
         
         manager.context["indicators"][f"atr_{self.lag}"] = atr.iloc[-1]
 
