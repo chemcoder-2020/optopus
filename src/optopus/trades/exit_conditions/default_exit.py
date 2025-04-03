@@ -9,6 +9,7 @@ from .base import (
 from typing import Union
 import pandas as pd
 from datetime import datetime
+import numpy as np
 
 
 class PipelineDefaultExit(CompositePipelineCondition):
@@ -39,6 +40,7 @@ class PipelineDefaultExit(CompositePipelineCondition):
             PremiumListInit(),
             PremiumFilter(
                 filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
+                max_spread=kwargs.get("max_spread", 0.1),
                 window_size=window_size,
                 n_sigma=n_sigma,
                 k=kwargs.get("k", 1.4826),
@@ -76,6 +78,7 @@ class PipelineDefaultExit(CompositePipelineCondition):
                     filter_method=kwargs.get(
                         "filter_method", preprocessor.filter_method
                     ),
+                    max_spread=kwargs.get("max_spread", preprocessor.max_spread),
                     window_size=kwargs.get("window_size", preprocessor.window_size),
                     n_sigma=kwargs.get("n_sigma", preprocessor.n_sigma),
                     k=kwargs.get("k", preprocessor.k),
@@ -110,6 +113,7 @@ class DefaultExitCondition(ExitConditionChecker):
                 PremiumListInit(),
                 PremiumFilter(
                     filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
+                    max_spread=kwargs.get("max_spread", 0.1),
                     window_size=kwargs.get("window_size", 3),
                     n_sigma=kwargs.get("n_sigma", 3),
                     k=kwargs.get("k", 1.4826),
@@ -131,8 +135,16 @@ class DefaultExitCondition(ExitConditionChecker):
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
     ) -> bool:
-        return self.flow.should_exit(
+        should_exit = self.flow.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
         )
+        if should_exit:
+            if np.isnan(strategy.filter_pl):
+                strategy.filter_pl = strategy.total_pl()
+            
+            if np.isnan(strategy.filter_return_percentage):
+                strategy.filter_return_percentage = strategy.return_percentage()
+
+        return should_exit

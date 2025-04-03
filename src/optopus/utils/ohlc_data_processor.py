@@ -71,7 +71,7 @@ class DataProcessor:
             current_daily_data.reset_index(inplace=True)
             current_daily_data.rename(columns={"date": "day"}, inplace=True)
             historical_data = current_daily_data.set_index("day").iloc[-500:]
-            monthly_data = historical_data.resample("M").apply(
+            monthly_data = historical_data.resample("ME").apply(
                 {
                     "close": "last",
                     "open": "first",
@@ -92,7 +92,7 @@ class DataProcessor:
                     "volume": "sum",
                 }
             ).dropna()[-500:]
-            monthly_data = historical_data.resample("M").apply(
+            monthly_data = historical_data.resample("ME").apply(
                 {
                     "close": "last",
                     "open": "first",

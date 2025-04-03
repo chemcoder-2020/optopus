@@ -56,7 +56,7 @@ class MonthlyReturn(BaseMetric):
         closed_pl_series = closed_pl_series.copy()
 
         # Resample to monthly and calculate changes
-        monthly_pl = closed_pl_series.groupby(pd.Grouper(freq="M")).sum()
+        monthly_pl = closed_pl_series.groupby(pd.Grouper(freq="ME")).sum()
 
         if non_zero_only:
             monthly_pl = monthly_pl[monthly_pl != 0]
@@ -83,7 +83,7 @@ class YearlyReturn(BaseMetric):
         closed_pl_series = closed_pl_series.copy()
 
         # Resample to yearly and calculate changes
-        yearly_pls = closed_pl_series.groupby(pd.Grouper(freq="Y")).sum()
+        yearly_pls = closed_pl_series.groupby(pd.Grouper(freq="YE")).sum()
 
         if non_zero_only:
             yearly_pls = yearly_pls[yearly_pls != 0]
@@ -104,7 +104,7 @@ class PositiveMonthlyProbability(BaseMetric):
             Dictionary with probability of positive months
         """
         pl_series = pl_series.copy()
-        monthly_pl = pl_series.resample("M").last().diff().dropna()
+        monthly_pl = pl_series.resample("ME").last().diff().dropna()
         positive_months = monthly_pl[monthly_pl > 0]
         total_months = monthly_pl[monthly_pl != 0]
         prob = len(positive_months) / len(total_months) if len(total_months) > 0 else 0

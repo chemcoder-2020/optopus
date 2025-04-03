@@ -82,33 +82,37 @@ class TrailingStopCondition(BaseComponent):
         # Initialize highest return if needed
         if not hasattr(strategy, "highest_return"):
             strategy.highest_return = 0
-            
+
         # Get current return percentage
         if not hasattr(strategy, "filter_return_percentage"):
             return_percentage = strategy.return_percentage()
         else:
             return_percentage = strategy.filter_return_percentage
-        
+
         # Update highest return with safety check
         if not np.isnan(return_percentage):
-            strategy.highest_return = max(strategy.highest_return, return_percentage)
+            strategy.highest_return = max(
+                strategy.highest_return, return_percentage
+            )
 
-        logger.debug(f"Current return: {return_percentage}% | Highest: {strategy.highest_return}%")
+        logger.debug(
+            f"Current return: {return_percentage}% | Highest: {strategy.highest_return}%"
+        )
 
         # Check profit target
         if return_percentage >= self.profit_target:
-            logger.info(f"Profit target {self.profit_target}% hit at {return_percentage}%")
+            logger.info(
+                f"Profit target {self.profit_target}% hit at {return_percentage}%"
+            )
             return True
-            
+
         # Check trailing stop conditions
         if strategy.highest_return >= self.trigger:
             pullback = strategy.highest_return - return_percentage
             should_exit = pullback >= self.stop_loss
             if not should_exit:
                 return False
-                
+
             return True
 
         return False
-
-

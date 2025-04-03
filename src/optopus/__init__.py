@@ -1,6 +1,18 @@
+from . import (
+    backtest,
+    brokers,
+    cli,
+    decisions,
+    metrics,
+    pandas_ta,
+    templates,
+    trades,
+    utils,
+)
 from loguru import logger
+
 logger.disable("optopus")
-from . import backtest, brokers, cli, decisions, templates, trades, utils
+
 
 __all__ = [
     "backtest",
@@ -8,6 +20,7 @@ __all__ = [
     "cli",
     "decisions",
     "metrics",
+    "pandas_ta",
     "templates",
     "trades",
     "utils",

@@ -288,6 +288,10 @@ class PremiumListInit(Preprocessor):
     def preprocess(self, strategy):
         if not hasattr(strategy, "premium_log"):
             strategy.premium_log = []
+            strategy.premium_bid = []
+            strategy.premium_ask = []
+            strategy.premium_qualified = []
+            strategy.time_log = []
             logger.debug("Premium log initialized")
             return True
 
@@ -296,6 +300,7 @@ class PremiumFilter(Preprocessor):
     def __init__(
         self,
         filter_method: Union[Filter, Type[Filter], str] = HampelFilterNumpy,
+        max_spread: float = 0.1,
         **kwargs,
     ):
         if isinstance(filter_method, str):
@@ -309,6 +314,7 @@ class PremiumFilter(Preprocessor):
             )
 
         self.filter_method = filter_method
+        self.max_spread = max_spread
         self.kwargs = kwargs
 
         self.premium_filter = self.filter_method(**kwargs)
@@ -325,6 +331,12 @@ class PremiumFilter(Preprocessor):
         """
         current_return = strategy.return_percentage()
         strategy.premium_log.append(current_return)
+        strategy.premium_bid.append(strategy.current_bid)
+        strategy.premium_ask.append(strategy.current_ask)
+        strategy.time_log.append(strategy.current_time)
+        bid_ask_spread = (strategy.current_ask - strategy.current_bid) / (
+            (strategy.current_bid + strategy.current_ask) / 2
+        )
 
         if len(strategy.premium_log) < self.window_size + 1:
             logger.debug(
@@ -332,6 +344,17 @@ class PremiumFilter(Preprocessor):
             )
             strategy.filter_return_percentage = current_return
             strategy.filter_pl = strategy.total_pl()
+            strategy.premium_qualified.append(True)
+            return True
+        
+        if bid_ask_spread > self.max_spread:
+            logger.debug(
+                f"Bid-ask spread is larger than {self.max_spread} max spread, Don't update filtered return"
+            )
+            strategy.premium_qualified.append(False)
+            if not hasattr(strategy, "filter_return_percentage"):
+                strategy.filter_return_percentage = np.nan
+                strategy.filter_pl = np.nan
             return True
 
         filtered_returns = self.premium_filter.fit_transform(strategy.premium_log)
@@ -343,12 +366,13 @@ class PremiumFilter(Preprocessor):
             * strategy.contracts
             * strategy.filter_return_percentage
         )
+        strategy.premium_qualified.append(True)
 
         return True
 
     def __repr__(self):
         return (
-            f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs})"
+            f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs}), max_spread={self.max_spread}"
         )
 
 
@@ -398,6 +422,12 @@ class CompositePipelineCondition(ExitConditionChecker):
             current_time=current_time,
             option_chain_df=option_chain_df,
         )
+        if result:
+            if np.isnan(strategy.filter_pl):
+                strategy.filter_pl = strategy.total_pl()
+
+            if np.isnan(strategy.filter_return_percentage):
+                strategy.filter_return_percentage = strategy.return_percentage()
         logger.debug(f"Pipeline evaluation result: {result}")
         return result
 
@@ -472,6 +502,13 @@ class CompositeExitCondition(ExitConditionChecker):
                 combined_result = combined_result or results[i + 1]
             else:
                 raise ValueError("Logical operation must be 'AND' or 'OR'")
+        
+        if combined_result:
+            if np.isnan(strategy.filter_pl):
+                strategy.filter_pl = strategy.total_pl()
+
+            if np.isnan(strategy.filter_return_percentage):
+                strategy.filter_return_percentage = strategy.return_percentage()
 
         return combined_result
 

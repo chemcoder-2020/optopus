@@ -63,7 +63,7 @@ class StatsForecastCheck(BaseComponent):
         # Initialize and fit statsforecast
         model = getattr(module, self.model)
         if self.context == "monthly_data":
-            freq = "M"
+            freq = "ME"
             seasonal_lengths = [12, 4]
         else:
             freq = "B"

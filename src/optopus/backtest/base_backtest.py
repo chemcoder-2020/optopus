@@ -104,9 +104,6 @@ class BaseBacktest(ABC):
                     logger.warning(f"Data is empty for {time}. Skipping this update.")
                 continue
 
-            if not PositionLimitCondition().should_enter(None, backtester, time):
-                continue
-
             # Create spread
             try:
                 new_spread = self.create_spread(time, option_chain_df)

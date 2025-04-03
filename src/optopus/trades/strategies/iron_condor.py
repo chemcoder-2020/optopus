@@ -7,6 +7,7 @@ from ..exit_conditions import DefaultExitCondition, ExitConditionChecker
 from ..option_chain_converter import OptionChainConverter
 from typing import Union, Tuple, Optional, Type
 from ..option_spread import OptionStrategy
+from loguru import logger
 
 
 class IronCondor(OptionStrategy):
@@ -86,11 +87,13 @@ class IronCondor(OptionStrategy):
             expiration, 
             max_extra_days=max_extra_days
         )
+        logger.info(f"Selected expiration date: {expiration_date}")
 
         put_short_strike_value = strategy.get_strike_value(
             converter, put_short_strike, expiration_date, "PUT",
             max_extra_days=max_extra_days
         )
+        logger.info(f"Selected put short strike: {put_short_strike_value}")
         put_long_strike_value = strategy.get_strike_value(
             converter,
             put_long_strike,
@@ -104,11 +107,13 @@ class IronCondor(OptionStrategy):
             ),
             max_extra_days=max_extra_days
         )
+        logger.info(f"Selected put long strike: {put_long_strike_value}")
 
         # Get call strikes
         call_short_strike_value = strategy.get_strike_value(
             converter, call_short_strike, expiration_date, "CALL"
         )
+        logger.info(f"Selected call short strike: {call_short_strike_value}")
         call_long_strike_value = strategy.get_strike_value(
             converter,
             call_long_strike,
@@ -121,6 +126,7 @@ class IronCondor(OptionStrategy):
                 else None
             ),
         )
+        logger.info(f"Selected call long strike: {call_long_strike_value}")
 
         if (
             put_long_strike_value > put_short_strike_value
@@ -133,6 +139,7 @@ class IronCondor(OptionStrategy):
         ):
             strategy.strategy_side = "CREDIT"
         else:
+            logger.error("Invalid Iron Condor strike values.")
             raise ValueError("Invalid Iron Condor strike values.")
 
         put_long_leg = OptionLeg(
@@ -193,6 +200,9 @@ class IronCondor(OptionStrategy):
             abs(call_short_strike_value - call_long_strike_value)
             + abs(put_short_strike_value - put_long_strike_value)
         ):
+            logger.warning(
+                "Entry net premium is greater than the spread width. This cannot be a valid strategy."
+            )
             raise ValueError(
                 "Entry net premium cannot be greater than the spread width."
             )
