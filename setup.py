@@ -1,25 +1,25 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='optopus',
-    version='0.9.10',
-    packages=find_packages(where='src'),
-    package_dir={'': 'src'},
+    name="optopus",
+    version="0.9.12",  # Updated version
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     package_data={
         "optopus": ["templates/*/*"],
     },
-    author='Huy Nguyen',
-    author_email='huynguyen2406@gmail.com',
-    description='A Python project for options trading and backtesting.',
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
-    url='https://github.com/chemcoder-2020/optopus',
+    author="Huy Nguyen",
+    author_email="huynguyen2406@gmail.com",
+    description="A Python project for options trading and backtesting.",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/chemcoder-2020/optopus",
     classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7',
+    python_requires=">=3.7",
     install_requires=[
         "joblib>=1.2.0",
         "loguru>=0.6.0",
@@ -38,11 +38,13 @@ setup(
         "neuralforecast>=1.0.0",
         "sktime>=0.3.0",
         "plotly>=5.0.0",
+        "streamlit>=1.30.0",
     ],
     entry_points={
-        'console_scripts': [
-            'setup-optopus-backtest=optopus.cli.setup_backtest:main',
-            'bot-status=optopus.cli.bot_status:main',
+        "console_scripts": [
+            "setup-optopus-backtest=optopus.cli.setup_backtest:main",
+            "bot-status=optopus.cli.bot_status:main",
+            "optopus-dashboard=optopus.web.runner:main",  # Added dashboard entry point
         ],
     },
 )

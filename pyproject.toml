@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optopus"
-version = "0.9.10"
+version = "0.9.12" # Updated version for dashboard addition
 authors = [
     { name = "Huy Nguyen", email = "huynguyen2406@gmail.com" }
 ]
@@ -35,11 +35,13 @@ dependencies = [
     "neuralforecast>=1.0.0",
     "sktime>=0.3.0",
     "plotly>=5.0.0",
+    "streamlit>=1.30.0"
 ]
 
 [project.scripts]
 setup-optopus-backtest = "optopus.cli.setup_backtest:main"
 bot-status = "optopus.cli.bot_status:main"
+optopus-dashboard = "optopus.web.runner:main" # Added dashboard entry point
 
 [tool.black]
 line-length = 88
