@@ -8,7 +8,8 @@ from typing import List
 import dill
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor
-import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt # Removed unused import
 
 
 class TradingManager(OptionBacktester):
@@ -58,7 +59,7 @@ class TradingManager(OptionBacktester):
                     )  # recover available capital
                     self._update_trade_counts()
                     logger.info(
-                        f"Entry failed. Removed from active trades and recovered capital."
+                        "Entry failed. Removed from active trades and recovered capital."  # Changed to regular string
                     )
                     return False
         return False
@@ -72,14 +73,18 @@ class TradingManager(OptionBacktester):
         - option_chain_df (pd.DataFrame, optional): The option chain DataFrame. Defaults to None.
 
         Returns:
-        - Order or None: The closed order if it was closed, None otherwise.
+        - Order or None: The order if it was closed, None otherwise.
         """
         order.update_order(option_chain_df)
         if order.status == "CLOSED":
-            if order.exit_order_id:
-                logger.info(f"Closed order {order.order_id}.")
-                return order
-        logger.info(f"Successfully updated order {order.order_id}.")
+            logger.info(
+                f"Order {order.order_id} status is CLOSED. Attempting to close trade."
+            )
+            self.close_trade(order)  # Use the base class method to handle closing
+            return order  # Return the closed order
+        logger.info(
+            f"Successfully updated order {order.order_id}, status: {order.status}."
+        )
         return None
 
     def update_orders(self, option_chain_df=None):
@@ -92,31 +97,45 @@ class TradingManager(OptionBacktester):
         if (
             self.active_orders
             and self.active_orders[0].market_isOpen()
-            and (hasattr(self, "management_on") == False or self.management_on)
+            and (
+                not hasattr(self, "management_on") or self.management_on
+            )  # Fixed boolean comparison
         ):
-            current_time = self.active_orders[-1].current_time
+            # Use the most recent time from the option chain if available, otherwise use the last order's time
+            if (
+                option_chain_df is not None
+                and not option_chain_df.empty
+                and "QUOTE_READTIME" in option_chain_df.columns
+            ):
+                current_time = pd.to_datetime(option_chain_df["QUOTE_READTIME"].iloc[0])
+            elif self.active_orders:
+                current_time = self.active_orders[
+                    -1
+                ].current_time  # Fallback if no option chain
+            else:
+                current_time = pd.Timestamp.now(
+                    tz="America/New_York"
+                )  # Fallback if no orders either
 
             with ThreadPoolExecutor() as executor:
-                orders_to_close = list(
+                # Map _process_order which now handles calling self.close_trade
+                list(  # Consume the iterator to ensure all threads complete
                     executor.map(
                         lambda order: self._process_order(order, option_chain_df),
-                        self.active_orders,
+                        self.active_orders[
+                            :
+                        ],  # Iterate over a copy in case list is modified
                     )
                 )
-
-            orders_to_close = [order for order in orders_to_close if order]
-            if orders_to_close:
-                self.closed_orders.extend(orders_to_close)
-                for order in orders_to_close:
-                    self.active_orders.remove(order)
-
-            self._update_trade_counts()
+            # No need to manually manage active/closed lists or call _update_trade_counts here
+            # self.close_trade handles these updates
 
             self.last_update_time = current_time
 
             # Record performance data after update
-            # if isinstance(self.last_update_time, pd.Timestamp):
-            #     self._record_performance_data(current_time)
+            if isinstance(self.last_update_time, pd.Timestamp):
+                # Pass option_chain_df to the base class method
+                self._record_performance_data(current_time, option_chain_df)
 
     # def _record_performance_data(self, current_time):
     #     """
@@ -334,7 +353,7 @@ class TradingManager(OptionBacktester):
         # TODO: Add abstract class for auth. Make sure authentication and refreshing works
         try:
             self.option_broker.auth.refresh_access_token()
-        except Exception as e:
+        except Exception:  # Removed unused 'e' variable
             logger.exception(
                 "... Attempting to get new token by going through the authentication process"
             )
@@ -512,14 +531,22 @@ class TradingManager(OptionBacktester):
             )
             return
 
-        if self.management_on:
-            self.update_orders()
-
-        if self.automation_on:
+        option_chain_df = None  # Initialize
+        if self.automation_on or self.management_on:  # Fetch chain if either is on
             option_chain_df = self.option_broker.data.get_option_chain(
                 self.config.ticker,
                 strike_count=STRATEGY_PARAMS.get("chain_strike_count", 50),
             )
+
+        if self.management_on:
+            self.update_orders(option_chain_df)  # Pass the fetched chain
+
+        if (
+            self.automation_on
+            and option_chain_df is not None
+            and not option_chain_df.empty
+        ):
+            # option_chain_df is already fetched above if automation_on or management_on is True
             bar = option_chain_df["QUOTE_READTIME"].iloc[0]
 
             if self.trade_type == "Vertical Spread":
