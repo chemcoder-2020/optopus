@@ -28,13 +28,18 @@ class OptionChainConverter:
         return pd.DatetimeIndex(dt_series).tz_localize(None)
 
     def get_closest_expiration(
-        self, target_date: int | pd.Timestamp | str | datetime, max_extra_days: int | None = None
+        self,
+        target_date: int | pd.Timestamp | str | datetime,
+        max_extra_days: int | None = None,
     ) -> pd.Timestamp:
         """
         Get the closest expiration date to the target date.
 
-        :param target_date: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
-        :param max_extra_days: Maximum number of extra days allowed beyond target_date. If None, no upper limit. Defaults to None.
+        :param target_date: Target date for expiration (int for DTE,
+                            pd.Timestamp, str, or datetime).
+        :param max_extra_days: Maximum number of extra days allowed beyond
+                               target_date. If None, no upper limit.
+                               Defaults to None.
         :return: Closest expiration date as pd.Timestamp.
         :raises ValueError: If no valid expiration dates are found.
         """
@@ -62,33 +67,36 @@ class OptionChainConverter:
 
         target_date = pd.Timestamp(target_date.date())
         expirations = self.option_chain_df["EXPIRE_DATE"].unique()
-        
+
         # Modified expiration filtering logic
         if max_extra_days is not None:
             upper_bound = target_date + pd.Timedelta(days=max_extra_days)
             valid_expirations = [
-                exp for exp in expirations
+                exp
+                for exp in expirations
                 if (exp >= target_date) and (exp <= upper_bound)
             ]
         else:
             valid_expirations = [exp for exp in expirations if exp >= target_date]
         if not valid_expirations:
             raise ValueError(
-                "No valid expiration dates found that meet the target date criteria."
+                "No valid expiration dates found that meet the target date " "criteria."
             )
         closest_expiration = min(valid_expirations, key=lambda x: abs(x - target_date))
         return closest_expiration
 
     def get_atm_strike(
-        self, 
-        expiration: int | pd.Timestamp | str | datetime, 
-        max_extra_days: int | None = None
+        self,
+        expiration: int | pd.Timestamp | str | datetime,
+        max_extra_days: int | None = None,
     ) -> float:
         """
         Get the At-The-Money (ATM) strike price for the given expiration.
 
-        :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
-        :param max_extra_days: Maximum number of extra days allowed beyond expiration date. If None, no upper limit.
+        :param expiration: Target date for expiration (int for DTE,
+                           pd.Timestamp, str, or datetime).
+        :param max_extra_days: Maximum number of extra days allowed beyond
+                               expiration date. If None, no upper limit.
         :return: The ATM strike price.
         :raises ValueError: If no data is found for the given expiration.
         """
@@ -118,15 +126,19 @@ class OptionChainConverter:
         expiration: int | pd.Timestamp | str | datetime,
         offset: float,
         by: str = "dollar",
-        max_extra_days: int | None = None
+        max_extra_days: int | None = None,
     ) -> float:
         """
         Get a strike price relative to the ATM strike.
 
-        :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
-        :param offset: Offset from ATM strike (in dollars or percentage based on 'by' parameter).
-        :param by: Method to calculate offset ('dollar' or 'percent', defaults to 'dollar').
-        :param max_extra_days: Maximum number of extra days allowed beyond expiration date. If None, no upper limit.
+        :param expiration: Target date for expiration (int for DTE,
+                           pd.Timestamp, str, or datetime).
+        :param offset: Offset from ATM strike (in dollars or percentage
+                       based on 'by' parameter).
+        :param by: Method to calculate offset ('dollar' or 'percent',
+                   defaults to 'dollar').
+        :param max_extra_days: Maximum number of extra days allowed beyond
+                               expiration date. If None, no upper limit.
         :return: The strike price offset from ATM.
         :raises ValueError: If invalid offset method is provided.
         """
@@ -148,7 +160,8 @@ class OptionChainConverter:
         else:  # by == 'percent'
             target_strike = atm_strike * (1 + offset / 100)
         relative_strike = min(
-            expiration_data["STRIKE"].unique(), key=lambda x: abs(x - target_strike)
+            expiration_data["STRIKE"].unique(),
+            key=lambda x: abs(x - target_strike),
         )
 
         return relative_strike
@@ -159,16 +172,20 @@ class OptionChainConverter:
         option_type: str,
         target: float,
         by: str = "delta",
-        max_extra_days: int | None = None
+        max_extra_days: int | None = None,
     ) -> float:
         """
-        Get the desired strike price at the specified expiration based on option type and target value.
+        Get the desired strike price at the specified expiration based on
+        option type and target value.
 
-        :param expiration: Target date for expiration (int for DTE, pd.Timestamp, str, or datetime).
+        :param expiration: Target date for expiration (int for DTE,
+                           pd.Timestamp, str, or datetime).
         :param option_type: Type of option ('CALL' or 'PUT').
         :param target: Target value (delta, strike price, or offset from ATM).
-        :param by: Method to find strike ('delta', 'strike', 'atm', or 'atm_percent', defaults to 'delta').
-        :param max_extra_days: Maximum number of extra days allowed beyond expiration date. If None, no upper limit.
+        :param by: Method to find strike ('delta', 'strike', 'atm', or
+                   'atm_percent', defaults to 'delta').
+        :param max_extra_days: Maximum number of extra days allowed beyond
+                               expiration date. If None, no upper limit.
         :return: Closest strike price available at the specified expiration.
         :raises ValueError: If invalid option_type or method is provided.
         """
@@ -177,7 +194,7 @@ class OptionChainConverter:
 
         if by not in ["delta", "strike", "atm", "atm_percent"]:
             raise ValueError(
-                "by must be either 'delta', 'strike', 'atm', or 'atm_percent'"
+                "by must be either 'delta', 'strike', 'atm', or " "'atm_percent'"
             )
 
         # Get the closest expiration date
@@ -195,21 +212,53 @@ class OptionChainConverter:
             delta_col = "P_DELTA" if option_type == "PUT" else "C_DELTA"
             target = -abs(target) if option_type == "PUT" else target
             # Find strike with closest delta
-            closest_strike = expiration_data.loc[
-                (expiration_data[delta_col] - target).abs().idxmin()
-            ]["STRIKE"]
+            try:
+                # Calculate absolute difference
+                diff_series = (expiration_data[delta_col] - target).abs()
+
+                # Explicitly check if all values are NaN before calling idxmin()
+                if diff_series.isnull().all():
+                    raise ValueError(
+                        f"Delta data for {option_type} at expiration "
+                        f"{closest_expiration} is all NaN. Cannot find "
+                        f"closest delta."
+                    )
+
+                # Find the index of the minimum difference
+                idx_min = diff_series.idxmin()
+                closest_strike = expiration_data.loc[idx_min]["STRIKE"]
+            except ValueError as e:
+                # Catch ValueError from isnull().all() check or idxmin()
+                raise ValueError(
+                    f"Could not find a strike for {option_type} with target "
+                    f"delta {target} at expiration {closest_expiration}. "
+                    f"Delta data might be missing or invalid. Original "
+                    f"error: {e}"
+                )
         elif by == "strike":
             target = float(target)
-            closest_strike = min(
-                expiration_data["STRIKE"], key=lambda x: abs(x - target)
-            )
+            # Ensure we handle potential NaNs here too
+            # Find the strike closest to the target strike price
+            valid_strikes = expiration_data["STRIKE"].dropna()
+            if valid_strikes.empty:
+                raise ValueError(
+                    f"No valid strikes found for expiration " f"{closest_expiration}."
+                )
+            # Use idxmin on the absolute difference of valid strikes
+            closest_strike = valid_strikes.loc[(valid_strikes - target).abs().idxmin()]
         elif by == "atm":
             closest_strike = self.get_strike_relative_to_atm(
-                expiration, target, by="dollar", max_extra_days=max_extra_days
+                expiration,
+                target,
+                by="dollar",
+                max_extra_days=max_extra_days,
             )
         else:  # by == 'atm_percent'
             closest_strike = self.get_strike_relative_to_atm(
-                expiration, target, by="percent", max_extra_days=max_extra_days
+                expiration,
+                target,
+                by="percent",
+                max_extra_days=max_extra_days,
             )
 
         return closest_strike
@@ -225,14 +274,14 @@ if __name__ == "__main__":
     # Initialize the OptionChainConverter
     converter = OptionChainConverter(option_chain_df)
 
-    converter.get_desired_strike(
-        pd.Timestamp("2019-01-24"), "PUT", 1, by="atm"
-    )
+    converter.get_desired_strike(pd.Timestamp("2019-01-24"), "PUT", 1, by="atm")
     converter.get_closest_expiration(0)
 
     # Example usage of get_closest_expiration
     target_date_int = 30  # 30 days from QUOTE_READTIME
-    closest_expiration_int = converter.get_closest_expiration(target_date_int, max_extra_days=5)
+    closest_expiration_int = converter.get_closest_expiration(
+        target_date_int, max_extra_days=5
+    )
     print(f"Closest expiration (int): {closest_expiration_int}")
 
     target_date_str = "2024-10-06"  # Specific date
@@ -281,7 +330,10 @@ if __name__ == "__main__":
     # Using pd.Timestamp
     expiry_as_timestamp = pd.Timestamp("2024-10-10")  # Same date
     call_strike_ts = converter.get_desired_strike(
-        expiry_as_timestamp, "CALL", target_delta, by="delta"
+        expiry_as_timestamp,
+        "CALL",
+        target_delta,
+        by="delta",
     )
     put_strike_ts = converter.get_desired_strike(
         expiry_as_timestamp, "PUT", target_delta, by="delta"
@@ -329,7 +381,10 @@ if __name__ == "__main__":
     # Demonstrating percentage-based ATM relative strikes
     print("\nDemonstrating percentage-based ATM relative strikes:")
     atm_plus_1pct = converter.get_desired_strike(
-        expiry_as_dte, "CALL", 1, by="atm_percent"
+        expiry_as_dte,
+        "CALL",
+        1,
+        by="atm_percent",
     )
     atm_minus_1pct = converter.get_desired_strike(
         expiry_as_dte, "PUT", -1, by="atm_percent"
