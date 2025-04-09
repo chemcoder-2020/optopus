@@ -1,0 +1,2 @@
+2025-04-04 11:39:11.526 | INFO     | src.optopus.cli.bot_status:check_available_bots:27 - Found available bots: {''}
+2025-04-04 12:58:07.801 | INFO     | src.optopus.cli.bot_status:check_available_bots:30 - Found available bots: set()

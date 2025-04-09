@@ -27,7 +27,7 @@ class RiskOfRuin(BaseMetric):
 
     def calculate(
         self,
-        returns: np.ndarray,
+        daily_pl: np.ndarray,
         initial_balance: float,
         num_simulations: int = 20000,
         num_steps: int = 252,
@@ -36,7 +36,7 @@ class RiskOfRuin(BaseMetric):
     ) -> dict:
         """
         Args:
-            returns (np.ndarray): Array of trade returns
+            daily_pl (np.ndarray): Array of trade daily_pl
             initial_balance (float): Initial capital balance
             num_simulations (int): Number of Monte Carlo simulations
             num_steps (int): Number of steps in each simulation
@@ -46,11 +46,11 @@ class RiskOfRuin(BaseMetric):
         Returns:
             dict: Dictionary with risk_of_ruin percentage
         """
-        # Apply rolling median to returns
+        # Apply rolling median to daily_pl
 
-        returns = returns.copy()
+        daily_pl = daily_pl.copy()
 
-        returns = returns / initial_balance
+        returns = daily_pl / initial_balance
 
         if distribution == "normal":
             random_returns = np.random.normal(
@@ -75,6 +75,29 @@ class RiskOfRuin(BaseMetric):
         return {"risk_of_ruin": float(ruin_count / num_simulations)}
 
 
+class Volatility(BaseMetric):
+    """Calculates annualized volatility from daily returns"""
+
+    def calculate(
+        self, returns: np.ndarray
+    ) -> dict:
+        """
+        Args:
+            returns (np.ndarray): Array of daily returns
+
+        Returns:
+            dict: Dictionary with annualized volatility percentage
+        """
+        if returns.size < 2:
+            return {"annualized_volatility": 0.0}
+
+        returns = returns.copy()
+        daily_vol = np.std(returns, ddof=1)
+        annualized_vol = daily_vol * np.sqrt(252)
+        
+        return {"annualized_volatility": float(annualized_vol)}
+
+
 class MaxDrawdown(BaseMetric):
     """Calculates maximum drawdown from cumulative returns"""
 
@@ -97,7 +120,7 @@ class MaxDrawdown(BaseMetric):
         # Find maximum drawdown
         max_drawdown_dollars = drawdown.max()
         max_drawdown_percentage = max_drawdown_dollars / allocation
-        max_drawdown_percentage_from_peak = np.nanmax(drawdown / (peak+allocation))
+        max_drawdown_percentage_from_peak = np.nanmax(drawdown / (peak + allocation))
 
         return {
             "max_drawdown_dollars": float(max_drawdown_dollars),

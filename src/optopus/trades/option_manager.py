@@ -20,6 +20,7 @@ from ..metrics import (
     MonthlyReturn,
     YearlyReturn,
     PositiveMonthlyProbability,
+    Volatility,
 )
 
 
@@ -761,13 +762,19 @@ class OptionBacktester:
         try:
             # Calculate daily P/L changes from performance data
             daily_pl = df["total_pl"].resample("B").last().ffill()
-            daily_returns = daily_pl.diff().dropna()
+            daily_returns = daily_pl.diff().dropna() / self.config.initial_capital
             sharpe_calculator = SharpeRatio()
             metrics["sharpe_ratio"] = sharpe_calculator.calculate(
                 daily_returns.values, risk_free_rate=0.02
             )["sharpe_ratio"]
+            
+            # Calculate volatility using same daily returns
+            volatility_calculator = Volatility()
+            metrics["annualized_volatility"] = volatility_calculator.calculate(
+                daily_returns.values
+            )["annualized_volatility"]
         except Exception as e:
-            logger.error(f"Error calculating Sharpe Ratio: {str(e)}")
+            logger.error(f"Error calculating Sharpe Ratio/Volatility: {str(e)}")
         try:
             pf_calculator = ProfitFactor()
             metrics["profit_factor"] = pf_calculator.calculate(
@@ -824,12 +831,11 @@ class OptionBacktester:
             logger.error(f"Error calculating Win Rate: {str(e)}")
         try:
             # Calculate daily P/L changes from performance data
-            daily_pl = df["total_pl"].resample("B").last().ffill()
-            daily_returns = daily_pl.diff().dropna()
+            daily_pl = df["total_pl"].resample("B").last().ffill().dropna()
 
             risk_of_ruin_calculator = RiskOfRuin()
             risk_result = risk_of_ruin_calculator.calculate(
-                returns=daily_returns.values,
+                daily_pl=daily_pl.values,
                 initial_balance=self.config.initial_capital,
                 distribution="histogram",
             )
@@ -905,6 +911,8 @@ class OptionBacktester:
             print("\nPerformance Summary:")
             if metrics.get("sharpe_ratio") is not None:
                 print(f"Sharpe Ratio: {metrics['sharpe_ratio']:.2f}")
+            if metrics.get("annualized_volatility") is not None:
+                print(f"Annualized Volatility: {metrics['annualized_volatility']:.2%}")
             if metrics.get("profit_factor") is not None:
                 print(f"Profit Factor: {metrics['profit_factor']:.2f}")
             if metrics.get("cagr") is not None:

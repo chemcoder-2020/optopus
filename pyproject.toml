@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optopus"
-version = "0.9.12" # Updated version for dashboard addition
+version = "0.9.15" # Updated version for dashboard addition
 authors = [
     { name = "Huy Nguyen", email = "huynguyen2406@gmail.com" }
 ]

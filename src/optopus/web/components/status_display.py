@@ -38,6 +38,13 @@ def display_single_bot_status(bot_name, load_func, status_func):
         bot = load_func(pkl_path)
         status = status_func(bot)
 
+        # Display Performance Chart if available
+        if hasattr(bot, 'performance_data') and bot.performance_data:
+            st.subheader("Performance Chart")
+            perf_df = pd.DataFrame(bot.performance_data)
+            fig = bot._plot_interactive_performance(perf_df)
+            st.plotly_chart(fig, use_container_width=True)
+
         # Display Key Metrics
         st.subheader("Key Metrics")
         col1, col2, col3 = st.columns(3)

@@ -143,7 +143,7 @@ class DefaultExitCondition(ExitConditionChecker):
         if should_exit:
             if np.isnan(strategy.filter_pl):
                 strategy.filter_pl = strategy.total_pl()
-            
+
             if np.isnan(strategy.filter_return_percentage):
                 strategy.filter_return_percentage = strategy.return_percentage()
 

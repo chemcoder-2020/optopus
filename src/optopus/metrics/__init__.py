@@ -1,7 +1,7 @@
 from .aggregator import Aggregator
 from .base_metric import BaseMetric
 from .return_metrics import CAGR, MonthlyReturn, YearlyReturn, PositiveMonthlyProbability
-from .risk_metrics import SharpeRatio, RiskOfRuin, MaxDrawdown
+from .risk_metrics import SharpeRatio, RiskOfRuin, MaxDrawdown, Volatility
 from .trade_metrics import WinRate, ProfitFactor
 
 __all__ = [
@@ -14,6 +14,7 @@ __all__ = [
     'SharpeRatio',
     'RiskOfRuin',
     'MaxDrawdown',
+    'Volatility',
     'WinRate',
     'ProfitFactor'
 ]
