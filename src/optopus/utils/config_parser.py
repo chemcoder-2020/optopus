@@ -2,12 +2,18 @@ from configparser import ConfigParser
 import pandas as pd
 from typing import Dict, Any
 import importlib
-from ..trades.option_manager import Config
-from ..trades.entry_conditions import *
-from ..trades.external_entry_conditions import *
-from ..trades.exit_conditions import *
-from loguru import logger
 import inspect
+import ast  # Import ast for literal_eval
+from loguru import logger
+
+
+# NOTE: Wildcard imports below are kept for dynamic class loading in
+# _parse_condition_section. Flake8 warnings F403 (wildcard) and F401 (unused)
+# are suppressed as the imports *are* used dynamically via importlib.
+from ..trades.entry_conditions import *  # noqa: F403, F401
+from ..trades.external_entry_conditions import *  # noqa: F403, F401
+from ..trades.exit_conditions import *  # noqa: F403, F401
+from ..trades.option_manager import Config
 
 
 class IniConfigParser:
@@ -28,35 +34,76 @@ class IniConfigParser:
 
         # Handle date/datetime values
         if "_date" in key.lower():
-            return pd.Timestamp(param)
+            try:
+                return pd.Timestamp(param)
+            except ValueError:
+                logger.warning(
+                    f"Could not parse '{param}' as Timestamp for key '{key}'. "
+                    f"Returning raw string."
+                )
+                return param
 
-        # Handle specific time formats
-        if "exit_time_before_expiration" in key.lower():
-            return pd.Timedelta(param)
+        # Handle timedelta values based on key naming convention
+        # Checks for '_time_' or ends with '_duration' or '_timedelta'
+        timedelta_keys = ("_duration", "_timedelta")
+        if "_time_" in key.lower() or key.lower().endswith(timedelta_keys):
+            try:
+                # Attempt to parse using pandas Timedelta
+                return pd.Timedelta(param)
+            except ValueError:
+                logger.warning(
+                    f"Could not parse '{param}' as Timedelta for key '{key}'. "
+                    f"Returning raw string."
+                )
+                return param
 
+        # Handle specific time list format (assuming it's a list of time strings)
         if "allowed_times" in key.lower():
-            return eval(param)
+            try:
+                # Safely evaluate the string representation of a list
+                evaluated = ast.literal_eval(param)
+                if isinstance(evaluated, list):
+                    return evaluated
+                else:
+                    logger.warning(
+                        f"Expected a list for key '{key}', but got "
+                        f"{type(evaluated)}. Returning raw string."
+                    )
+                    return param
+            except (ValueError, SyntaxError):
+                logger.warning(
+                    f"Could not evaluate '{param}' as a list for key '{key}'. "
+                    f"Returning raw string."
+                )
+                return param
 
         # Try numeric conversions
-        if "." in param:
-            try:
-                return float(param)
-            except ValueError:
-                pass
-        elif param.isnumeric():
-            return int(param)
+        try:
+            # Attempt integer conversion first if it looks like an integer
+            if param.isdigit() or (param.startswith("-") and param[1:].isdigit()):
+                return int(param)
+            # Otherwise, try float conversion
+            return float(param)
+        except ValueError:
+            pass  # Not a simple number
 
         # Handle boolean values
         if param.lower() in ["true", "false"]:
             return param.lower() == "true"
 
-        # Evaluate tuple-like expressions using ast.literal_eval
-        if "(" in param and ")" in param:
+        # Evaluate tuple-like expressions using ast.literal_eval for safety
+        if param.startswith("(") and param.endswith(")"):
             try:
-                return eval(param)
-            except:
+                return ast.literal_eval(param)
+            except (ValueError, SyntaxError):
+                # If it's not a valid literal tuple, return as string
+                logger.warning(
+                    f"Could not evaluate '{param}' as a tuple for key '{key}'. "
+                    f"Returning raw string."
+                )
                 return param
 
+        # Default: return the raw string if no other type matches
         return param
 
     def get_strategy_params(self) -> Dict[str, Any]:
@@ -132,28 +179,45 @@ class IniConfigParser:
                     module_path = "optopus.trades.external_entry_conditions"
                 else:
                     raise ValueError(f"Unknown section: {section}")
+
                 module = importlib.import_module(module_path)
                 class_members = dict(inspect.getmembers(module, inspect.isclass))
                 cls = class_members[condition_class]
+
             except (ValueError, AttributeError, ModuleNotFoundError, KeyError) as e:
+                available = list(class_members.keys())
                 logger.error(
-                    f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Avaible classes: {class_members.keys()}. Now trying to import from custom module."
+                    f"Failed to import '{condition_class}' from {module_path}: "
+                    f"{e}. Available: {available}. Trying custom module."
                 )
+                # Attempt import from custom module path
+                custom_module_path = ""
                 try:
                     if section == "EXIT_CONDITION":
-                        module_path = "exit_condition"
+                        custom_module_path = "exit_condition"
                     elif section == "ENTRY_CONDITION":
-                        module_path = "entry_condition"
+                        custom_module_path = "entry_condition"
                     elif section == "EXTERNAL_ENTRY_CONDITION":
-                        module_path = "external_entry_condition"
+                        custom_module_path = "external_entry_condition"
                     else:
-                        raise ValueError(f"Unknown section: {section}")
-                    module = importlib.import_module(module_path)
+                        # This case should ideally not be reached if the first try failed
+                        raise ValueError(
+                            f"Unknown section for custom import: {section}"
+                        )
+
+                    module = importlib.import_module(custom_module_path)
                     class_members = dict(inspect.getmembers(module, inspect.isclass))
                     cls = class_members[condition_class]
-                except (ValueError, AttributeError, ModuleNotFoundError, KeyError) as e:
+                except (
+                    ValueError,
+                    AttributeError,
+                    ModuleNotFoundError,
+                    KeyError,
+                ) as e_custom:
+                    available = list(class_members.keys())
                     raise ValueError(
-                        f"Failed to import condition class '{condition_class}': {str(e)} from {module_path}. Avaible classes: {class_members.keys()}"
+                        f"Failed to import '{condition_class}' from custom module "
+                        f"'{custom_module_path}': {e_custom}. Available: {available}"
                     )
 
         return {"class": cls, "params": params}
