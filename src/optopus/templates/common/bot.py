@@ -1,6 +1,6 @@
 import os
 import dill
-from optopus.trades.trade_manager import TradingManager
+from optopus.trades.live_trade_manager import LiveTradeManager
 import pandas as pd
 import dotenv
 from loguru import logger
@@ -49,7 +49,7 @@ config.token_file = os.path.join(basename, "token.json")
 if os.path.exists(f"{cwd}/trading_manager{STRATEGY_NAME}.pkl"):
     trading_manager = dill.load(open(f"{cwd}/trading_manager{STRATEGY_NAME}.pkl", "rb"))
 else:
-    trading_manager = TradingManager(config)
+    trading_manager = LiveTradeManager(config)
 
 trading_manager.auth_refresh()
 

@@ -85,15 +85,22 @@ class TradingManager(OptionBacktester):
         logger.info(
             f"Successfully updated order {order.order_id}, status: {order.status}."
         )
-        return None
+        return option_chain_df  # Return the option_chain_df for further processing
 
-    def update_orders(self, option_chain_df=None):
+    def update_orders(self, option_chain_df=None, STRATEGY_PARAMS={}):
         """
         Update the status of all orders using parallel processing.
 
         Parameters:
         - option_chain_df (pd.DataFrame, optional): The option chain DataFrame. Defaults to None.
         """
+        if option_chain_df is None:  # Fetch chain if not provided
+            logger.info("Fetching option chain data.")
+            option_chain_df = self.option_broker.data.get_option_chain(
+                self.config.ticker,
+                strike_count=STRATEGY_PARAMS.get("chain_strike_count", 100),
+            )
+
         if (
             self.active_orders
             and self.active_orders[0].market_isOpen()
@@ -136,25 +143,6 @@ class TradingManager(OptionBacktester):
             if isinstance(self.last_update_time, pd.Timestamp):
                 # Pass option_chain_df to the base class method
                 self._record_performance_data(current_time, option_chain_df)
-
-    # def _record_performance_data(self, current_time):
-    #     """
-    #     Record performance data for the given time.
-
-    #     Parameters:
-    #     - current_time (datetime): The current time.
-    #     """
-    #     total_pl = self.get_total_pl()
-    #     closed_pl = self.get_closed_pl()
-    #     active_positions = len(self.active_trades)
-    #     self.performance_data.append(
-    #         {
-    #             "time": current_time,
-    #             "total_pl": total_pl,
-    #             "closed_pl": closed_pl,
-    #             "active_positions": active_positions,
-    #         }
-    #     )
 
     def get_active_orders(self) -> List[Order]:
         """
@@ -449,9 +437,6 @@ class TradingManager(OptionBacktester):
             self._update_trade_counts()
             return True
 
-        # self.active_trades = self.active_orders
-        # self.closed_trades = self.closed_orders  # sync active and closed trades
-
         logger.warning(f"Order with ID {order_id} not found.")
         return False
 
@@ -535,11 +520,11 @@ class TradingManager(OptionBacktester):
         if self.automation_on or self.management_on:  # Fetch chain if either is on
             option_chain_df = self.option_broker.data.get_option_chain(
                 self.config.ticker,
-                strike_count=STRATEGY_PARAMS.get("chain_strike_count", 50),
+                strike_count=STRATEGY_PARAMS.get("chain_strike_count", 100),
             )
 
         if self.management_on:
-            self.update_orders(option_chain_df)  # Pass the fetched chain
+            self.update_orders(option_chain_df, STRATEGY_PARAMS)  # Pass the fetched chain
 
         if (
             self.automation_on

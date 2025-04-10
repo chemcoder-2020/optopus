@@ -509,7 +509,12 @@ class OptionBacktester:
 
         # Check if we have indicators
         has_indicators = not df["indicators"].dropna().empty
-        num_indicators = len(df["indicators"].iloc[0]) if has_indicators else 0
+        num_indicators = 0
+        if has_indicators:
+            for val in df["indicators"]:
+                if isinstance(val, (dict, list)):
+                    num_indicators = len(val)
+                    break
         
         # Create subplots dynamically based on indicators
         subplot_titles = [
