@@ -28,6 +28,10 @@ class SchwabAuth:
 
         self.load_token()
 
+    @property
+    def token_file(self):
+        return os.getenv("SCHWAB_TOKEN_FILE", "token.json")
+
     def load_token(self):
         """
         Load the access token from the token file.
@@ -138,11 +142,3 @@ class SchwabAuth:
             with open(path, "w") as f:
                 json.dump(self.token_data, f)
 
-
-if __name__ == "__main__":
-    client_id = "WjGR3xmyXiUGGdewERBkiJkmVYLWKsM4"
-    client_secret = "eu5aIVUNx7ReRK2f"
-    redirect_uri = "https://127.0.0.1"
-    token_file = "token.json"
-    auth = SchwabAuth(client_id, client_secret, redirect_uri, token_file="token.json")
-    auth.authenticate()
