@@ -1,6 +1,6 @@
 import pandas as pd
-from ..trades.backtest_trade_manager import BacktestTradeManager
 import os
+from ..trades.option_manager import OptionBacktester
 from ..trades.entry_conditions import PositionLimitCondition
 import numpy as np
 import scipy.stats
@@ -33,7 +33,7 @@ class BaseBacktest(ABC):
         self.trading_start_time = trading_start_time
         self.trading_end_time = trading_end_time
         self.debug = debug
-        self.backtester = BacktestTradeManager(self.config)
+        self.backtester = OptionBacktester(self.config)
 
     @abstractmethod
     def create_spread(self, time, option_chain_df):
@@ -124,6 +124,8 @@ class BaseBacktest(ABC):
                             logger.info(
                                 f"{time} Spread not added due to NaN required capital."
                             )
+                    # Record performance data after update
+                    backtester._record_performance_data(time, option_chain_df)
             except Exception as e:
                 if self.debug:
                     logger.error(f"Error adding new spread: {e} at {time}")
@@ -242,7 +244,7 @@ class BaseBacktest(ABC):
             """Run backtest for a specific time range and return performance metrics."""
 
             start_date, end_date = time_range
-            backtester = BacktestTradeManager(self.config)
+            backtester = OptionBacktester(self.config)
 
             # Modify run_backtest to accept start_date and end_date parameters
             self.run_backtest(

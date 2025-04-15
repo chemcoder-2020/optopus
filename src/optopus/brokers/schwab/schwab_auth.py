@@ -19,9 +19,6 @@ class SchwabAuth:
             if redirect_uri
             else os.getenv("SCHWAB_REDIRECT_URI", "https://127.0.0.1")
         )
-        self.token_file = (
-            token_file if token_file else os.getenv("SCHWAB_TOKEN_FILE", "token.json")
-        )
         self.access_token = None
         self.refresh_token = None
         self.token_data = None

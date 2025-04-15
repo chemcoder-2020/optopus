@@ -160,8 +160,6 @@ class OptionBacktester:
 
             self._update_trade_counts()
 
-            # Record performance data after update
-            self._record_performance_data(current_time, option_chain_df)
         except Exception as e:
             logger.error(f"Error updating backtester: {str(e)}")
 

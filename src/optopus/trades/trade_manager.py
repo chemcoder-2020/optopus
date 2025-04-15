@@ -1,7 +1,6 @@
 import pandas as pd
 from .option_manager import OptionBacktester, Config
 from .option_leg import calculate_dte
-from .strategies.vertical_spread import VerticalSpread
 from ..brokers.broker import OptionBroker
 from ..brokers.order import Order
 from typing import List
@@ -535,6 +534,7 @@ class TradingManager(OptionBacktester):
             bar = option_chain_df["QUOTE_READTIME"].iloc[0]
 
             if self.trade_type == "Vertical Spread":
+                from .strategies.vertical_spread import VerticalSpread
                 strategy = VerticalSpread.create_vertical_spread(
                     symbol=self.config.ticker,
                     option_type=STRATEGY_PARAMS.get("option_type"),
@@ -638,3 +638,5 @@ class TradingManager(OptionBacktester):
                 logger.info(f"{bar}: Added order: {order}")
             else:
                 logger.info(f"{bar}: Order not added {order}")
+            # Record performance data after update
+            self._record_performance_data(self.last_update_time, option_chain_df)
