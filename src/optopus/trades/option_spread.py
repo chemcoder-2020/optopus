@@ -264,7 +264,6 @@ class OptionStrategy:
 
     def _check_exit_conditions(self, option_chain_df):
         """Check and apply exit conditions."""
-        # TODO: add pre-process for premium filtering here.
         current_return = self.return_percentage()
 
         # Update highest return for trailing stop
@@ -485,9 +484,9 @@ class OptionStrategy:
             if abs(strike_input) < 1:
                 # Numeric input treated as delta if float < 1
                 return converter.get_desired_strike(
-                    expiration_date, 
-                    option_type, 
-                    strike_input, 
+                    expiration_date,
+                    option_type,
+                    strike_input,
                     by="delta",
                     max_extra_days=max_extra_days
                 )

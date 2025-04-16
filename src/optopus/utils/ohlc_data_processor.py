@@ -82,7 +82,7 @@ class DataProcessor:
             ).dropna()
 
         else:
-            current_intraday_data = self.intraday_data[:time][:-1] # if data bar is labeled on left: 9:30 => 9:45 is labeled 9:30, for example
+            current_intraday_data = self.intraday_data[:pd.Timestamp(time)-pd.Timedelta(microseconds=1)] # if data bar is labeled on left: 9:30 => 9:45 is labeled 9:30, for example. Small timedelta applied to make it exclusive
             historical_data = current_intraday_data.resample("B").apply(
                 {
                     "close": "last",
