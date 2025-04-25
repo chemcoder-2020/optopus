@@ -21,7 +21,7 @@ class VolatilityDecreaseCheck(BaseComponent):
 
         atr = tr.rolling(window=self.lag).mean()
         
-        manager.context["indicators"][f"atr_{self.lag}"] = atr.iloc[-1]
+        manager.context["indicators"].update({f"atr_{self.lag}": atr.iloc[-1]})
 
         assert time == manager.context.get(
             "bar"

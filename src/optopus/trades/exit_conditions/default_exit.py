@@ -134,11 +134,14 @@ class DefaultExitCondition(ExitConditionChecker):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
+        """Check exit conditions using the configured pipeline."""
         should_exit = self.flow.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         )
         if should_exit:
             if np.isnan(strategy.filter_pl):

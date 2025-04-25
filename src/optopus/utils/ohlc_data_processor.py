@@ -28,7 +28,7 @@ class DataProcessor:
         else:
             raise FileNotFoundError(f"OHLC data file not found: {self.ohlc}")
 
-    def prepare_historical_data(self, time, current_price):
+    def prepare_historical_data(self, time):
         """Prepare historical data with monthly resampling"""
 
         if isinstance(self.ohlc, str) and self.ohlc.lower() == "schwab":
@@ -71,35 +71,31 @@ class DataProcessor:
             current_daily_data.reset_index(inplace=True)
             current_daily_data.rename(columns={"date": "day"}, inplace=True)
             historical_data = current_daily_data.set_index("day").iloc[-500:]
-            monthly_data = historical_data.resample("ME").apply(
-                {
-                    "close": "last",
-                    "open": "first",
-                    "low": "min",
-                    "high": "max",
-                    "volume": "sum",
-                }
+            monthly_data = historical_data.groupby(pd.Grouper(freq='ME')).agg(
+                open=('open', 'first'),
+                high=('high', 'max'),
+                low=('low', 'min'),
+                close=('close', 'last'),
+                volume=('volume', 'sum')
             ).dropna()
 
         else:
             current_intraday_data = self.intraday_data[:pd.Timestamp(time)-pd.Timedelta(microseconds=1)] # if data bar is labeled on left: 9:30 => 9:45 is labeled 9:30, for example. Small timedelta applied to make it exclusive
-            historical_data = current_intraday_data.resample("B").apply(
-                {
-                    "close": "last",
-                    "open": "first",
-                    "low": "min",
-                    "high": "max",
-                    "volume": "sum",
-                }
-            ).dropna()[-500:]
-            monthly_data = historical_data.resample("ME").apply(
-                {
-                    "close": "last",
-                    "open": "first",
-                    "low": "min",
-                    "high": "max",
-                    "volume": "sum",
-                }
+
+            daily_agg = current_intraday_data.groupby(current_intraday_data.index.normalize()).agg(
+                open=("open", "first"),
+                high=("high", "max"),
+                low=("low", "min"),
+                close=("close", "last"),
+                volume=("volume", "sum"),
+            )
+            historical_data = daily_agg.dropna().iloc[-500:]
+            monthly_data = historical_data.groupby(pd.Grouper(freq='ME')).agg(
+                open=('open', 'first'),
+                high=('high', 'max'),
+                low=('low', 'min'),
+                close=('close', 'last'),
+                volume=('volume', 'sum')
             ).dropna()
 
         return historical_data, monthly_data

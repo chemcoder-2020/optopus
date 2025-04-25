@@ -27,7 +27,7 @@ class LOESSCheck(BaseComponent):
 
         result = smoothed[-1] - smoothed[-2]
         logger.info(f"LOESSCheck: {result}")
-        manager.context["indicators"][f"LOESS_{self.frac}"] = smoothed[-1]
+        manager.context["indicators"].update({f"LOESS_{self.frac}": smoothed[-1]})
 
         if result > 0:
             logger.info("LOESSCheck passed.")

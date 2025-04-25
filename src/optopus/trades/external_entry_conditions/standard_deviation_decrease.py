@@ -28,7 +28,7 @@ class StdevVolatilityDecreaseCheck(BaseComponent):
         volatility_current = volatility.iloc[-1]
         volatility_prev = volatility.iloc[-2]
 
-        manager.context["indicators"][f"stdev_vol_{self.lag}"] = volatility_current
+        manager.context["indicators"].update({f"stdev_vol_{self.lag}": volatility_current})
 
         logger.info(
             f"Previous Standard Dev Volatility: {volatility_prev:.4f}; Current Standard Dev Volatility: {volatility_current:.4f}."

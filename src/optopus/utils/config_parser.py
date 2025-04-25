@@ -58,7 +58,7 @@ class IniConfigParser:
                 return param
 
         # Handle specific time list format (assuming it's a list of time strings)
-        if "allowed_times" in key.lower():
+        if "allowed_times" in key.lower() or "allowed_days" in key.lower():
             try:
                 # Safely evaluate the string representation of a list
                 evaluated = ast.literal_eval(param)

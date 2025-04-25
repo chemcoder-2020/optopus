@@ -229,7 +229,7 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         current_price = strategy.underlying_last if strategy else None
         try:
             hist_data, monthly_data = self.data_processor.prepare_historical_data(
-                time, current_price
+                time
             )
         except Exception as e:
             logger.error(f"Error preparing historical data: {e}")
@@ -240,7 +240,7 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
             logger.debug("Creating new context in manager")
             manager.context = {}
 
-        if not hasattr(manager.context, "indicators"):
+        if "indicators" not in manager.context:
             manager.context["indicators"] = {}
 
         # Store data in context for components

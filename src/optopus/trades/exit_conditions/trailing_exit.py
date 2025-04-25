@@ -154,6 +154,7 @@ class TrailingStopExitCondition(ExitConditionChecker):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
         # Run preprocessing steps
         for preprocessor in self.preprocessors:
@@ -161,8 +162,8 @@ class TrailingStopExitCondition(ExitConditionChecker):
 
         # Check both conditions with OR logic
         should_exit = self.trailing_condition.should_exit(
-            strategy, current_time, option_chain_df
-        ) or self.time_condition.should_exit(strategy, current_time, option_chain_df)
+            strategy, current_time, option_chain_df, manager=manager
+        ) or self.time_condition.should_exit(strategy, current_time, option_chain_df, manager=manager)
         if should_exit:
             if np.isnan(strategy.filter_pl):
                 strategy.filter_pl = strategy.total_pl()
@@ -265,11 +266,13 @@ class FaultyTrailingStopExitCondition(ExitConditionChecker):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
         should_exit = self.flow.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         )
         if should_exit:
             if np.isnan(strategy.filter_pl):

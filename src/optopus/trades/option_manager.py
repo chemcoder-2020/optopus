@@ -123,6 +123,7 @@ class OptionBacktester:
         self.trades_entered_today = 0
         self.trades_entered_this_week = 0
         self.performance_data = []
+        self.context = {"indicators": {}}
 
     def update(self, current_time: datetime, option_chain_df: pd.DataFrame) -> None:
         """
@@ -133,8 +134,8 @@ class OptionBacktester:
             option_chain_df (pd.DataFrame): DataFrame containing the option chain data.
         """
         if not hasattr(self, "context"):
-            self.context = {}
-        if not hasattr(self.context, "indicators"):
+            self.context = {"indicators": {}}
+        if "indicators" not in self.context:
             self.context["indicators"] = {}
 
         self.context.update(
@@ -183,6 +184,7 @@ class OptionBacktester:
             required_capital = new_spread.get_required_capital()
             # Calculate and store entry delta
             new_spread.entry_delta = new_spread.current_delta()
+            new_spread.manager = self
             self.active_trades.append(new_spread)
             self.available_to_trade -= required_capital
             self._update_trade_counts()

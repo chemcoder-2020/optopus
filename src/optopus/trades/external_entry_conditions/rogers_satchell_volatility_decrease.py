@@ -34,7 +34,7 @@ class RogersSatchellVolatilityDecreaseCheck(BaseComponent):
         rs_current = rs_volatility.iloc[-1]
         rs_prev = rs_volatility.iloc[-2]
 
-        manager.context["indicators"][f"rs_vol_{self.lag}"] = rs_current
+        manager.context["indicators"].update({f"rs_vol_{self.lag}": rs_current})
 
         logger.info(
             f"Previous Rogers-Satchell Volatility: {rs_prev:.4f}; Current Rogers-Satchell Volatility: {rs_current:.4f}."

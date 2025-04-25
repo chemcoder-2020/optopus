@@ -92,7 +92,7 @@ class StatsForecastCheck(BaseComponent):
         last_close = df["y"].iloc[-1]
         forecasted_value = forecast.iloc[0]
 
-        manager.context["indicators"][f"{sf.models[0].__str__()}"] = forecasted_value
+        manager.context["indicators"].update({f"{sf.models[0].__str__()}": forecasted_value})
 
         # Determine trend direction
         detected_trend = "upward" if forecasted_value > last_close else "downward"

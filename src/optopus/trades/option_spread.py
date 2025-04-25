@@ -6,7 +6,10 @@ import numpy as np
 from loguru import logger
 from .exit_conditions import DefaultExitCondition, ExitConditionChecker
 from .option_chain_converter import OptionChainConverter
-from typing import Union, Tuple, Optional, Type
+from typing import Union, Tuple, Optional, Type, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .option_manager import OptionBacktester
 
 
 class OptionStrategy:
@@ -66,6 +69,7 @@ class OptionStrategy:
                 "window_size": 5,
             },
         },
+        manager: 'Optional[OptionBacktester]' = None,
         **kwargs,
     ):
         """
@@ -107,6 +111,7 @@ class OptionStrategy:
                 "Invalid exit_scheme format. Must be an instance, class, or dict with class and params"
             )
 
+        self.manager = manager
         self.symbol = symbol
         self.strategy_type = strategy_type
         self.strategy_side = None
@@ -268,14 +273,15 @@ class OptionStrategy:
 
         # Update highest return for trailing stop
         if hasattr(self, "filter_return_percentage"):
-            self.highest_return = max(
-                self.highest_return, self.filter_return_percentage
-            )
+            if self.filter_return_percentage is not None:
+                self.highest_return = max(
+                    self.highest_return, self.filter_return_percentage
+                )
         else:
             self.highest_return = max(self.highest_return, current_return)
 
         if hasattr(self, "exit_scheme") and self.exit_scheme:
-            if self.exit_scheme.should_exit(self, self.current_time, option_chain_df):
+            if self.exit_scheme.should_exit(self, self.current_time, option_chain_df, manager=self.manager):
                 self._close_strategy(option_chain_df)
                 return
         else:

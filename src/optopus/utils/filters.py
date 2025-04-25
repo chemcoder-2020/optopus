@@ -116,3 +116,19 @@ class HampelFilterNumpy(Filter):
 
     def fit_transform(self, X):
         return self.transform(X)
+
+
+class Identity(Filter):
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def fit(self, X, y=None):
+        """No fitting required, returns self for compatibility."""
+        return self
+
+    def transform(self, X):
+        return np.array(X).reshape(-1, 1).flatten()
+
+    def fit_transform(self, X):
+        return self.transform(X)

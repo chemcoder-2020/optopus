@@ -67,14 +67,16 @@ class IndicatorThresholdCheck(BaseComponent):
             indicator_value = indicator_series.iloc[self.indicator_index]
 
             if self.indicator in ['close', 'open', 'high', 'low', 'volume']:
-                manager.context["indicators"][
-                    f"{self.indicator}_{self.indicator_index}"
-                ] = indicator_value
+                manager.context["indicators"].update(
+                    {f"{self.indicator}": indicator_value}
+                )
             else:
-                manager.context["indicators"][
-                    f"{self.indicator.__name__}_{self.lag}_{self.indicator_index}"
-                ] = indicator_value
-
+                manager.context["indicators"].update(
+                    {
+                        f"{self.indicator.__name__}_{self.lag}_{self.indicator_index}": indicator_value
+                    }
+                )
+                
             logger.info(
                 "IndicatorThresholdCheck: Comparing indicator_value: {} with target: {}".format(
                     indicator_value, self.target

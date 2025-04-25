@@ -83,7 +83,7 @@ class EntryOnForecastPlusKellyCriterion(ExternalEntryConditionChecker):
             self.data_processor.ticker = strategy.symbol
 
         historical_data, monthly_data = self.data_processor.prepare_historical_data(
-            time, current_price
+            time
         )
         monthly_data = pd.Series(monthly_data["close"])
 

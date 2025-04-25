@@ -21,7 +21,7 @@ class TestDataProcessor(unittest.TestCase):
         
         # Test prepare_historical_data method at 2025-03-12 09:45:00
         self.assertEqual(dp.intraday_data[:"2025-03-12 09:45:00"][:-1].index[-1], pd.Timestamp("2025-03-12 09:30:00"))
-        historical_data, monthly_data = dp.prepare_historical_data("2025-03-12 09:45:00", 100)
+        historical_data, monthly_data = dp.prepare_historical_data("2025-03-12 09:45:00")
         self.assertEqual(historical_data.index[-1], pd.Timestamp("2025-03-12"))
         self.assertEqual(historical_data.index[-2], pd.Timestamp("2025-03-11"))
         self.assertEqual(monthly_data.index[-1], pd.Timestamp("2025-03-31"))
@@ -34,7 +34,7 @@ class TestDataProcessor(unittest.TestCase):
         self.assertEqual(historical_data["volume"].iloc[-1], 9510762.0)
 
         # Test prepare_historical_data method at 2025-03-12 10:15:00
-        historical_data, monthly_data = dp.prepare_historical_data("2025-03-12 10:15:00", 100)
+        historical_data, monthly_data = dp.prepare_historical_data("2025-03-12 10:15:00")
         self.assertEqual(historical_data.index[-1], pd.Timestamp("2025-03-12"))
         self.assertEqual(historical_data.index[-2], pd.Timestamp("2025-03-11"))
         self.assertEqual(monthly_data.index[-1], pd.Timestamp("2025-03-31"))

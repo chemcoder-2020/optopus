@@ -14,7 +14,7 @@ class ExitConditionChecker(ABC):
     Abstract base class for exit condition checkers.
 
     Methods:
-        should_exit(strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame) -> bool:
+        should_exit(strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame, manager=None) -> bool:
             Check if the exit conditions are met for the option strategy.
     """
 
@@ -44,6 +44,7 @@ class ExitConditionChecker(ABC):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
         """
         Check if the exit conditions are met for the option strategy.
@@ -52,6 +53,7 @@ class ExitConditionChecker(ABC):
             strategy (OptionStrategy): The option strategy to check.
             current_time (datetime): The current time for evaluation.
             option_chain_df (pd.DataFrame): The updated option chain data.
+            manager (Optional[OptionBacktester]): The backtester instance managing the strategy. Defaults to None.
 
         Returns:
             bool: True if the exit conditions are met, False otherwise.
@@ -100,15 +102,19 @@ class AndComponent(BaseComponent):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
+        # Docstring update not strictly needed here as it inherits, but adding manager to call
         return self.left.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         ) and self.right.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         )
 
 
@@ -125,15 +131,19 @@ class OrComponent(BaseComponent):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
+        # Docstring update not strictly needed here as it inherits, but adding manager to call
         return self.left.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         ) or self.right.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         )
 
 
@@ -149,11 +159,14 @@ class NotComponent(BaseComponent):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
+        # Docstring update not strictly needed here as it inherits, but adding manager to call
         return not self.component.should_exit(
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         )
 
 
@@ -300,9 +313,9 @@ class PremiumFilter(Preprocessor):
     def __init__(
         self,
         filter_method: Union[Filter, Type[Filter], str] = HampelFilterNumpy,
-        max_spread: float = 0.1,
         **kwargs,
     ):
+        self._method = filter_method
         if isinstance(filter_method, str):
             filter_module = importlib.import_module("optopus.utils.filters")
             filter_method = getattr(filter_module, filter_method)
@@ -314,7 +327,6 @@ class PremiumFilter(Preprocessor):
             )
 
         self.filter_method = filter_method
-        self.max_spread = max_spread
         self.kwargs = kwargs
 
         self.premium_filter = self.filter_method(**kwargs)
@@ -334,28 +346,6 @@ class PremiumFilter(Preprocessor):
         strategy.premium_bid.append(strategy.current_bid)
         strategy.premium_ask.append(strategy.current_ask)
         strategy.time_log.append(strategy.current_time)
-        bid_ask_spread = (strategy.current_ask - strategy.current_bid) / (
-            (strategy.current_bid + strategy.current_ask) / 2
-        )
-
-        if len(strategy.premium_log) < self.window_size + 1:
-            logger.debug(
-                f"Premium log has less than {self.window_size + 1} values, skipping filter - assume valid data"
-            )
-            strategy.filter_return_percentage = current_return
-            strategy.filter_pl = strategy.total_pl()
-            strategy.premium_qualified.append(True)
-            return True
-        
-        if bid_ask_spread > self.max_spread:
-            logger.debug(
-                f"Bid-ask spread is larger than {self.max_spread} max spread, Don't update filtered return"
-            )
-            strategy.premium_qualified.append(False)
-            if not hasattr(strategy, "filter_return_percentage"):
-                strategy.filter_return_percentage = np.nan
-                strategy.filter_pl = np.nan
-            return True
 
         filtered_returns = self.premium_filter.fit_transform(strategy.premium_log)
 
@@ -371,9 +361,7 @@ class PremiumFilter(Preprocessor):
         return True
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs}), max_spread={self.max_spread}"
-        )
+        return f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs}, max_spread={self.max_spread})"
 
 
 class CompositePipelineCondition(ExitConditionChecker):
@@ -398,10 +386,11 @@ class CompositePipelineCondition(ExitConditionChecker):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
 
         # Pre-processing
-        if self.preprocessors is not None:
+        if self.preprocessors:
             if isinstance(self.preprocessors, list):
                 for preprocessor in self.preprocessors:
                     preprocessor.preprocess(strategy)
@@ -421,6 +410,7 @@ class CompositePipelineCondition(ExitConditionChecker):
             strategy=strategy,
             current_time=current_time,
             option_chain_df=option_chain_df,
+            manager=manager,
         )
         if result:
             if np.isnan(strategy.filter_pl):
@@ -472,6 +462,7 @@ class CompositeExitCondition(ExitConditionChecker):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
         """
         Check if the composite exit condition is met.
@@ -480,6 +471,7 @@ class CompositeExitCondition(ExitConditionChecker):
             strategy (OptionStrategy): The option strategy to check.
             current_time (datetime): The current time for evaluation.
             option_chain_df (pd.DataFrame): The updated option chain data.
+            manager (Optional[OptionBacktester]): The backtester instance managing the strategy. Defaults to None.
 
         Returns:
             bool: True if the composite exit condition is met, False otherwise.
@@ -490,7 +482,7 @@ class CompositeExitCondition(ExitConditionChecker):
             )
 
         results = [
-            condition.should_exit(strategy, current_time, option_chain_df)
+            condition.should_exit(strategy, current_time, option_chain_df, manager=manager)
             for condition in self.conditions
         ]
         combined_result = results[0]
@@ -502,7 +494,7 @@ class CompositeExitCondition(ExitConditionChecker):
                 combined_result = combined_result or results[i + 1]
             else:
                 raise ValueError("Logical operation must be 'AND' or 'OR'")
-        
+
         if combined_result:
             if np.isnan(strategy.filter_pl):
                 strategy.filter_pl = strategy.total_pl()

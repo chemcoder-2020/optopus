@@ -23,7 +23,7 @@ class CubicRegressionCheck(BaseComponent):
         p = np.polynomial.polynomial.Polynomial([d, c, b, a])
         result = p(x[-1]) - p(x[-2])
         logger.info(f"CubicRegressionCheck: {result}")
-        manager.context["indicators"][f"CubicRegression_{self.lag}"] = result
+        manager.context["indicators"].update({f"CubicRegression_{self.lag}": result})
 
         if result > 0:
             logger.info("CubicRegressionCheck passed.")

@@ -66,6 +66,7 @@ class TrailingStopCondition(BaseComponent):
         strategy,
         current_time: Union[datetime, str, pd.Timestamp],
         option_chain_df: pd.DataFrame,
+        manager=None,
     ) -> bool:
         """
         Check if the trailing stop condition is met.
@@ -74,6 +75,7 @@ class TrailingStopCondition(BaseComponent):
             strategy (OptionStrategy): The option strategy to check.
             current_time (datetime): The current time for evaluation.
             option_chain_df (pd.DataFrame): The updated option chain data.
+            manager (Optional[OptionBacktester]): The backtester instance managing the strategy. Defaults to None.
 
         Returns:
             bool: True if the trailing stop condition is met, False otherwise.
@@ -84,7 +86,7 @@ class TrailingStopCondition(BaseComponent):
             strategy.highest_return = 0
 
         # Get current return percentage
-        if not hasattr(strategy, "filter_return_percentage"):
+        if not hasattr(strategy, "filter_return_percentage") or not strategy.filter_return_percentage:
             return_percentage = strategy.return_percentage()
         else:
             return_percentage = strategy.filter_return_percentage
