@@ -22,6 +22,7 @@ from ..metrics import (
     PositiveMonthlyProbability,
     Volatility,
 )
+from concurrent.futures import ThreadPoolExecutor
 
 
 @dataclass
@@ -124,6 +125,31 @@ class OptionBacktester:
         self.trades_entered_this_week = 0
         self.performance_data = []
         self.context = {"indicators": {}}
+    
+    def _process_trade(self, trade, current_time, option_chain_df=None):
+        """
+        Helper function to process individual trades.
+
+        Parameters:
+        - current_time: The current time for the trade.
+        - trade (OptionStrategy): The trade to process.
+        - option_chain_df (pd.DataFrame, optional): The option chain DataFrame. Defaults to None.
+
+        Returns:
+        - OptionStrategy or None: The trade if it was closed, None otherwise.
+        """
+        trade_update_success = trade.update(current_time, option_chain_df)
+        if not trade_update_success:
+            logger.warning(
+                f"Trade {trade} update failed at {current_time}."
+            )
+        elif trade.status == "CLOSED":
+            logger.info(
+                "Trade status is CLOSED. Attempting to close trade."
+            )
+            self.close_trade(trade)  # Use the base class method to handle closing
+            return trade  # Return the closed trade
+        return option_chain_df  # Return the option_chain_df for further processing
 
     def update(self, current_time: datetime, option_chain_df: pd.DataFrame) -> None:
         """
@@ -149,15 +175,25 @@ class OptionBacktester:
             self.last_update_time = current_time
 
             # Update all active trades
-            if self.active_trades != []:
-                for trade in self.active_trades:
-                    trade_update_success = trade.update(current_time, option_chain_df)
-                    if not trade_update_success:
-                        logger.warning(
-                            f"Trade {trade} update failed at {current_time}, due to spike in option chain."
+            if self.active_trades:
+                with ThreadPoolExecutor() as executor:
+                    # Map _process_trade which now handles calling self.close_trade
+                    list(  # Consume the iterator to ensure all threads complete
+                        executor.map(
+                            lambda trade: self._process_trade(trade, current_time, option_chain_df),
+                            self.active_trades[
+                                :
+                            ],  # Iterate over a copy in case list is modified
                         )
-                    elif trade.status == "CLOSED":
-                        self.close_trade(trade)
+                    )
+                # for trade in self.active_trades:
+                #     trade_update_success = trade.update(current_time, option_chain_df)
+                #     if not trade_update_success:
+                #         logger.warning(
+                #             f"Trade {trade} update failed at {current_time}, due to spike in option chain."
+                #         )
+                #     elif trade.status == "CLOSED":
+                #         self.close_trade(trade)
 
             self._update_trade_counts()
 

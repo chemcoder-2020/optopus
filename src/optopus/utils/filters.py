@@ -128,7 +128,8 @@ class Identity(Filter):
         return self
 
     def transform(self, X):
-        return np.array(X).reshape(-1, 1).flatten()
+        return X
+        # return np.array(X).reshape(-1, 1).flatten()
 
     def fit_transform(self, X):
         return self.transform(X)

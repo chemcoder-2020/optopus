@@ -99,6 +99,12 @@ class TradingManager(OptionBacktester):
                 self.config.ticker,
                 strike_count=STRATEGY_PARAMS.get("chain_strike_count", 100),
             )
+        
+        self.context.update(
+            {
+                "option_chain_df": option_chain_df,
+            }
+        )
 
         if (
             self.active_orders

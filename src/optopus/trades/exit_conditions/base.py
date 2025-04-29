@@ -361,7 +361,7 @@ class PremiumFilter(Preprocessor):
         return True
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs}, max_spread={self.max_spread})"
+        return f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs})"
 
 
 class CompositePipelineCondition(ExitConditionChecker):

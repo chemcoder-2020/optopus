@@ -40,7 +40,6 @@ class PipelineDefaultExit(CompositePipelineCondition):
             PremiumListInit(),
             PremiumFilter(
                 filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
-                max_spread=kwargs.get("max_spread", 0.1),
                 window_size=window_size,
                 n_sigma=n_sigma,
                 k=kwargs.get("k", 1.4826),
@@ -78,7 +77,6 @@ class PipelineDefaultExit(CompositePipelineCondition):
                     filter_method=kwargs.get(
                         "filter_method", preprocessor.filter_method
                     ),
-                    max_spread=kwargs.get("max_spread", preprocessor.max_spread),
                     window_size=kwargs.get("window_size", preprocessor.window_size),
                     n_sigma=kwargs.get("n_sigma", preprocessor.n_sigma),
                     k=kwargs.get("k", preprocessor.k),
@@ -113,7 +111,6 @@ class DefaultExitCondition(ExitConditionChecker):
                 PremiumListInit(),
                 PremiumFilter(
                     filter_method=kwargs.get("filter_method", "HampelFilterNumpy"),
-                    max_spread=kwargs.get("max_spread", 0.1),
                     window_size=kwargs.get("window_size", 3),
                     n_sigma=kwargs.get("n_sigma", 3),
                     k=kwargs.get("k", 1.4826),
