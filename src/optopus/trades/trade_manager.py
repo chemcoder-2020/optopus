@@ -93,7 +93,7 @@ class TradingManager(OptionBacktester):
         if option_chain_df is None:  # Fetch chain if not provided
             logger.info("Fetching option chain data.")
             option_chain_df = self.option_broker.data.get_option_chain(
-                self.config.ticker,
+                STRATEGY_PARAMS.get("symbol"),
                 strike_count=STRATEGY_PARAMS.get("chain_strike_count", 100),
             )
         
@@ -451,77 +451,10 @@ class TradingManager(OptionBacktester):
         if config is not None:
             self.config = config
 
-        trade_type_required_keys = {
-            "Vertical Spread": {
-                "option_type",
-                "long_delta",
-                "short_delta",
-                "dte",
-                "contracts",
-                "commission",
-                "exit_scheme",
-            },
-            "Naked Put": {
-                "strike",
-                "dte",
-                "contracts",
-                "commission",
-                "exit_scheme",
-                "strategy_side",
-            },
-            "Naked Call": {
-                "strike",
-                "dte",
-                "contracts",
-                "commission",
-                "exit_scheme",
-                "strategy_side",
-            },
-            "Iron Condor": {
-                "put_long_strike",
-                "put_short_strike",
-                "call_short_strike",
-                "call_long_strike",
-                "dte",
-                "contracts",
-                "commission",
-                "exit_scheme",
-            },
-            "Iron Butterfly": {
-                "lower_strike",
-                "middle_strike",
-                "upper_strike",
-                "dte",
-                "contracts",
-                "commission",
-                "exit_scheme",
-                "strategy_side",
-            },
-            "Straddle": {
-                "strike",
-                "dte",
-                "contracts",
-                "commission",
-                "exit_scheme",
-                "strategy_side",
-            },
-        }
-
-        if self.trade_type not in trade_type_required_keys:
-            logger.error(f"Unsupported trade type: {self.trade_type}")
-            return
-
-        required_keys = trade_type_required_keys[self.trade_type]
-        if not required_keys.issubset(STRATEGY_PARAMS):
-            logger.error(
-                f"Missing keys in STRATEGY_PARAMS for {self.trade_type}: {required_keys - STRATEGY_PARAMS}"
-            )
-            return
-
         option_chain_df = None  # Initialize
         if self.automation_on or self.management_on:  # Fetch chain if either is on
             option_chain_df = self.option_broker.data.get_option_chain(
-                self.config.ticker,
+                STRATEGY_PARAMS.get("symbol"),
                 strike_count=STRATEGY_PARAMS.get("chain_strike_count", 100),
             )
 

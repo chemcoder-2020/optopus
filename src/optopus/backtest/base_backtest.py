@@ -12,10 +12,10 @@ import joblib
 from tqdm import tqdm
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
-from abc import ABC, abstractmethod
+# from abc import ABC, abstractmethod
 
 
-class BaseBacktest(ABC):
+class BaseBacktest:
     def __init__(
         self,
         config,
@@ -24,6 +24,7 @@ class BaseBacktest(ABC):
         end_date,
         trading_start_time,
         trading_end_time,
+        strategy_params,
         debug=False,
     ):
         self.config = config
@@ -33,11 +34,13 @@ class BaseBacktest(ABC):
         self.trading_start_time = trading_start_time
         self.trading_end_time = trading_end_time
         self.debug = debug
+        self.strategy_params = strategy_params
+        self.symbol = self.strategy_params["symbol"]
         self.backtester = OptionBacktester(self.config)
 
-    @abstractmethod
-    def create_spread(self, time, option_chain_df):
-        pass
+    # @abstractmethod
+    # def create_spread(self, time, option_chain_df):
+    #     pass
 
     def run_backtest(
         self,
@@ -105,8 +108,15 @@ class BaseBacktest(ABC):
                 continue
 
             # Create spread
+            # try:
+            #     new_spread = self.create_spread(time, option_chain_df)
+            #     logger.info(f"Created new spread at {time}. {new_spread}")
+            # except Exception as e:
+            #     if self.debug:
+            #         logger.error(f"Error creating new spread: {e} at {time}")
+            #     continue
             try:
-                new_spread = self.create_spread(time, option_chain_df)
+                new_spread = backtester.create_strategy(self.strategy_params, option_chain_df, time)
                 logger.info(f"Created new spread at {time}. {new_spread}")
             except Exception as e:
                 if self.debug:

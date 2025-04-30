@@ -1,4 +1,4 @@
-from strategy_selection import BacktestStrategy
+from optopus.backtest import BaseBacktest
 from loguru import logger
 
 from optopus.utils.config_parser import IniConfigParser
@@ -19,7 +19,7 @@ BACKTESTER_CONFIG = config
 
 logger.disable("optopus")
 
-backtest = BacktestStrategy(
+backtest = BaseBacktest(
     config=BACKTESTER_CONFIG,
     data_folder=DATA_FOLDER,
     start_date=START_DATE,

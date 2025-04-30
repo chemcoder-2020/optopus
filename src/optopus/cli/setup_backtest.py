@@ -22,7 +22,6 @@ def copy_template_files(project_name, strategy):
         "exit_condition.py",
     ]
     strategy_files_to_copy = [
-        "strategy_selection.py",
         "config.ini",
     ]
 

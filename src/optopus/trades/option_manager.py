@@ -128,7 +128,7 @@ class OptionBacktester:
         if not hasattr(config, "trade_type"):
             raise ValueError("Config must contain a trade_type attribute.")
         self.trade_type = config.trade_type
-    
+
     def _process_trade(self, trade, current_time, option_chain_df=None):
         """
         Helper function to process individual trades.
@@ -143,13 +143,9 @@ class OptionBacktester:
         """
         trade_update_success = trade.update(current_time, option_chain_df)
         if not trade_update_success:
-            logger.warning(
-                f"Trade {trade} update failed at {current_time}."
-            )
+            logger.warning(f"Trade {trade} update failed at {current_time}.")
         elif trade.status == "CLOSED":
-            logger.info(
-                "Trade status is CLOSED. Attempting to close trade."
-            )
+            logger.info("Trade status is CLOSED. Attempting to close trade.")
             self.close_trade(trade)  # Use the base class method to handle closing
             return trade  # Return the closed trade
         return option_chain_df  # Return the option_chain_df for further processing
@@ -183,20 +179,14 @@ class OptionBacktester:
                     # Map _process_trade which now handles calling self.close_trade
                     list(  # Consume the iterator to ensure all threads complete
                         executor.map(
-                            lambda trade: self._process_trade(trade, current_time, option_chain_df),
+                            lambda trade: self._process_trade(
+                                trade, current_time, option_chain_df
+                            ),
                             self.active_trades[
                                 :
                             ],  # Iterate over a copy in case list is modified
                         )
                     )
-                # for trade in self.active_trades:
-                #     trade_update_success = trade.update(current_time, option_chain_df)
-                #     if not trade_update_success:
-                #         logger.warning(
-                #             f"Trade {trade} update failed at {current_time}, due to spike in option chain."
-                #         )
-                #     elif trade.status == "CLOSED":
-                #         self.close_trade(trade)
 
             self._update_trade_counts()
 
@@ -554,52 +544,53 @@ class OptionBacktester:
                 if isinstance(val, (dict, list)):
                     num_indicators = len(val)
                     break
-        
+
         # Create subplots dynamically based on indicators
         subplot_titles = [
-            "Total P/L", 
+            "Total P/L",
             "Closed P/L",
             "Drawdown",
             "Underlying Price",
-            "Active Positions"
+            "Active Positions",
         ]
-        
+
         if has_indicators:
             indicators = df["indicators"].apply(pd.Series)
             subplot_titles += [f"Indicator: {col}" for col in indicators.columns]
-        
+
         fig = make_subplots(
             rows=len(subplot_titles),
             cols=1,
             shared_xaxes=True,
             vertical_spacing=0.05,
-            subplot_titles=subplot_titles
+            subplot_titles=subplot_titles,
         )
 
         # Add main traces
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["total_pl"], name="Total P/L"),
-            row=1, col=1
+            go.Scatter(x=df.index, y=df["total_pl"], name="Total P/L"), row=1, col=1
         )
-        
+
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["closed_pl"], name="Closed P/L"),
-            row=2, col=1
+            go.Scatter(x=df.index, y=df["closed_pl"], name="Closed P/L"), row=2, col=1
         )
-        
+
         fig.add_trace(
-            go.Scatter(x=df.index, y=df["drawdown"], fill='tozeroy', name="Drawdown"),
-            row=3, col=1
+            go.Scatter(x=df.index, y=df["drawdown"], fill="tozeroy", name="Drawdown"),
+            row=3,
+            col=1,
         )
-        
+
         fig.add_trace(
             go.Scatter(x=df.index, y=df["underlying_last"], name="Underlying Price"),
-            row=4, col=1
+            row=4,
+            col=1,
         )
-        
+
         fig.add_trace(
             go.Scatter(x=df.index, y=df["active_positions"], name="Active Positions"),
-            row=5, col=1
+            row=5,
+            col=1,
         )
 
         # Add indicators if available
@@ -607,15 +598,15 @@ class OptionBacktester:
             for i, col in enumerate(indicators.columns):
                 fig.add_trace(
                     go.Scatter(
-                        x=df.index, 
-                        y=indicators[col], 
+                        x=df.index,
+                        y=indicators[col],
                         name=f"Indicator: {col}",
-                        showlegend=False
+                        showlegend=False,
                     ),
-                    row=6+i,  # Start at row 6
-                    col=1
+                    row=6 + i,  # Start at row 6
+                    col=1,
                 )
-                fig.update_yaxes(title_text=col, row=6+i, col=1)
+                fig.update_yaxes(title_text=col, row=6 + i, col=1)
 
         # Formatting and crosshair configuration
         fig.update_layout(
@@ -624,17 +615,13 @@ class OptionBacktester:
             title_text="Trading Performance",
             hovermode="x unified",
             spikedistance=1000,
-            hoverdistance=100
+            hoverdistance=100,
         )
-        
+
         # Apply crosshair to all subplots
-        for i in range(1, len(subplot_titles)+1):
+        for i in range(1, len(subplot_titles) + 1):
             fig.update_xaxes(
-                showspikes=True,
-                spikemode="across",
-                spikedash="solid",
-                row=i, 
-                col=1
+                showspikes=True, spikemode="across", spikedash="solid", row=i, col=1
             )
         fig.update_traces(xaxis="x1")
         fig.show()
@@ -811,7 +798,7 @@ class OptionBacktester:
             metrics["sharpe_ratio"] = sharpe_calculator.calculate(
                 daily_returns.values, risk_free_rate=0.02
             )["sharpe_ratio"]
-            
+
             # Calculate volatility using same daily returns
             volatility_calculator = Volatility()
             metrics["annualized_volatility"] = volatility_calculator.calculate(
@@ -1010,15 +997,83 @@ class OptionBacktester:
                 )
         else:
             print("No performance data available for summary.")
-    
+
     def create_strategy(self, STRATEGY_PARAMS, option_chain_df, entry_time=None):
         if entry_time is None:
             entry_time = option_chain_df["QUOTE_READTIME"].iloc[0]
 
+        trade_type_required_keys = {
+            "Vertical Spread": {
+                "option_type",
+                "long_delta",
+                "short_delta",
+                "dte",
+                "contracts",
+                "commission",
+                "exit_scheme",
+            },
+            "Naked Put": {
+                "strike",
+                "dte",
+                "contracts",
+                "commission",
+                "exit_scheme",
+                "strategy_side",
+            },
+            "Naked Call": {
+                "strike",
+                "dte",
+                "contracts",
+                "commission",
+                "exit_scheme",
+                "strategy_side",
+            },
+            "Iron Condor": {
+                "put_long_strike",
+                "put_short_strike",
+                "call_short_strike",
+                "call_long_strike",
+                "dte",
+                "contracts",
+                "commission",
+                "exit_scheme",
+            },
+            "Iron Butterfly": {
+                "lower_strike",
+                "middle_strike",
+                "upper_strike",
+                "dte",
+                "contracts",
+                "commission",
+                "exit_scheme",
+                "strategy_side",
+            },
+            "Straddle": {
+                "strike",
+                "dte",
+                "contracts",
+                "commission",
+                "exit_scheme",
+                "strategy_side",
+            },
+        }
+
+        if self.trade_type not in trade_type_required_keys:
+            logger.error(f"Unsupported trade type: {self.trade_type}")
+            return
+
+        required_keys = trade_type_required_keys[self.trade_type]
+        if not required_keys.issubset(STRATEGY_PARAMS):
+            logger.error(
+                f"Missing keys in STRATEGY_PARAMS for {self.trade_type}: {required_keys - STRATEGY_PARAMS}"
+            )
+            return
+
         if self.trade_type == "Vertical Spread":
             from .strategies.vertical_spread import VerticalSpread
+
             strategy = VerticalSpread.create_vertical_spread(
-                symbol=self.config.ticker,
+                symbol=STRATEGY_PARAMS.get("symbol"),
                 option_type=STRATEGY_PARAMS.get("option_type"),
                 long_strike=STRATEGY_PARAMS.get("long_delta"),
                 short_strike=STRATEGY_PARAMS.get("short_delta"),
@@ -1034,7 +1089,7 @@ class OptionBacktester:
             from .strategies.naked_put import NakedPut
 
             strategy = NakedPut.create_naked_put(
-                symbol=self.config.ticker,
+                symbol=STRATEGY_PARAMS.get("symbol"),
                 strike=STRATEGY_PARAMS.get("strike"),
                 expiration=STRATEGY_PARAMS.get("dte"),
                 contracts=STRATEGY_PARAMS.get("contracts"),
@@ -1049,7 +1104,7 @@ class OptionBacktester:
             from .strategies.naked_call import NakedCall
 
             strategy = NakedCall.create_naked_call(
-                symbol=self.config.ticker,
+                symbol=STRATEGY_PARAMS.get("symbol"),
                 strike=STRATEGY_PARAMS.get("strike"),
                 expiration=STRATEGY_PARAMS.get("dte"),
                 contracts=STRATEGY_PARAMS.get("contracts"),
@@ -1064,7 +1119,7 @@ class OptionBacktester:
             from .strategies.iron_condor import IronCondor
 
             strategy = IronCondor.create_iron_condor(
-                symbol=self.config.ticker,
+                symbol=STRATEGY_PARAMS.get("symbol"),
                 put_long_strike=STRATEGY_PARAMS.get("put_long_strike"),
                 put_short_strike=STRATEGY_PARAMS.get("put_short_strike"),
                 call_short_strike=STRATEGY_PARAMS.get("call_short_strike"),
@@ -1081,7 +1136,7 @@ class OptionBacktester:
             from .strategies.iron_butterfly import IronButterfly
 
             strategy = IronButterfly.create_iron_butterfly(
-                symbol=self.config.ticker,
+                symbol=STRATEGY_PARAMS.get("symbol"),
                 lower_strike=STRATEGY_PARAMS.get("lower_strike"),
                 middle_strike=STRATEGY_PARAMS.get("middle_strike"),
                 upper_strike=STRATEGY_PARAMS.get("upper_strike"),
@@ -1098,7 +1153,7 @@ class OptionBacktester:
             from .strategies.straddle import Straddle
 
             strategy = Straddle.create_straddle(
-                symbol=self.config.ticker,
+                symbol=STRATEGY_PARAMS.get("symbol"),
                 strike=STRATEGY_PARAMS.get("strike"),
                 expiration=STRATEGY_PARAMS.get("dte"),
                 contracts=STRATEGY_PARAMS.get("contracts"),
@@ -1112,5 +1167,5 @@ class OptionBacktester:
         else:
             logger.warning(f"Unsupported trade type: {self.trade_type}")
             return
-        
+
         return strategy
