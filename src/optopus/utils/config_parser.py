@@ -32,51 +32,6 @@ class IniConfigParser:
         if "delta" in key or "strike" in key:
             return param
 
-        # Handle date/datetime values
-        if "_date" in key.lower():
-            try:
-                return pd.Timestamp(param)
-            except ValueError:
-                logger.warning(
-                    f"Could not parse '{param}' as Timestamp for key '{key}'. "
-                    f"Returning raw string."
-                )
-                return param
-
-        # Handle timedelta values based on key naming convention
-        # Checks for '_time_' or ends with '_duration' or '_timedelta'
-        timedelta_keys = ("_duration", "_timedelta")
-        if "_time_" in key.lower() or key.lower().endswith(timedelta_keys):
-            try:
-                # Attempt to parse using pandas Timedelta
-                return pd.Timedelta(param)
-            except ValueError:
-                logger.warning(
-                    f"Could not parse '{param}' as Timedelta for key '{key}'. "
-                    f"Returning raw string."
-                )
-                return param
-
-        # Handle specific time list format (assuming it's a list of time strings)
-        if "allowed_times" in key.lower() or "allowed_days" in key.lower():
-            try:
-                # Safely evaluate the string representation of a list
-                evaluated = ast.literal_eval(param)
-                if isinstance(evaluated, list):
-                    return evaluated
-                else:
-                    logger.warning(
-                        f"Expected a list for key '{key}', but got "
-                        f"{type(evaluated)}. Returning raw string."
-                    )
-                    return param
-            except (ValueError, SyntaxError):
-                logger.warning(
-                    f"Could not evaluate '{param}' as a list for key '{key}'. "
-                    f"Returning raw string."
-                )
-                return param
-
         # Try numeric conversions
         try:
             # Attempt integer conversion first if it looks like an integer
@@ -87,21 +42,100 @@ class IniConfigParser:
         except ValueError:
             pass  # Not a simple number
 
+        # Handle date/datetime values
+        # if "_date" in key.lower():
+        #     try:
+        #         return pd.Timestamp(param)
+        #     except ValueError:
+        #         logger.warning(
+        #             f"Could not parse '{param}' as Timestamp for key '{key}'. "
+        #             f"Returning raw string."
+        #         )
+        #         return param
+        
+        try:
+            # Attempt to parse as a timedelta
+            return pd.Timedelta(param)
+        except ValueError:
+            try:
+                # Attempt to parse as a date
+                return pd.Timestamp(param)
+            except ValueError:
+                logger.warning(
+                    f"Could not parse '{param}' as Timedelta or Timestamp for key '{key}'. "
+                )
+        
+
+        # Handle timedelta values based on key naming convention
+        # Checks for '_time_' or ends with '_duration' or '_timedelta'
+        # timedelta_keys = ("_duration", "_timedelta")
+        # if "_time_" in key.lower() or key.lower().endswith(timedelta_keys):
+        #     try:
+        #         # Attempt to parse using pandas Timedelta
+        #         return pd.Timedelta(param)
+        #     except ValueError:
+        #         logger.warning(
+        #             f"Could not parse '{param}' as Timedelta for key '{key}'. "
+        #             f"Returning raw string."
+        #         )
+        #         return param
+        
+        # Attempt ast literal_eval
+        try:
+            evaluated = ast.literal_eval(param)
+            return evaluated
+        except (ValueError, SyntaxError):
+            logger.warning(
+                f"Could not evaluate '{param}' as a literal for key '{key}'. "
+                f"Returning raw string."
+            )
+            return param
+
+        # Handle specific time list format (assuming it's a list of time strings)
+        # if "allowed_times" in key.lower() or "allowed_days" in key.lower():
+        #     try:
+        #         # Safely evaluate the string representation of a list
+        #         evaluated = ast.literal_eval(param)
+        #         if isinstance(evaluated, list):
+        #             return evaluated
+        #         else:
+        #             logger.warning(
+        #                 f"Expected a list for key '{key}', but got "
+        #                 f"{type(evaluated)}. Returning raw string."
+        #             )
+        #             return param
+        #     except (ValueError, SyntaxError):
+        #         logger.warning(
+        #             f"Could not evaluate '{param}' as a list for key '{key}'. "
+        #             f"Returning raw string."
+        #         )
+        #         return param
+
+        # Try numeric conversions
+        # try:
+        #     # Attempt integer conversion first if it looks like an integer
+        #     if param.isdigit() or (param.startswith("-") and param[1:].isdigit()):
+        #         return int(param)
+        #     # Otherwise, try float conversion
+        #     return float(param)
+        # except ValueError:
+        #     pass  # Not a simple number
+
         # Handle boolean values
-        if param.lower() in ["true", "false"]:
-            return param.lower() == "true"
+        # if param.lower() in ["true", "false"]:
+        #     return param.lower() == "true"
 
         # Evaluate tuple-like expressions using ast.literal_eval for safety
-        if param.startswith("(") and param.endswith(")"):
-            try:
-                return ast.literal_eval(param)
-            except (ValueError, SyntaxError):
-                # If it's not a valid literal tuple, return as string
-                logger.warning(
-                    f"Could not evaluate '{param}' as a tuple for key '{key}'. "
-                    f"Returning raw string."
-                )
-                return param
+        # if param.startswith("(") and param.endswith(")"):
+        #     try:
+        #         return ast.literal_eval(param)
+        #     except (ValueError, SyntaxError):
+        #         # If it's not a valid literal tuple, return as string
+        #         logger.warning(
+        #             f"Could not evaluate '{param}' as a tuple for key '{key}'. "
+        #             f"Returning raw string."
+        #         )
+        #         return param
 
         # Default: return the raw string if no other type matches
         return param

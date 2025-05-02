@@ -25,7 +25,7 @@ class VerticalSpread(OptionStrategy):
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
-        max_extra_days: int | None = None,
+        max_extra_dte: int | None = None,
         commission: float = 0.5,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
             "class": DefaultExitCondition,
@@ -81,14 +81,16 @@ class VerticalSpread(OptionStrategy):
         )
 
         expiration_date = converter.get_closest_expiration(
-            expiration,
-            max_extra_days=max_extra_days
+            expiration, max_extra_dte=max_extra_dte
         )
 
         # Get strike prices using the converter
         short_strike_value = strategy.get_strike_value(
-            converter, short_strike, expiration_date, option_type,
-            max_extra_days=max_extra_days
+            converter,
+            short_strike,
+            expiration_date,
+            option_type,
+            max_extra_dte=max_extra_dte,
         )
 
         long_strike_value = strategy.get_strike_value(

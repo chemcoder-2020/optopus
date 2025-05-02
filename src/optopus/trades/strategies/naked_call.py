@@ -23,14 +23,14 @@ class NakedCall(OptionStrategy):
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
         strategy_side: str = "DEBIT",
-        max_extra_days: int | None = None,
+        max_extra_dte: int | None = None,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
-            'class': DefaultExitCondition,
-            'params': {
-                'profit_target': 40,
-                'exit_time_before_expiration': Timedelta(minutes=15),
-                'window_size': 5
-            }
+            "class": DefaultExitCondition,
+            "params": {
+                "profit_target": 40,
+                "exit_time_before_expiration": Timedelta(minutes=15),
+                "window_size": 5,
+            },
         },
         **kwargs,
     ):
@@ -49,7 +49,7 @@ class NakedCall(OptionStrategy):
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
             strategy_side (str, optional): The strategy side ('DEBIT' or 'CREDIT'). Defaults to 'DEBIT'.
-            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional):
                 The exit condition scheme to use. Can be:
                 - An instance of ExitConditionChecker
                 - A ExitConditionChecker class (will be instantiated with default params)
@@ -76,17 +76,12 @@ class NakedCall(OptionStrategy):
         )
 
         expiration_date = converter.get_closest_expiration(
-            expiration,
-            max_extra_days=max_extra_days
+            expiration, max_extra_dte=max_extra_dte
         )
 
         # Get strike price using the converter
         strike_value = cls.get_strike_value(
-            converter, 
-            strike, 
-            expiration_date, 
-            "CALL",
-            max_extra_days=max_extra_days
+            converter, strike, expiration_date, "CALL", max_extra_dte=max_extra_dte
         )
 
         call_leg = OptionLeg(

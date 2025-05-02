@@ -22,16 +22,16 @@ class Straddle(OptionStrategy):
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         leg_ratio: int = 1,
-        max_extra_days: int | None = None,
+        max_extra_dte: int | None = None,
         commission: float = 0.5,
         strategy_side: str = "DEBIT",
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
-            'class': DefaultExitCondition,
-            'params': {
-                'profit_target': 40,
-                'exit_time_before_expiration': Timedelta(minutes=15),
-                'window_size': 5
-            }
+            "class": DefaultExitCondition,
+            "params": {
+                "profit_target": 40,
+                "exit_time_before_expiration": Timedelta(minutes=15),
+                "window_size": 5,
+            },
         },
         **kwargs,
     ):
@@ -50,7 +50,7 @@ class Straddle(OptionStrategy):
             trailing_stop (float, optional): Trailing stop percentage.
             leg_ratio (int, optional): The ratio of leg contracts to the strategy's contract count.
             commission (float, optional): Commission per contract per leg.
-            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional):
                 The exit condition scheme to use. Can be:
                 - An instance of ExitConditionChecker
                 - A ExitConditionChecker class (will be instantiated with default params)
@@ -78,17 +78,12 @@ class Straddle(OptionStrategy):
         )
 
         expiration_date = converter.get_closest_expiration(
-            expiration,
-            max_extra_days=max_extra_days
+            expiration, max_extra_dte=max_extra_dte
         )
 
         # Get strike prices using the converter
         call_strike_value = cls.get_strike_value(
-            converter, 
-            strike, 
-            expiration_date, 
-            "CALL",
-            max_extra_days=max_extra_days
+            converter, strike, expiration_date, "CALL", max_extra_dte=max_extra_dte
         )
         put_strike_value = cls.get_strike_value(
             converter, call_strike_value, expiration_date, "PUT"

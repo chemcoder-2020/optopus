@@ -26,14 +26,14 @@ class IronButterfly(OptionStrategy):
         stop_loss: Optional[float] = None,
         trailing_stop: Optional[float] = None,
         commission: float = 0.5,
-        max_extra_days: int | None = None,
+        max_extra_dte: int | None = None,
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
-            'class': DefaultExitCondition,
-            'params': {
-                'profit_target': 40,
-                'exit_time_before_expiration': Timedelta(minutes=15),
-                'window_size': 5
-            }
+            "class": DefaultExitCondition,
+            "params": {
+                "profit_target": 40,
+                "exit_time_before_expiration": Timedelta(minutes=15),
+                "window_size": 5,
+            },
         },
         **kwargs,
     ):
@@ -54,7 +54,7 @@ class IronButterfly(OptionStrategy):
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
-            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional):
                 The exit condition scheme to use. Can be:
                 - An instance of ExitConditionChecker
                 - A ExitConditionChecker class (will be instantiated with default params)
@@ -85,7 +85,7 @@ class IronButterfly(OptionStrategy):
                 trailing_stop=trailing_stop,
                 commission=commission,
                 exit_scheme=exit_scheme,
-                max_extra_days=max_extra_days,
+                max_extra_dte=max_extra_dte,
                 **kwargs,
             )
         else:
@@ -104,6 +104,7 @@ class IronButterfly(OptionStrategy):
                 trailing_stop=trailing_stop,
                 commission=commission,
                 exit_scheme=exit_scheme,
+                max_extra_dte=max_extra_dte,
                 **kwargs,
             )
         strategy.strategy_type = "Iron Butterfly"
@@ -156,7 +157,10 @@ class IronButterfly(OptionStrategy):
             )
 
         # Add breakeven lines
-        for be_price, be_type in [(breakeven_lower, "Lower"), (breakeven_upper, "Upper")]:
+        for be_price, be_type in [
+            (breakeven_lower, "Lower"),
+            (breakeven_upper, "Upper"),
+        ]:
             fig.add_shape(
                 type="line",
                 x0=be_price,

@@ -2,6 +2,7 @@ from ..trades.strategies.iron_butterfly import IronButterfly
 from loguru import logger
 from .base_backtest import BaseBacktest
 
+
 class BacktestIronButterfly(BaseBacktest):
     def __init__(
         self,
@@ -64,7 +65,7 @@ class BacktestIronButterfly(BaseBacktest):
                 profit_target=self.strategy_params.get("profit_target"),
                 stop_loss=self.strategy_params.get("stop_loss"),
                 commission=self.strategy_params.get("commission", 0.5),
-                max_extra_days=self.strategy_params.get("max_extra_days", None),
+                max_extra_dte=self.strategy_params.get("max_extra_dte", None),
                 exit_scheme=self.strategy_params.get("exit_scheme"),
             )
             return new_spread
@@ -72,4 +73,3 @@ class BacktestIronButterfly(BaseBacktest):
             if self.debug:
                 logger.error(f"Error creating new spread: {e} at {time}")
             return None
-

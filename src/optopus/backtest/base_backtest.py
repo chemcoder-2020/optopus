@@ -62,6 +62,10 @@ class BaseBacktest:
             start_date = start_date.strftime("%Y-%m-%d")
         if isinstance(end_date, (pd.Timestamp, datetime)):
             end_date = end_date.strftime("%Y-%m-%d")
+        if isinstance(self.trading_start_time, (pd.Timestamp, datetime)):
+            self.trading_start_time = self.trading_start_time.strftime("%H:%M")
+        if isinstance(self.trading_end_time, (pd.Timestamp, datetime)):
+            self.trading_end_time = self.trading_end_time.strftime("%H:%M")
 
         # Generate time range for trading hours
         time_range = pd.date_range(

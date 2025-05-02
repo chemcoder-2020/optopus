@@ -2,6 +2,7 @@ from ..trades.strategies.straddle import Straddle
 from loguru import logger
 from .base_backtest import BaseBacktest
 
+
 class BacktestStraddle(BaseBacktest):
     def __init__(
         self,
@@ -61,7 +62,7 @@ class BacktestStraddle(BaseBacktest):
                 profit_target=self.strategy_params.get("profit_target"),
                 stop_loss=self.strategy_params.get("stop_loss"),
                 commission=self.strategy_params.get("commission", 0.5),
-                max_extra_days=self.strategy_params.get("max_extra_days", None),
+                max_extra_dte=self.strategy_params.get("max_extra_dte", None),
                 exit_scheme=self.strategy_params.get("exit_scheme"),
                 strategy_side=self.strategy_params.get("strategy_side", "DEBIT"),
             )
@@ -70,4 +71,3 @@ class BacktestStraddle(BaseBacktest):
             if self.debug:
                 logger.error(f"Error creating new spread: {e} at {time}")
             return None
-

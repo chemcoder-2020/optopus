@@ -69,7 +69,7 @@ class OptionStrategy:
                 "window_size": 5,
             },
         },
-        manager: 'Optional[OptionBacktester]' = None,
+        manager: "Optional[OptionBacktester]" = None,
         **kwargs,
     ):
         """
@@ -266,7 +266,6 @@ class OptionStrategy:
 
         return True
 
-
     def _check_exit_conditions(self, option_chain_df):
         """Check and apply exit conditions."""
         current_return = self.return_percentage()
@@ -281,7 +280,9 @@ class OptionStrategy:
             self.highest_return = max(self.highest_return, current_return)
 
         if hasattr(self, "exit_scheme") and self.exit_scheme:
-            if self.exit_scheme.should_exit(self, self.current_time, option_chain_df, manager=self.manager):
+            if self.exit_scheme.should_exit(
+                self, self.current_time, option_chain_df, manager=self.manager
+            ):
                 self._close_strategy(option_chain_df)
                 return
         else:
@@ -484,7 +485,7 @@ class OptionStrategy:
         expiration_date,
         option_type: str,
         reference_strike: float = None,
-        max_extra_days: int | None = None,
+        max_extra_dte: int | None = None,
     ):
         if isinstance(strike_input, (int, float)):
             if abs(strike_input) < 1:
@@ -494,7 +495,7 @@ class OptionStrategy:
                     option_type,
                     strike_input,
                     by="delta",
-                    max_extra_days=max_extra_days
+                    max_extra_dte=max_extra_dte,
                 )
             else:
                 # Numeric input treated as a specific strike price
@@ -503,7 +504,7 @@ class OptionStrategy:
                     option_type,
                     strike_input,
                     by="strike",
-                    max_extra_days=max_extra_days
+                    max_extra_dte=max_extra_dte,
                 )
         elif isinstance(strike_input, str):
             if strike_input.startswith(("+", "-")):
@@ -512,8 +513,11 @@ class OptionStrategy:
                     if abs(offset) < 1:
                         # ATM relative strike with delta
                         return converter.get_desired_strike(
-                            expiration_date, option_type, offset, by="delta",
-                            max_extra_days=max_extra_days
+                            expiration_date,
+                            option_type,
+                            offset,
+                            by="delta",
+                            max_extra_dte=max_extra_dte,
                         )
                     else:
                         return converter.get_desired_strike(
@@ -521,7 +525,7 @@ class OptionStrategy:
                             option_type,
                             reference_strike + offset,
                             by="strike",
-                            max_extra_days=max_extra_days
+                            max_extra_dte=max_extra_dte,
                         )
                 except ValueError:
                     raise ValueError(f"Invalid strike input: {strike_input}")
@@ -529,14 +533,16 @@ class OptionStrategy:
                 try:
                     strike_price = float(strike_input)
                     return converter.get_desired_strike(
-                        expiration_date, option_type, strike_price, by="strike",
-                        max_extra_days=max_extra_days
+                        expiration_date,
+                        option_type,
+                        strike_price,
+                        by="strike",
+                        max_extra_dte=max_extra_dte,
                     )
                 except ValueError:
                     if strike_input.upper() == "ATM":
                         return converter.get_atm_strike(
-                            expiration_date,
-                            max_extra_days=max_extra_days
+                            expiration_date, max_extra_dte=max_extra_dte
                         )
                     elif "ATM" in strike_input:
                         try:
@@ -547,7 +553,7 @@ class OptionStrategy:
                                     option_type,
                                     offset,
                                     by="atm_percent",
-                                    max_extra_days=max_extra_days
+                                    max_extra_dte=max_extra_dte,
                                 )
                             else:
                                 return converter.get_desired_strike(
@@ -555,7 +561,7 @@ class OptionStrategy:
                                     option_type,
                                     offset,
                                     by="atm",
-                                    max_extra_days=max_extra_days
+                                    max_extra_dte=max_extra_dte,
                                 )
                         except ValueError:
                             raise ValueError(f"Invalid strike input: {strike_input}")
@@ -753,7 +759,7 @@ class OptionStrategy:
 
     def generate_payoff_curve(self):
         commission = self.calculate_total_commission()
-        
+
         # Generate price range for underlying
         min_strike = min(leg.strike for leg in self.legs)
         max_strike = max(leg.strike for leg in self.legs)
