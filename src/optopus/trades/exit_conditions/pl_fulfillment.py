@@ -58,7 +58,7 @@ class PLCheckForExit(BaseComponent):
         try:
             pl = (
                 pd.DataFrame(manager.performance_data)
-                .set_index("time")["closed_pl"]
+                .set_index("time")["total_pl"]
                 .resample(self.freq)
                 .last()
                 .diff()
