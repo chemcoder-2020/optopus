@@ -58,7 +58,9 @@ class QuadraticIndicatorRegressionCheck(BaseComponent):
         p = np.polynomial.polynomial.Polynomial([c, b, a])
         result = p(x[-1]) - p(x[-2])
         logger.info(f"QuadraticIndicatorRegressionCheck: {result}")
-        manager.context["indicators"].update({f"QuadraticIndicatorRegression_{self.lag}": result})
+        manager.context["indicators"].update(
+            {f"QuadraticIndicatorRegression_{self.lag}": result}
+        )
 
         if result > 0:
             logger.info("QuadraticIndicatorRegressionCheck passed.")

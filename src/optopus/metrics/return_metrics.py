@@ -3,7 +3,6 @@ import pandas as pd
 from .base_metric import BaseMetric
 
 
-
 class CAGR(BaseMetric):
     """Calculates Compound Annual Growth Rate (CAGR)"""
 
@@ -65,6 +64,7 @@ class MonthlyReturn(BaseMetric):
             "avg_monthly_pl": float(monthly_pl.mean()) if not monthly_pl.empty else 0.0
         }
 
+
 class YearlyReturn(BaseMetric):
     """Calculates average yearly profit/loss from performance data"""
 
@@ -89,8 +89,11 @@ class YearlyReturn(BaseMetric):
             yearly_pls = yearly_pls[yearly_pls != 0]
 
         return {
-            "median_yearly_pl": float(yearly_pls.median()) if not yearly_pls.empty else 0.0
+            "median_yearly_pl": (
+                float(yearly_pls.median()) if not yearly_pls.empty else 0.0
+            )
         }
+
 
 class PositiveMonthlyProbability(BaseMetric):
     """Calculates probability of positive monthly P/L"""

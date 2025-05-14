@@ -361,7 +361,9 @@ class PremiumFilter(Preprocessor):
         return True
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs})"
+        return (
+            f"{self.__class__.__name__}({self.filter_method.__name__}: {self.kwargs})"
+        )
 
 
 class CompositePipelineCondition(ExitConditionChecker):
@@ -482,7 +484,9 @@ class CompositeExitCondition(ExitConditionChecker):
             )
 
         results = [
-            condition.should_exit(strategy, current_time, option_chain_df, manager=manager)
+            condition.should_exit(
+                strategy, current_time, option_chain_df, manager=manager
+            )
             for condition in self.conditions
         ]
         combined_result = results[0]

@@ -39,7 +39,7 @@ class IndicatorThresholdCheck(BaseComponent):
             )
         )
         try:
-            if self.indicator in ['close', 'open', 'high', 'low', 'volume']:
+            if self.indicator in ["close", "open", "high", "low", "volume"]:
                 indicator_series = hist_data[self.indicator].copy()
             else:
                 if self.lag > 1:
@@ -66,7 +66,7 @@ class IndicatorThresholdCheck(BaseComponent):
 
             indicator_value = indicator_series.iloc[self.indicator_index]
 
-            if self.indicator in ['close', 'open', 'high', 'low', 'volume']:
+            if self.indicator in ["close", "open", "high", "low", "volume"]:
                 manager.context["indicators"].update(
                     {f"{self.indicator}": indicator_value}
                 )
@@ -76,7 +76,7 @@ class IndicatorThresholdCheck(BaseComponent):
                         f"{self.indicator.__name__}_{self.lag}_{self.indicator_index}": indicator_value
                     }
                 )
-                
+
             logger.info(
                 "IndicatorThresholdCheck: Comparing indicator_value: {} with target: {}".format(
                     indicator_value, self.target
@@ -85,7 +85,10 @@ class IndicatorThresholdCheck(BaseComponent):
             if isinstance(self.target, (int, float)):
                 result = indicator_value > self.target
             elif isinstance(self.target, tuple):
-                result = indicator_value > self.target[0] and indicator_value < self.target[1]
+                result = (
+                    indicator_value > self.target[0]
+                    and indicator_value < self.target[1]
+                )
             else:
                 logger.error(
                     "IndicatorThresholdCheck: Invalid target type: {}".format(

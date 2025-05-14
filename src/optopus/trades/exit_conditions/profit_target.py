@@ -62,7 +62,10 @@ class ProfitTargetCondition(BaseComponent):
         Returns:
             bool: True if the profit target is met, False otherwise.
         """
-        if not hasattr(strategy, "filter_return_percentage") or not strategy.filter_return_percentage:
+        if (
+            not hasattr(strategy, "filter_return_percentage")
+            or not strategy.filter_return_percentage
+        ):
             return_percentage = strategy.return_percentage()
         else:
             return_percentage = strategy.filter_return_percentage

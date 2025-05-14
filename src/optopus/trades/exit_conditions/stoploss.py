@@ -1,7 +1,7 @@
 from .base import BaseComponent
 import pandas as pd
 from loguru import logger
-from typing import Union, List
+from typing import Union
 import datetime
 
 
@@ -61,7 +61,10 @@ class StopLossCondition(BaseComponent):
         Returns:
             bool: True if the stop loss is met, False otherwise.
         """
-        if not hasattr(strategy, "filter_return_percentage") or not strategy.filter_return_percentage:
+        if (
+            not hasattr(strategy, "filter_return_percentage")
+            or not strategy.filter_return_percentage
+        ):
             return_percentage = strategy.return_percentage()
         else:
             return_percentage = strategy.filter_return_percentage

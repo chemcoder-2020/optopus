@@ -25,7 +25,9 @@ def check_available_bots():
     pkl_files = glob.glob("**/*.pkl", recursive=True)
     # Filter out empty strings that might result from pkl files in root
     available_bots = {
-        os.path.basename(os.path.dirname(pkl)) for pkl in pkl_files if os.path.basename(os.path.dirname(pkl))
+        os.path.basename(os.path.dirname(pkl))
+        for pkl in pkl_files
+        if os.path.basename(os.path.dirname(pkl))
     }
     logger.info(f"Found available bots: {available_bots}")
     return available_bots

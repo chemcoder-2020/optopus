@@ -1,6 +1,11 @@
 from optopus.backtest.vertical_spread import BacktestVerticalSpread
 from optopus.trades.option_manager import Config
-from optopus.trades.exit_conditions import DefaultExitCondition, TrailingStopCondition, TimeBasedCondition, CompositeExitCondition
+from optopus.trades.exit_conditions import (
+    DefaultExitCondition,
+    TrailingStopCondition,
+    TimeBasedCondition,
+    CompositeExitCondition,
+)
 from loguru import logger
 import pandas as pd
 
@@ -18,7 +23,13 @@ TRADING_END_TIME = "15:45"
 DEBUG = False
 
 # Strategy parameters for vertical spreads
-exit_condition = CompositeExitCondition([TrailingStopCondition(trigger=40, stop_loss=15), TimeBasedCondition(exit_time_before_expiration=pd.Timedelta(minutes=15))], logical_operation="OR")
+exit_condition = CompositeExitCondition(
+    [
+        TrailingStopCondition(trigger=40, stop_loss=15),
+        TimeBasedCondition(exit_time_before_expiration=pd.Timedelta(minutes=15)),
+    ],
+    logical_operation="OR",
+)
 
 STRATEGY_PARAMS = {
     "symbol": "SPY",
@@ -32,7 +43,7 @@ STRATEGY_PARAMS = {
     "condition": "close > 0",  # and 30 < RSI < 70
     "commission": 0.5,
     # "exit_scheme": DefaultExitCondition(profit_target=20, exit_time_before_expiration=pd.Timedelta(minutes=15)),
-    "exit_scheme": exit_condition
+    "exit_scheme": exit_condition,
 }
 
 BACKTESTER_CONFIG = Config(
@@ -55,7 +66,7 @@ backtest = BacktestVerticalSpread(
     trading_start_time=TRADING_START_TIME,
     trading_end_time=TRADING_END_TIME,
     strategy_params=STRATEGY_PARAMS,
-    debug=DEBUG
+    debug=DEBUG,
 )
 bt = backtest.run_backtest()
 closed_trades_df = bt.get_closed_trades_df()

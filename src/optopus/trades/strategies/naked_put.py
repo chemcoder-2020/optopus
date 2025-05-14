@@ -24,15 +24,14 @@ class NakedPut(OptionStrategy):
         commission: float = 0.5,
         strategy_side: str = "DEBIT",
         exit_scheme: Union[ExitConditionChecker, Type[ExitConditionChecker], dict] = {
-            'class': DefaultExitCondition,
-            'params': {
-                'profit_target': 40,
-                'exit_time_before_expiration': Timedelta(minutes=15),
-                'window_size': 5
-            }
+            "class": DefaultExitCondition,
+            "params": {
+                "profit_target": 40,
+                "exit_time_before_expiration": Timedelta(minutes=15),
+                "window_size": 5,
+            },
         },
         **kwargs,
-        
     ):
         """
         Create a naked put option strategy.
@@ -48,7 +47,7 @@ class NakedPut(OptionStrategy):
             stop_loss (float, optional): Stop loss percentage.
             trailing_stop (float, optional): Trailing stop percentage.
             commission (float, optional): Commission percentage.
-            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional): 
+            exit_scheme (Union[ExitConditionChecker, Type[ExitConditionChecker], dict], optional):
                 The exit condition scheme to use. Can be:
                 - An instance of ExitConditionChecker
                 - A ExitConditionChecker class (will be instantiated with default params)
@@ -129,7 +128,9 @@ class NakedPut(OptionStrategy):
         # Calculate key levels
         breakeven_price = put_leg.strike - entry_premium
         max_profit = entry_premium
-        max_loss = put_leg.strike - entry_premium - (self.underlying_last - put_leg.strike)
+        max_loss = (
+            put_leg.strike - entry_premium - (self.underlying_last - put_leg.strike)
+        )
 
         # Create plot
         fig = go.Figure()

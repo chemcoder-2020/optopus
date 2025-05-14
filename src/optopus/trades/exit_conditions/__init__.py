@@ -12,6 +12,7 @@ from .base import (
 )
 from .default_exit import DefaultExitCondition, PipelineDefaultExit
 from .profit_target import ProfitTargetCondition
+from .shotclock import ShotClock
 from .stoploss import StopLossCondition
 from .time_based import TimeBasedCondition
 from .trailing_stoploss import TrailingStopCondition

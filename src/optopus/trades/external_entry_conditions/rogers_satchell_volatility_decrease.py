@@ -22,11 +22,10 @@ class RogersSatchellVolatilityDecreaseCheck(BaseComponent):
         df = hist_data[["high", "low", "close", "open"]]
 
         # Calculate Rogers-Satchell volatility components
-        rs_terms = (
-            np.log(df['high']/df['close']) * np.log(df['high']/df['open']) + 
-            np.log(df['low']/df['close']) * np.log(df['low']/df['open'])
-        )
-        
+        rs_terms = np.log(df["high"] / df["close"]) * np.log(
+            df["high"] / df["open"]
+        ) + np.log(df["low"] / df["close"]) * np.log(df["low"] / df["open"])
+
         # Calculate volatility
         rs_volatility = np.sqrt(rs_terms.rolling(self.lag).mean())
 

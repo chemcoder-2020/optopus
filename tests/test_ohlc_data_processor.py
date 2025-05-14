@@ -3,25 +3,31 @@ import unittest
 import pandas as pd
 from pathlib import Path
 
+
 class TestDataProcessor(unittest.TestCase):
 
     def setUp(self):
         # Load test data
         self.intraday_data = "data/alpaca_SPY_15m_rebase.csv"
-    
+
     def test_init_data_processor(self):
         dp = DataProcessor(self.intraday_data)
         if Path(self.intraday_data).exists():
             self.assertIsInstance(dp.intraday_data, pd.DataFrame)
-        
+
     def test_prepare_historical_data(self):
         dp = DataProcessor(self.intraday_data)
         if Path(self.intraday_data).exists():
             self.assertIsInstance(dp.intraday_data, pd.DataFrame)
-        
+
         # Test prepare_historical_data method at 2025-03-12 09:45:00
-        self.assertEqual(dp.intraday_data[:"2025-03-12 09:45:00"][:-1].index[-1], pd.Timestamp("2025-03-12 09:30:00"))
-        historical_data, monthly_data = dp.prepare_historical_data("2025-03-12 09:45:00")
+        self.assertEqual(
+            dp.intraday_data[:"2025-03-12 09:45:00"][:-1].index[-1],
+            pd.Timestamp("2025-03-12 09:30:00"),
+        )
+        historical_data, monthly_data = dp.prepare_historical_data(
+            "2025-03-12 09:45:00"
+        )
         self.assertEqual(historical_data.index[-1], pd.Timestamp("2025-03-12"))
         self.assertEqual(historical_data.index[-2], pd.Timestamp("2025-03-11"))
         self.assertEqual(monthly_data.index[-1], pd.Timestamp("2025-03-31"))
@@ -34,7 +40,9 @@ class TestDataProcessor(unittest.TestCase):
         self.assertEqual(historical_data["volume"].iloc[-1], 9510762.0)
 
         # Test prepare_historical_data method at 2025-03-12 10:15:00
-        historical_data, monthly_data = dp.prepare_historical_data("2025-03-12 10:15:00")
+        historical_data, monthly_data = dp.prepare_historical_data(
+            "2025-03-12 10:15:00"
+        )
         self.assertEqual(historical_data.index[-1], pd.Timestamp("2025-03-12"))
         self.assertEqual(historical_data.index[-2], pd.Timestamp("2025-03-11"))
         self.assertEqual(monthly_data.index[-1], pd.Timestamp("2025-03-31"))

@@ -423,8 +423,12 @@ class SchwabTrade(Schwab):
             if len(expiration) != 6:
                 expiration = pd.Timestamp(expiration).strftime("%y%m%d")
 
-        call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(strike_price * 1000)).zfill(8)}"
-        put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(strike_price * 1000)).zfill(8)}"
+        call_option_symbol = (
+            f"{symbol.ljust(6)}{expiration}C{str(int(strike_price * 1000)).zfill(8)}"
+        )
+        put_option_symbol = (
+            f"{symbol.ljust(6)}{expiration}P{str(int(strike_price * 1000)).zfill(8)}"
+        )
 
         if is_entry:
             order_type = "NET_DEBIT"
@@ -500,9 +504,13 @@ class SchwabTrade(Schwab):
                 expiration = pd.Timestamp(expiration).strftime("%y%m%d")
 
         long_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(long_call_strike_price * 1000)).zfill(8)}"
-        short_call_option_symbol = f"{symbol.ljust(6)}{expiration}C{str(int(strike_price * 1000)).zfill(8)}"
+        short_call_option_symbol = (
+            f"{symbol.ljust(6)}{expiration}C{str(int(strike_price * 1000)).zfill(8)}"
+        )
         long_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(long_put_strike_price * 1000)).zfill(8)}"
-        short_put_option_symbol = f"{symbol.ljust(6)}{expiration}P{str(int(strike_price * 1000)).zfill(8)}"
+        short_put_option_symbol = (
+            f"{symbol.ljust(6)}{expiration}P{str(int(strike_price * 1000)).zfill(8)}"
+        )
 
         if is_entry:
             order_type = "NET_CREDIT"

@@ -1,6 +1,10 @@
 from optopus.backtest.vertical_spread import BacktestVerticalSpread
 from optopus.trades.option_manager import Config
-from optopus.trades.exit_conditions import DefaultExitCondition, TrailingStopCondition, TimeBasedCondition
+from optopus.trades.exit_conditions import (
+    DefaultExitCondition,
+    TrailingStopCondition,
+    TimeBasedCondition,
+)
 from loguru import logger
 import pandas as pd
 
@@ -30,7 +34,9 @@ STRATEGY_PARAMS = {
     "contracts": 1000,
     "condition": "close > 0",  # and 30 < RSI < 70
     "commission": 0.5,
-    "exit_scheme": DefaultExitCondition(profit_target=30, exit_time_before_expiration=pd.Timedelta(minutes=15)),
+    "exit_scheme": DefaultExitCondition(
+        profit_target=30, exit_time_before_expiration=pd.Timedelta(minutes=15)
+    ),
 }
 
 BACKTESTER_CONFIG = Config(
@@ -56,7 +62,7 @@ backtest = BacktestVerticalSpread(
     strategy_params=STRATEGY_PARAMS,
     debug=DEBUG,
 )
-cv = backtest.cross_validate(8*4, 1)
+cv = backtest.cross_validate(8 * 4, 1)
 print("\nCross-Validation Results:")
 print("==========================")
 for metric, stats in cv.items():

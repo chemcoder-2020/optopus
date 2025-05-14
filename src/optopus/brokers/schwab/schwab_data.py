@@ -4,7 +4,6 @@ import os
 from .schwab import Schwab
 
 
-
 class SchwabData(Schwab):
     def __init__(
         self,
@@ -241,7 +240,7 @@ class SchwabData(Schwab):
                 else formatted_quote[f"{contractType}_MARK"]
             )
             formatted_quote["intDTE"] = int(formatted_quote["DTE"])
-            
+
             formatted_df = pd.Series(formatted_quote).to_frame().T
             formatted_df = formatted_df[
                 [
@@ -282,41 +281,41 @@ class SchwabData(Schwab):
             formatted_quotes.append(formatted_df)
 
         # Separate puts (P_ columns) and calls (C_ columns)
-        put_list = [df for df in formatted_quotes if 'P_BID' in df.columns]
+        put_list = [df for df in formatted_quotes if "P_BID" in df.columns]
         if put_list != []:
             df_puts = pd.concat(put_list)
-        
-        call_list = [df for df in formatted_quotes if 'C_BID' in df.columns]
+
+        call_list = [df for df in formatted_quotes if "C_BID" in df.columns]
         if call_list != []:
-            df_calls = pd.concat([df for df in formatted_quotes if 'C_BID' in df.columns])
-        
+            df_calls = pd.concat(
+                [df for df in formatted_quotes if "C_BID" in df.columns]
+            )
+
         if call_list == [] and put_list == []:
             raise ValueError("No calls or puts found in quote data.")
-            
+
         if put_list == []:
             return df_calls
-        
+
         if call_list == []:
             return df_puts
 
         # Merge on key columns and handle overlapping columns with suffixes
-        merge_keys = ['STRIKE', 'EXPIRE_DATE']
+        merge_keys = ["STRIKE", "EXPIRE_DATE"]
         merged_df = pd.merge(
-            df_puts,
-            df_calls,
-            on=merge_keys,
-            how='outer',
-            suffixes=('_PUT', '_CALL')
+            df_puts, df_calls, on=merge_keys, how="outer", suffixes=("_PUT", "_CALL")
         )
         # Columns to consolidate (common between puts and calls)
         common_cols_all = df_puts.columns.intersection(df_calls.columns).tolist()
         common_cols = [col for col in common_cols_all if col not in merge_keys]
 
         for col in common_cols:
-            merged_col_put = f'{col}_PUT'
-            merged_col_call = f'{col}_CALL'
+            merged_col_put = f"{col}_PUT"
+            merged_col_call = f"{col}_CALL"
             # Use put value if available; fallback to call
-            merged_df[col] = merged_df[merged_col_put].fillna(merged_df[merged_col_call])
+            merged_df[col] = merged_df[merged_col_put].fillna(
+                merged_df[merged_col_call]
+            )
             # Drop the original merged columns
             merged_df.drop([merged_col_put, merged_col_call], axis=1, inplace=True)
 
@@ -415,7 +414,12 @@ class SchwabData(Schwab):
             pd.DataFrame: DataFrame with columns open, high, low, close, volume, datetime.
         """
         df = pd.DataFrame(price_history_json["candles"])
-        df["datetime"] = pd.to_datetime(df["datetime"], unit="ms").dt.tz_localize("UTC").dt.tz_convert("America/New_York").dt.tz_localize(None)
+        df["datetime"] = (
+            pd.to_datetime(df["datetime"], unit="ms")
+            .dt.tz_localize("UTC")
+            .dt.tz_convert("America/New_York")
+            .dt.tz_localize(None)
+        )
         if frequency_type in ["daily", "weekly", "monthly"]:
             df["datetime"] = df["datetime"].dt.date
         df = df[["open", "high", "low", "close", "volume", "datetime"]]

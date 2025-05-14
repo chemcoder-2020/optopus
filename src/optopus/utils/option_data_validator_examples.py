@@ -5,6 +5,7 @@ from option_data_validator import (
     OPTIONAL_OPTION_DATA_SCHEMA,
 )
 
+
 def create_modified_dataframe(original_df: pd.DataFrame, scenario: str) -> pd.DataFrame:
     """
     Creates a modified DataFrame based on the original DataFrame for testing different scenarios.
@@ -37,6 +38,7 @@ def create_modified_dataframe(original_df: pd.DataFrame, scenario: str) -> pd.Da
         raise ValueError(f"Invalid scenario: {scenario}")
     return df
 
+
 if __name__ == "__main__":
     # Replace with the actual path to your parquet file
     parquet_file_path = "/Users/traderHuy/Library/CloudStorage/OneDrive-Personal/Documents/optopus-dev/data/SPY_2024-09-06 15-30.parquet"
@@ -51,8 +53,12 @@ if __name__ == "__main__":
         print("Validated DataFrame:\n", validated_df.head())
         # Assertions for original DataFrame
         for col, dtype in EXPECTED_OPTION_DATA_SCHEMA.items():
-            assert col in validated_df.columns, f"Column {col} is missing in the validated DataFrame"
-            assert validated_df[col].dtype == dtype, f"Column {col} has incorrect data type in the validated DataFrame"
+            assert (
+                col in validated_df.columns
+            ), f"Column {col} is missing in the validated DataFrame"
+            assert (
+                validated_df[col].dtype == dtype
+            ), f"Column {col} has incorrect data type in the validated DataFrame"
 
         # Scenario 2: Missing required column
         print("\nScenario 2: Missing required column")
@@ -61,8 +67,12 @@ if __name__ == "__main__":
         print("Validated DataFrame:\n", validated_df.head())
         # Assertions for missing required column
         for col, dtype in EXPECTED_OPTION_DATA_SCHEMA.items():
-            assert col in validated_df.columns, f"Column {col} is missing in the validated DataFrame"
-            assert validated_df[col].dtype == dtype, f"Column {col} has incorrect data type in the validated DataFrame"
+            assert (
+                col in validated_df.columns
+            ), f"Column {col} is missing in the validated DataFrame"
+            assert (
+                validated_df[col].dtype == dtype
+            ), f"Column {col} has incorrect data type in the validated DataFrame"
 
         # Scenario 3: Incorrect data type for a required column
         print("\nScenario 3: Incorrect data type for a required column")
@@ -71,8 +81,12 @@ if __name__ == "__main__":
         print("Validated DataFrame:\n", validated_df.head())
         # Assertions for incorrect data type of a required column
         for col, dtype in EXPECTED_OPTION_DATA_SCHEMA.items():
-            assert col in validated_df.columns, f"Column {col} is missing in the validated DataFrame"
-            assert validated_df[col].dtype == dtype, f"Column {col} has incorrect data type in the validated DataFrame"
+            assert (
+                col in validated_df.columns
+            ), f"Column {col} is missing in the validated DataFrame"
+            assert (
+                validated_df[col].dtype == dtype
+            ), f"Column {col} has incorrect data type in the validated DataFrame"
 
         # Scenario 4: Missing optional column
         print("\nScenario 4: Missing optional column")
@@ -81,8 +95,12 @@ if __name__ == "__main__":
         print("Validated DataFrame:\n", validated_df.head())
         # Assertions for missing optional column (should still pass if missing)
         for col, dtype in EXPECTED_OPTION_DATA_SCHEMA.items():
-            assert col in validated_df.columns, f"Column {col} is missing in the validated DataFrame"
-            assert validated_df[col].dtype == dtype, f"Column {col} has incorrect data type in the validated DataFrame"
+            assert (
+                col in validated_df.columns
+            ), f"Column {col} is missing in the validated DataFrame"
+            assert (
+                validated_df[col].dtype == dtype
+            ), f"Column {col} has incorrect data type in the validated DataFrame"
 
         # Scenario 5: Incorrect data type for an optional column
         print("\nScenario 5: Incorrect data type for an optional column")
@@ -91,12 +109,20 @@ if __name__ == "__main__":
         print("Validated DataFrame:\n", validated_df.head())
         # Assertions for incorrect data type of an optional column
         for col, dtype in EXPECTED_OPTION_DATA_SCHEMA.items():
-            assert col in validated_df.columns, f"Column {col} is missing in the validated DataFrame"
-            assert validated_df[col].dtype == dtype, f"Column {col} has incorrect data type in the validated DataFrame"
+            assert (
+                col in validated_df.columns
+            ), f"Column {col} is missing in the validated DataFrame"
+            assert (
+                validated_df[col].dtype == dtype
+            ), f"Column {col} has incorrect data type in the validated DataFrame"
         for col, dtype in OPTIONAL_OPTION_DATA_SCHEMA.items():
             if col in modified_df.columns:
-                assert col in validated_df.columns, f"Column {col} is missing in the validated DataFrame"
-                assert validated_df[col].dtype == dtype, f"Column {col} has incorrect data type in the validated DataFrame"
+                assert (
+                    col in validated_df.columns
+                ), f"Column {col} is missing in the validated DataFrame"
+                assert (
+                    validated_df[col].dtype == dtype
+                ), f"Column {col} has incorrect data type in the validated DataFrame"
 
     except FileNotFoundError:
         print(f"Error: File not found at {parquet_file_path}")

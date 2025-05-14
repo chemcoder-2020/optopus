@@ -190,7 +190,7 @@ def main():
             print(f"Bot Name: {args.bot}")
             print(f"Allocation: {status['Allocation']}")
             print(f"Risk: {status['Risk']}")
-            if status['Performance Metrics'] is not None:
+            if status["Performance Metrics"] is not None:
                 print(f"Performance Metrics:\n")
                 for metric, value in status["Performance Metrics"].items():
                     print(f"  {metric}: {value}")

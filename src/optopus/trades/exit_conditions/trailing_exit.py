@@ -160,7 +160,9 @@ class TrailingStopExitCondition(ExitConditionChecker):
         # Check both conditions with OR logic
         should_exit = self.trailing_condition.should_exit(
             strategy, current_time, option_chain_df, manager=manager
-        ) or self.time_condition.should_exit(strategy, current_time, option_chain_df, manager=manager)
+        ) or self.time_condition.should_exit(
+            strategy, current_time, option_chain_df, manager=manager
+        )
         if should_exit:
             if np.isnan(strategy.filter_pl):
                 strategy.filter_pl = strategy.total_pl()

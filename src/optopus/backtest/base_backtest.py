@@ -12,6 +12,7 @@ import joblib
 from tqdm import tqdm
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
+
 # from abc import ABC, abstractmethod
 
 
@@ -103,7 +104,7 @@ class BaseBacktest:
                     )
                 continue
 
-            option_chain_df = pd.read_parquet(file_path)
+            option_chain_df = pd.read_parquet(file_path, engine="pyarrow")
             if not option_chain_df.empty:
                 backtester.update(time, option_chain_df)
             else:
@@ -120,7 +121,9 @@ class BaseBacktest:
             #         logger.error(f"Error creating new spread: {e} at {time}")
             #     continue
             try:
-                new_spread = backtester.create_strategy(self.strategy_params, option_chain_df, time)
+                new_spread = backtester.create_strategy(
+                    self.strategy_params, option_chain_df, time
+                )
                 logger.info(f"Created new spread at {time}. {new_spread}")
             except Exception as e:
                 if self.debug:

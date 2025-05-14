@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optopus"
-version = "0.9.21" # Updated version for dashboard addition
+version = "0.9.22" # Updated version for dashboard addition
 authors = [
     { name = "Huy Nguyen", email = "huynguyen2406@gmail.com" }
 ]
@@ -35,7 +35,7 @@ dependencies = [
     "neuralforecast>=1.0.0",
     "sktime>=0.3.0",
     "plotly>=5.0.0",
-    "streamlit>=1.30.0"
+    "streamlit>=1.30.0",
 ]
 
 [project.scripts]

@@ -85,7 +85,10 @@ class IndicatorStateCheck(BaseComponent):
             long_value = indicator_series2.iloc[self.indicator_index2]
 
             manager.context["indicators"].update(
-                {f"{self.indicator.__name__}_{self.lag1}_{self.indicator_index1}": short_value, f"{self.indicator.__name__}_{self.lag2}_{self.indicator_index2}": long_value}
+                {
+                    f"{self.indicator.__name__}_{self.lag1}_{self.indicator_index1}": short_value,
+                    f"{self.indicator.__name__}_{self.lag2}_{self.indicator_index2}": long_value,
+                }
             )
 
             logger.info(

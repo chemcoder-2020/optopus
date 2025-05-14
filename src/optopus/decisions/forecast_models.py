@@ -20,7 +20,9 @@ from loguru import logger
 
 class ForecastModels:
     @staticmethod
-    def check_arima_trend(monthly_data, current_price, freq="M", order=(0, 1, 1), seasonal_order=(0, 1, 1)):
+    def check_arima_trend(
+        monthly_data, current_price, freq="M", order=(0, 1, 1), seasonal_order=(0, 1, 1)
+    ):
         """Check ARIMA forecast for upward trend"""
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=Warning)
@@ -179,12 +181,10 @@ class ForecastModels:
         # Copy data
         monthly_data = monthly_data.copy().to_frame()
         logger.info(f"Monthly data: {monthly_data}")
-        monthly_data.columns = ['close']
+        monthly_data.columns = ["close"]
         latest_data = monthly_data[-1:]
         logger.info(f"Latest data: {latest_data}")
-        monthly_data["target"] = (
-            monthly_data.shift(-1) > monthly_data
-        ).astype(int)
+        monthly_data["target"] = (monthly_data.shift(-1) > monthly_data).astype(int)
         monthly_data = monthly_data.dropna()
 
         # Create features and target
@@ -197,7 +197,9 @@ class ForecastModels:
         elif classifier == "svm":
             model = make_pipeline(StandardScaler(), SVC(probability=True))
         elif classifier == "gradient_boosting":
-            model = make_pipeline(StandardScaler(), GradientBoostingClassifier(n_estimators=400))
+            model = make_pipeline(
+                StandardScaler(), GradientBoostingClassifier(n_estimators=400)
+            )
         elif classifier == "gaussian_process":
             model = make_pipeline(StandardScaler(), GaussianProcessClassifier())
         elif classifier == "mlp":
@@ -212,33 +214,30 @@ class ForecastModels:
         return model.predict(latest_data)[0] == 1
 
     @staticmethod
-    def check_seasonality_oscillator(
-        monthly_data: pd.Series, 
-        lags: int = 3
-    ) -> bool:
+    def check_seasonality_oscillator(monthly_data: pd.Series, lags: int = 3) -> bool:
         """
         Detect strong seasonal patterns using STL decomposition and transformation pipeline.
-        
+
         Args:
             monthly_data: Pandas Series of monthly prices
             lags: Number of lags for differencing (default: 3)
-            
+
         Returns:
             bool: True if latest seasonal component exceeds threshold
         """
         try:
             # Create transformation pipeline
             pipe = (
-                LogTransformer() *
-                Detrender(TrendForecaster(Ridge())) *
-                Differencer(lags=lags)
+                LogTransformer()
+                * Detrender(TrendForecaster(Ridge()))
+                * Differencer(lags=lags)
             )
-            
+
             # Fit and transform pipeline
             oscillator = pipe.fit_transform(monthly_data)
-        
+
             return oscillator.iloc[-1] > 0
-            
+
         except Exception as e:
             logger.warning(f"Seasonality detection failed: {str(e)}")
             return False

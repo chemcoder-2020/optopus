@@ -28,7 +28,10 @@ BACKTESTER_CONFIG = config
 
 # Configure loguru to write logs to a file
 logger.add(
-    f"{cwd}/{STRATEGY_NAME}.log", rotation="10 MB", retention="60 days", compression="zip"
+    f"{cwd}/{STRATEGY_NAME}.log",
+    rotation="10 MB",
+    retention="60 days",
+    compression="zip",
 )
 logger.enable("optopus")
 

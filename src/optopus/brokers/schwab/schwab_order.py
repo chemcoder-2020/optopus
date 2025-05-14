@@ -389,10 +389,14 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                                 # Update exit price for each leg
                                 order_df = self.parse_order(exit_order)
                                 for leg in self.legs:
-                                    leg_df = order_df.query("`instrument.symbol` == @leg.schwab_symbol")
+                                    leg_df = order_df.query(
+                                        "`instrument.symbol` == @leg.schwab_symbol"
+                                    )
                                     avg_leg_price = (
-                                        leg_df["price"] * leg_df["quantity"] / leg_df["quantity"].sum()
-                                    ) .sum()
+                                        leg_df["price"]
+                                        * leg_df["quantity"]
+                                        / leg_df["quantity"].sum()
+                                    ).sum()
                                     leg.update_exit_price(avg_leg_price)
 
                                 # Update exit net premium
@@ -446,10 +450,14 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     # Update entry price for each leg
                     order_df = self.parse_order(order)
                     for leg in self.legs:
-                        leg_df = order_df.query("`instrument.symbol` == @leg.schwab_symbol")
+                        leg_df = order_df.query(
+                            "`instrument.symbol` == @leg.schwab_symbol"
+                        )
                         avg_leg_price = (
-                            leg_df["price"] * leg_df["quantity"] / leg_df["quantity"].sum()
-                        ) .sum()
+                            leg_df["price"]
+                            * leg_df["quantity"]
+                            / leg_df["quantity"].sum()
+                        ).sum()
                         leg.update_entry_price(avg_leg_price)
 
                     # Update entry net premium
@@ -506,10 +514,14 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                             # Update exit price for each leg
                             order_df = self.parse_order(exit_order)
                             for leg in self.legs:
-                                leg_df = order_df.query("`instrument.symbol` == @leg.schwab_symbol")
+                                leg_df = order_df.query(
+                                    "`instrument.symbol` == @leg.schwab_symbol"
+                                )
                                 avg_leg_price = (
-                                    leg_df["price"] * leg_df["quantity"] / leg_df["quantity"].sum()
-                                ) .sum()
+                                    leg_df["price"]
+                                    * leg_df["quantity"]
+                                    / leg_df["quantity"].sum()
+                                ).sum()
                                 leg.update_exit_price(avg_leg_price)
 
                             # Update exit net premium

@@ -52,7 +52,7 @@ class IniConfigParser:
         #             f"Returning raw string."
         #         )
         #         return param
-        
+
         try:
             # Attempt to parse as a timedelta
             return pd.Timedelta(param)
@@ -64,7 +64,6 @@ class IniConfigParser:
                 logger.warning(
                     f"Could not parse '{param}' as Timedelta or Timestamp for key '{key}'. "
                 )
-        
 
         # Handle timedelta values based on key naming convention
         # Checks for '_time_' or ends with '_duration' or '_timedelta'
@@ -79,7 +78,7 @@ class IniConfigParser:
         #             f"Returning raw string."
         #         )
         #         return param
-        
+
         # Attempt ast literal_eval
         try:
             evaluated = ast.literal_eval(param)

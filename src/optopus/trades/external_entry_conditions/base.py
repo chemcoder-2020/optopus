@@ -228,9 +228,7 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
         # Prepare market data
         current_price = strategy.underlying_last if strategy else None
         try:
-            hist_data, monthly_data = self.data_processor.prepare_historical_data(
-                time
-            )
+            hist_data, monthly_data = self.data_processor.prepare_historical_data(time)
         except Exception as e:
             logger.error(f"Error preparing historical data: {e}")
             return False
@@ -266,6 +264,3 @@ class CompositePipelineCondition(ExternalEntryConditionChecker):
             result = False
         logger.debug(f"Pipeline evaluation result: {result}")
         return result
-
-
-

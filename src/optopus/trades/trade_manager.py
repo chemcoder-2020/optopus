@@ -96,7 +96,7 @@ class TradingManager(OptionBacktester):
                 STRATEGY_PARAMS.get("symbol"),
                 strike_count=STRATEGY_PARAMS.get("chain_strike_count", 100),
             )
-        
+
         self.context.update(
             {
                 "option_chain_df": option_chain_df,
@@ -459,7 +459,9 @@ class TradingManager(OptionBacktester):
             )
 
         if self.management_on:
-            self.update_orders(option_chain_df, STRATEGY_PARAMS)  # Pass the fetched chain
+            self.update_orders(
+                option_chain_df, STRATEGY_PARAMS
+            )  # Pass the fetched chain
 
         if (
             self.automation_on

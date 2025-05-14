@@ -23,7 +23,9 @@ class LinearRegressionCheck(BaseComponent):
         if model.coef_[0] > 0:
             logger.info("LinearRegressionCheck passed. Slope > 0")
 
-        manager.context["indicators"].update({f"LinearRegression_{self.lag}": model.coef_[0]})
+        manager.context["indicators"].update(
+            {f"LinearRegression_{self.lag}": model.coef_[0]}
+        )
 
         return model.coef_[0] > 0
 

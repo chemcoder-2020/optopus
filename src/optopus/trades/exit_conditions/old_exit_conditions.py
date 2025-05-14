@@ -168,7 +168,9 @@ class MedianCalculator:
         """
         current_return = strategy.return_percentage()
 
-        if not hasattr(self, "method") or not self.method:  # Handle empty/null method case
+        if (
+            not hasattr(self, "method") or not self.method
+        ):  # Handle empty/null method case
             strategy.filter_return_percentage = current_return
             strategy.filter_pl = strategy.total_pl()
             strategy.premium_log = self.premiums.copy()
@@ -213,7 +215,7 @@ class PremiumFilter:
             n_sigma=n_sigma,
             k=k,
             max_iterations=max_iterations,
-            replace_with_na=True
+            replace_with_na=True,
         )
         self.premiums = []
 
@@ -244,7 +246,7 @@ class PremiumFilter:
         else:
             self.premiums = []
             strategy.premium_log = []
-            
+
         current_return = strategy.return_percentage()
         self.add_premium(current_return)
 
@@ -257,15 +259,21 @@ class PremiumFilter:
 
         # Apply Hampel filter (outliers will be replaced with NaNs)
         filtered_returns = self.filter.fit_transform(np.array([self.premiums]))
-        
+
         # Check if last value is NaN (indicates outlier)
         is_valid = not np.isnan(filtered_returns[0][-1])
-        
+
         # Store results in strategy
         strategy.premium_log = self.premiums.copy()
-        strategy.filter_return_percentage = filtered_returns[0][-1] if is_valid else filtered_returns[0][-2]
-        strategy.filter_pl = strategy.entry_net_premium * strategy.contracts * strategy.filter_return_percentage
-        
+        strategy.filter_return_percentage = (
+            filtered_returns[0][-1] if is_valid else filtered_returns[0][-2]
+        )
+        strategy.filter_pl = (
+            strategy.entry_net_premium
+            * strategy.contracts
+            * strategy.filter_return_percentage
+        )
+
         return is_valid
 
 
@@ -290,7 +298,9 @@ class ProfitTargetCondition(ExitConditionChecker):
         """
         self.profit_target = profit_target
         self.median_calculator = MedianCalculator(
-            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"), replace_with_na=kwargs.get("replace_with_na", True)
+            kwargs.get("window_size", 10),
+            kwargs.get("method", "HampelFilter"),
+            replace_with_na=kwargs.get("replace_with_na", True),
         )
         self.kwargs = kwargs
 
@@ -364,7 +374,9 @@ class StopLossCondition(ExitConditionChecker):
         """
         self.stop_loss = stop_loss
         self.median_calculator = MedianCalculator(
-            kwargs.get("window_size", 10), kwargs.get("method", "HampelFilter"), replace_with_na=kwargs.get("replace_with_na", False)
+            kwargs.get("window_size", 10),
+            kwargs.get("method", "HampelFilter"),
+            replace_with_na=kwargs.get("replace_with_na", False),
         )
         self.kwargs = kwargs
 
@@ -500,12 +512,17 @@ class TrailingStopCondition(ExitConditionChecker):
         self.stop_loss = stop_loss
         self.median_window = kwargs.get("window_size", 10)
         # self.median_calculator = MedianCalculator(self.median_window)
-        
+
         self.highest_return = 0
         self.kwargs = kwargs
         self.median_method = kwargs.get("method", "HampelFilter")
         self.median_calculator = MedianCalculator(
-            window_size=self.median_window, method=self.median_method, n_sigma=self.kwargs.get("n_sigma", 3), k=self.kwargs.get("k", 1.4826), max_iterations=self.kwargs.get("max_iterations", 5), replace_with_na=kwargs.get("replace_with_na", False)
+            window_size=self.median_window,
+            method=self.median_method,
+            n_sigma=self.kwargs.get("n_sigma", 3),
+            k=self.kwargs.get("k", 1.4826),
+            max_iterations=self.kwargs.get("max_iterations", 5),
+            replace_with_na=kwargs.get("replace_with_na", False),
         )
 
         # Set all kwargs as attributes
@@ -717,9 +734,7 @@ class DefaultExitCondition(ExitConditionChecker):
         Returns:
             str: String representation of the default exit condition.
         """
-        return (
-            f"{self.__class__.__name__}(composite_condition={self.composite_condition}): profit target={self.profit_target}, exit_time_before_expiration={self.exit_time_before_expiration}"
-        )
+        return f"{self.__class__.__name__}(composite_condition={self.composite_condition}): profit target={self.profit_target}, exit_time_before_expiration={self.exit_time_before_expiration}"
 
     def should_exit(
         self,
@@ -765,7 +780,9 @@ class ProfitAndTriggeredTrailingStopExitCondition(ExitConditionChecker):
     ):
 
         profit_target_condition = ProfitTargetCondition(
-            profit_target=profit_target, window_size=kwargs.get("window_size", 10), method=kwargs.get("filter_method", "HampelFilter")
+            profit_target=profit_target,
+            window_size=kwargs.get("window_size", 10),
+            method=kwargs.get("filter_method", "HampelFilter"),
         )
 
         tsl_condition = TrailingStopCondition(
@@ -793,9 +810,7 @@ class ProfitAndTriggeredTrailingStopExitCondition(ExitConditionChecker):
         Returns:
             str: String representation of the profit-and-triggered-trailing-stop exit condition.
         """
-        return (
-            f"{self.__class__.__name__}(composite_condition={self.composite_condition}): profit target={self.profit_target}, trigger={self.trigger}, stop_loss={self.stop_loss}, exit_time_before_expiration={self.exit_time_before_expiration}"
-        )
+        return f"{self.__class__.__name__}(composite_condition={self.composite_condition}): profit target={self.profit_target}, trigger={self.trigger}, stop_loss={self.stop_loss}, exit_time_before_expiration={self.exit_time_before_expiration}"
 
     def should_exit(
         self,

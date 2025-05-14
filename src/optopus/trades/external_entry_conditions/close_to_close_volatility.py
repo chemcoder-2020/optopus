@@ -37,7 +37,7 @@ class CloseToCloseVolatilityDecreaseCheck(BaseComponent):
         # Get current and previous values
         vol_current = volatility.iloc[-1]
         vol_prev = volatility.iloc[-2]
-        
+
         manager.context["indicators"].update({f"c2c_vol_{self.lag}": vol_current})
 
         logger.info(

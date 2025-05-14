@@ -76,8 +76,12 @@ class BacktestBidirectionalVerticalSpread:
         inp["date"] = pd.DatetimeIndex(inp["date"])
         inp["isSPSEntry"] = False
         inp["isSCSEntry"] = False
-        inp.loc[inp.query(self.strategy_params["SPScondition"]).index, "isSPSEntry"] = True
-        inp.loc[inp.query(self.strategy_params["SCScondition"]).index, "isSCSEntry"] = True
+        inp.loc[inp.query(self.strategy_params["SPScondition"]).index, "isSPSEntry"] = (
+            True
+        )
+        inp.loc[inp.query(self.strategy_params["SCScondition"]).index, "isSCSEntry"] = (
+            True
+        )
         inp["isSPSEntry"] = inp["isSPSEntry"].astype(bool)
         inp["isSCSEntry"] = inp["isSCSEntry"].astype(bool)
         inp.set_index("date", inplace=True)
@@ -127,7 +131,7 @@ class BacktestBidirectionalVerticalSpread:
                 if self.debug:
                     logger.error(f"Error getting SCS entry signal: {e} at {time}")
                 scs_entry_signal = False
-            
+
             if not sps_entry_signal and not scs_entry_signal:
                 continue
 
@@ -151,7 +155,7 @@ class BacktestBidirectionalVerticalSpread:
             except Exception as e:
                 if self.debug:
                     logger.error(f"Error creating SPS spread: {e} at {time}")
-        
+
             try:
                 if scs_entry_signal:
                     scs_spread = VerticalSpread.create_vertical_spread(
@@ -186,7 +190,7 @@ class BacktestBidirectionalVerticalSpread:
             except Exception as e:
                 if self.debug:
                     logger.error(f"Error adding SPS spread: {e} at {time}")
-            
+
             try:
                 if scs_spread is not None:
                     if not np.isnan(scs_spread.get_required_capital()):

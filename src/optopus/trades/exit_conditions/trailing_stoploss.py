@@ -86,16 +86,17 @@ class TrailingStopCondition(BaseComponent):
             strategy.highest_return = 0
 
         # Get current return percentage
-        if not hasattr(strategy, "filter_return_percentage") or not strategy.filter_return_percentage:
+        if (
+            not hasattr(strategy, "filter_return_percentage")
+            or not strategy.filter_return_percentage
+        ):
             return_percentage = strategy.return_percentage()
         else:
             return_percentage = strategy.filter_return_percentage
 
         # Update highest return with safety check
         if not np.isnan(return_percentage):
-            strategy.highest_return = max(
-                strategy.highest_return, return_percentage
-            )
+            strategy.highest_return = max(strategy.highest_return, return_percentage)
 
         logger.debug(
             f"Current return: {return_percentage}% | Highest: {strategy.highest_return}%"

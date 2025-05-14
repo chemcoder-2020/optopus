@@ -20,7 +20,7 @@ class VolatilityDecreaseCheck(BaseComponent):
         tr = data[["tr0", "tr1", "tr2"]].max(axis=1)
 
         atr = tr.rolling(window=self.lag).mean()
-        
+
         manager.context["indicators"].update({f"atr_{self.lag}": atr.iloc[-1]})
 
         assert time == manager.context.get(

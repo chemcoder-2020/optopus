@@ -19,7 +19,7 @@ class TechnicalIndicators:
     def check_median_trend(historical_data, short_lag=50, long_lag=200):
         """Check median forecast for upward trend"""
         median1 = np.median(historical_data["close"].iloc[-short_lag:].values)
-        median2= np.median(historical_data["close"].iloc[-long_lag:].values)
+        median2 = np.median(historical_data["close"].iloc[-long_lag:].values)
         return median1 > median2
 
     @staticmethod
@@ -29,10 +29,10 @@ class TechnicalIndicators:
         delta = close_prices.diff()
         gain = delta.where(delta > 0, 0)
         loss = -delta.where(delta < 0, 0)
-        
+
         avg_gain = gain.rolling(window=period, min_periods=1).mean()
         avg_loss = loss.rolling(window=period, min_periods=1).mean()
-        
+
         rs = avg_gain / (avg_loss + 1e-10)  # Avoid division by zero
         rsi = 100 - (100 / (1 + rs))
         return rsi.iloc[-1] < oversold

@@ -73,7 +73,7 @@ class CompositeEntryCondition(EntryConditionChecker):
 
 class SequentialPipelineCondition(EntryConditionChecker):
     """Process conditions sequentially with configurable logic operators and optional short-circuiting"""
-    
+
     LOGIC_MAP = {
         "AND": lambda a, b: a and b,
         "OR": lambda a, b: a or b,
@@ -103,7 +103,9 @@ class SequentialPipelineCondition(EntryConditionChecker):
         # Evaluate first step
         first_condition, _, _ = self.steps[0]
         result = first_condition.should_enter(strategy, manager, time)
-        logger.info(f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}")
+        logger.info(
+            f"SequentialPipeline Step 1/{len(self.steps)} ({first_condition.__class__.__name__}): {result}"
+        )
         if not result:
             if self.steps[0][1] == "AND":
                 logger.info("SequentialPipeline: First step failed, denying entry")
@@ -116,7 +118,7 @@ class SequentialPipelineCondition(EntryConditionChecker):
         # Evaluate remaining steps
         for i, (condition, logic, enable_sc) in enumerate(self.steps[1:], start=2):
             condition_name = condition.__class__.__name__
-            
+
             if logic not in self.LOGIC_MAP:
                 raise ValueError(f"Invalid logic operator: {logic}")
 

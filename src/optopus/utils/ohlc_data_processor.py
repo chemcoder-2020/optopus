@@ -71,18 +71,26 @@ class DataProcessor:
             current_daily_data.reset_index(inplace=True)
             current_daily_data.rename(columns={"date": "day"}, inplace=True)
             historical_data = current_daily_data.set_index("day").iloc[-500:]
-            monthly_data = historical_data.groupby(pd.Grouper(freq='ME')).agg(
-                open=('open', 'first'),
-                high=('high', 'max'),
-                low=('low', 'min'),
-                close=('close', 'last'),
-                volume=('volume', 'sum')
-            ).dropna()
+            monthly_data = (
+                historical_data.groupby(pd.Grouper(freq="ME"))
+                .agg(
+                    open=("open", "first"),
+                    high=("high", "max"),
+                    low=("low", "min"),
+                    close=("close", "last"),
+                    volume=("volume", "sum"),
+                )
+                .dropna()
+            )
 
         else:
-            current_intraday_data = self.intraday_data[:pd.Timestamp(time)-pd.Timedelta(microseconds=1)] # if data bar is labeled on left: 9:30 => 9:45 is labeled 9:30, for example. Small timedelta applied to make it exclusive
+            current_intraday_data = self.intraday_data[
+                : pd.Timestamp(time) - pd.Timedelta(microseconds=1)
+            ]  # if data bar is labeled on left: 9:30 => 9:45 is labeled 9:30, for example. Small timedelta applied to make it exclusive
 
-            daily_agg = current_intraday_data.groupby(current_intraday_data.index.normalize()).agg(
+            daily_agg = current_intraday_data.groupby(
+                current_intraday_data.index.normalize()
+            ).agg(
                 open=("open", "first"),
                 high=("high", "max"),
                 low=("low", "min"),
@@ -90,12 +98,16 @@ class DataProcessor:
                 volume=("volume", "sum"),
             )
             historical_data = daily_agg.dropna().iloc[-500:]
-            monthly_data = historical_data.groupby(pd.Grouper(freq='ME')).agg(
-                open=('open', 'first'),
-                high=('high', 'max'),
-                low=('low', 'min'),
-                close=('close', 'last'),
-                volume=('volume', 'sum')
-            ).dropna()
+            monthly_data = (
+                historical_data.groupby(pd.Grouper(freq="ME"))
+                .agg(
+                    open=("open", "first"),
+                    high=("high", "max"),
+                    low=("low", "min"),
+                    close=("close", "last"),
+                    volume=("volume", "sum"),
+                )
+                .dropna()
+            )
 
         return historical_data, monthly_data

@@ -39,7 +39,7 @@ def display_single_bot_status(bot_name, load_func, status_func):
         status = status_func(bot)
 
         # Display Performance Chart if available
-        if hasattr(bot, 'performance_data') and bot.performance_data:
+        if hasattr(bot, "performance_data") and bot.performance_data:
             st.subheader("Performance Chart")
             perf_df = pd.DataFrame(bot.performance_data)
             fig = bot._plot_interactive_performance(perf_df)
@@ -63,18 +63,14 @@ def display_single_bot_status(bot_name, load_func, status_func):
         col3a.metric("Open P/L", f"${open_pl:,.2f}")
 
         col1b, col2b = st.columns(2)
-        col1b.metric(
-            "Total P/L Today", f"${status.get('Total P/L Today', 0):,.2f}"
-        )
+        col1b.metric("Total P/L Today", f"${status.get('Total P/L Today', 0):,.2f}")
         col2b.metric(
             "Closed P/L Today",
             f"${status.get('Closed P/L Today', 0):,.2f}",
         )
 
         col1c, col2c = st.columns(2)
-        col1c.metric(
-            "Total P/L MTD", f"${status.get('Total P/L MTD', 0):,.2f}"
-        )
+        col1c.metric("Total P/L MTD", f"${status.get('Total P/L MTD', 0):,.2f}")
         col2c.metric(
             "Closed P/L MTD",
             f"${status.get('Closed P/L MTD', 0):,.2f}",
@@ -108,9 +104,7 @@ def display_single_bot_status(bot_name, load_func, status_func):
             f"expected path: {pkl_path}",
         )
     except Exception as e:
-        logger.exception(
-            f"Error loading or checking status for bot {bot_name}"
-        )
+        logger.exception(f"Error loading or checking status for bot {bot_name}")
         st.error(f"Processing error for bot {bot_name}: {e}")
 
 
@@ -145,19 +139,13 @@ def display_all_bots_status(status_func, available_func, load_func):
 
                 total_allocation += status.get("Allocation", 0)
                 total_risk += status.get("Risk", 0)
-                total_available_to_trade += status.get(
-                    "Available to Trade", 0
-                )
+                total_available_to_trade += status.get("Available to Trade", 0)
                 total_pl += status.get("Total P/L", 0)
                 total_closed_pl += status.get("Closed P/L", 0)
                 total_pl_change_today += status.get("Total P/L Today", 0)
-                total_closed_pl_change_today += status.get(
-                    "Closed P/L Today", 0
-                )
+                total_closed_pl_change_today += status.get("Closed P/L Today", 0)
                 total_pl_change_mtd += status.get("Total P/L MTD", 0)
-                total_closed_pl_change_mtd += status.get(
-                    "Closed P/L MTD", 0
-                )
+                total_closed_pl_change_mtd += status.get("Closed P/L MTD", 0)
 
                 active_df = status.get("Active Orders", pd.DataFrame())
                 if not active_df.empty:
@@ -175,9 +163,7 @@ def display_all_bots_status(status_func, available_func, load_func):
                     f"expected path: {pkl_path}. Skipping."
                 )
             except Exception as e:
-                logger.warning(
-                    f"Could not process bot {bot_name}: {e}. Skipping."
-                )
+                logger.warning(f"Could not process bot {bot_name}: {e}. Skipping.")
             finally:
                 progress_bar.progress((i + 1) / total_bots)
 
@@ -214,13 +200,9 @@ def display_all_bots_status(status_func, available_func, load_func):
         # Display Combined Active Orders
         st.subheader("All Active Orders")
         if all_active_orders_list:
-            combined_active_df = pd.concat(
-                all_active_orders_list, ignore_index=True
-            )
+            combined_active_df = pd.concat(all_active_orders_list, ignore_index=True)
             # Sort or rearrange columns if needed, e.g., put 'Bot' first
-            cols = ["Bot"] + [
-                col for col in combined_active_df.columns if col != "Bot"
-            ]
+            cols = ["Bot"] + [col for col in combined_active_df.columns if col != "Bot"]
             st.dataframe(combined_active_df[cols])
         else:
             st.write("No active orders across all bots.")

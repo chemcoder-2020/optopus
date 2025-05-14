@@ -76,7 +76,12 @@ class TestOptionLeg(unittest.TestCase):
 
         self.assertAlmostEqual(option_leg.underlying_diff, 579.27 - 584.33, places=2)
         self.assertAlmostEqual(option_leg.price_diff, 14.42 - 17.06, places=2)
-        self.assertAlmostEqual(option_leg.pl, -1 * (14.42 - 17.06) * self.contracts * 100 - option_leg.calculate_total_commission(), places=2)
+        self.assertAlmostEqual(
+            option_leg.pl,
+            -1 * (14.42 - 17.06) * self.contracts * 100
+            - option_leg.calculate_total_commission(),
+            places=2,
+        )
 
     def test_calculate_pl(self):
         option_leg = OptionLeg(
@@ -242,14 +247,30 @@ class TestOptionLeg(unittest.TestCase):
 
         expected_dte = calculate_dte(expiration_date_str, current_date_str)
 
-        self.assertEqual(calculate_dte(expiration_date_str, current_date_ts), expected_dte)
-        self.assertEqual(calculate_dte(expiration_date_str, current_date_dt), expected_dte)
-        self.assertEqual(calculate_dte(expiration_date_ts, current_date_str), expected_dte)
-        self.assertEqual(calculate_dte(expiration_date_ts, current_date_ts), expected_dte)
-        self.assertEqual(calculate_dte(expiration_date_ts, current_date_dt), expected_dte)
-        self.assertEqual(calculate_dte(expiration_date_dt, current_date_str), expected_dte)
-        self.assertEqual(calculate_dte(expiration_date_dt, current_date_ts), expected_dte)
-        self.assertEqual(calculate_dte(expiration_date_dt, current_date_dt), expected_dte)
+        self.assertEqual(
+            calculate_dte(expiration_date_str, current_date_ts), expected_dte
+        )
+        self.assertEqual(
+            calculate_dte(expiration_date_str, current_date_dt), expected_dte
+        )
+        self.assertEqual(
+            calculate_dte(expiration_date_ts, current_date_str), expected_dte
+        )
+        self.assertEqual(
+            calculate_dte(expiration_date_ts, current_date_ts), expected_dte
+        )
+        self.assertEqual(
+            calculate_dte(expiration_date_ts, current_date_dt), expected_dte
+        )
+        self.assertEqual(
+            calculate_dte(expiration_date_dt, current_date_str), expected_dte
+        )
+        self.assertEqual(
+            calculate_dte(expiration_date_dt, current_date_ts), expected_dte
+        )
+        self.assertEqual(
+            calculate_dte(expiration_date_dt, current_date_dt), expected_dte
+        )
 
 
 if __name__ == "__main__":

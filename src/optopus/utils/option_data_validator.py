@@ -41,6 +41,7 @@ OPTIONAL_OPTION_DATA_SCHEMA = {
     "INTEREST_RATE": "float64",
 }
 
+
 def _add_missing_columns(df: pd.DataFrame, expected_schema: dict) -> pd.DataFrame:
     """Adds missing columns to the DataFrame with default values."""
     for col, dtype in expected_schema.items():

@@ -31,15 +31,20 @@ class TestOptionStrategy(unittest.TestCase):
             option_type="PUT",
             long_strike="ATM-1.5%",
             short_strike="ATM",
-            expiration=0, #"2024-09-06",
+            expiration=0,  # "2024-09-06",
             contracts=1,
             entry_time="2024-09-06 15:30:00",
             option_chain_df=self.entry_df,
         )
         for leg in vertical_spread.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side} | {leg.entry_bid} | {leg.entry_ask}")
+            logger.debug(
+                f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side} | {leg.entry_bid} | {leg.entry_ask}"
+            )
         print(vertical_spread.entry_bid, vertical_spread.entry_ask)
-        self.assertEqual(vertical_spread.entry_bid, vertical_spread.legs[1].entry_bid - vertical_spread.legs[0].entry_ask)
+        self.assertEqual(
+            vertical_spread.entry_bid,
+            vertical_spread.legs[1].entry_bid - vertical_spread.legs[0].entry_ask,
+        )
         self.assertEqual(len(vertical_spread.legs), 2)
         self.assertEqual(vertical_spread.strategy_type, "Vertical Spread")
 
@@ -56,7 +61,9 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         for leg in iron_condor.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}")
+            logger.debug(
+                f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}"
+            )
         self.assertEqual(len(iron_condor.legs), 4)
         self.assertEqual(iron_condor.strategy_type, "Iron Condor")
 
@@ -70,7 +77,9 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         for leg in straddle.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}")
+            logger.debug(
+                f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}"
+            )
         self.assertEqual(straddle.legs[0].strike, straddle.legs[1].strike)
         self.assertEqual(len(straddle.legs), 2)
         self.assertEqual(straddle.strategy_type, "Straddle")
@@ -88,7 +97,9 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         for leg in butterfly.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}")
+            logger.debug(
+                f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}"
+            )
         self.assertEqual(butterfly.legs[1].strike, butterfly.legs[2].strike)
         self.assertEqual(len(butterfly.legs), 4)
         self.assertEqual(butterfly.strategy_type, "Iron Butterfly")
@@ -103,7 +114,9 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         for leg in naked_call.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}")
+            logger.debug(
+                f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}"
+            )
         self.assertEqual(len(naked_call.legs), 1)
         self.assertEqual(naked_call.strategy_type, "Naked Call")
 
@@ -117,7 +130,9 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         for leg in naked_put.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}")
+            logger.debug(
+                f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side}"
+            )
         self.assertEqual(len(naked_put.legs), 1)
         self.assertEqual(naked_put.strategy_type, "Naked Put")
 
@@ -396,9 +411,7 @@ class TestOptionStrategy(unittest.TestCase):
         expected_debit_iron_condor_capital = (
             debit_iron_condor.entry_net_premium * 100 * debit_iron_condor.contracts
         ) + debit_iron_condor.calculate_total_commission()
-        self.assertEqual(
-            debit_iron_condor_capital, expected_debit_iron_condor_capital
-        )
+        self.assertEqual(debit_iron_condor_capital, expected_debit_iron_condor_capital)
 
     def test_required_capital_iron_condor(self):
         iron_condor = IronCondor.create_iron_condor(
@@ -491,7 +504,7 @@ class TestOptionStrategy(unittest.TestCase):
             abs(naked_put.entry_net_premium * 100 * naked_put.contracts)
         ) + naked_put.calculate_total_commission()
         self.assertEqual(naked_put_capital, expected_naked_put_capital)
-    
+
     def test_required_capital_credit_naked_call(self):
         naked_call = NakedCall.create_naked_call(
             symbol="SPY",
@@ -504,7 +517,11 @@ class TestOptionStrategy(unittest.TestCase):
         )
         naked_call_capital = naked_call.get_required_capital()
         expected_naked_call_capital = (
-            abs((naked_call.legs[0].strike - naked_call.entry_net_premium) * 100 * naked_call.contracts)
+            abs(
+                (naked_call.legs[0].strike - naked_call.entry_net_premium)
+                * 100
+                * naked_call.contracts
+            )
         ) + naked_call.calculate_total_commission()
         self.assertEqual(naked_call_capital, expected_naked_call_capital)
 
@@ -520,7 +537,11 @@ class TestOptionStrategy(unittest.TestCase):
         )
         naked_put_capital = naked_put.get_required_capital()
         expected_naked_put_capital = (
-            abs((naked_put.legs[0].strike - naked_put.entry_net_premium) * 100 * naked_put.contracts)
+            abs(
+                (naked_put.legs[0].strike - naked_put.entry_net_premium)
+                * 100
+                * naked_put.contracts
+            )
         ) + naked_put.calculate_total_commission()
         self.assertEqual(naked_put_capital, expected_naked_put_capital)
 
@@ -538,7 +559,7 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertEqual(vertical_spread.DIT, 0)
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertEqual(vertical_spread.DIT, 3)
-    
+
     def test_dte_calculation1(self):
         vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
@@ -551,7 +572,7 @@ class TestOptionStrategy(unittest.TestCase):
             option_chain_df=self.entry_df,
         )
         self.assertEqual(vertical_spread.entry_dte, 0)
-    
+
     def test_dte_calculation2(self):
         vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
@@ -578,7 +599,7 @@ class TestOptionStrategy(unittest.TestCase):
         )
         vertical_spread.close_strategy("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(vertical_spread.status, "CLOSED")
-    
+
     def test_close_strategy_dte(self):
         vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
@@ -593,7 +614,7 @@ class TestOptionStrategy(unittest.TestCase):
         vertical_spread.close_strategy("2024-09-06 15:45:00", self.update_df)
         self.assertEqual(vertical_spread.status, "CLOSED")
         self.assertEqual(vertical_spread.exit_dte, 55)
-    
+
     def test_close_strategy_dit(self):
         vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
@@ -623,7 +644,9 @@ class TestOptionStrategy(unittest.TestCase):
             exit_scheme=profit_target_condition,
         )
         for leg in vertical_spread.legs:
-            logger.debug(f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side} | {leg.entry_price}")
+            logger.debug(
+                f"{leg.symbol} | {leg.expiration} | {leg.strike} | {leg.option_type} | {leg.position_side} | {leg.entry_price}"
+            )
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
         self.assertFalse(vertical_spread.won)
 
@@ -657,7 +680,9 @@ class TestOptionStrategy(unittest.TestCase):
             exit_scheme=profit_target_condition,
         )
         for legs in vertical_spread.legs:
-            logger.debug(f"{legs.symbol} | {legs.expiration} | {legs.strike} | {legs.option_type} | {legs.position_side} | {legs.entry_price}")
+            logger.debug(
+                f"{legs.symbol} | {legs.expiration} | {legs.strike} | {legs.option_type} | {legs.position_side} | {legs.entry_price}"
+            )
         logger.debug(vertical_spread.entry_net_premium)
         logger.debug(vertical_spread.total_pl())
         vertical_spread.update("2024-09-09 09:45:00", self.update_df2)
@@ -669,7 +694,9 @@ class TestOptionStrategy(unittest.TestCase):
         self.assertTrue(vertical_spread.won)
 
     def test_time_based_condition(self):
-        time_based_condition = TimeBasedCondition(exit_time_before_expiration=pd.Timedelta(minutes=15))
+        time_based_condition = TimeBasedCondition(
+            exit_time_before_expiration=pd.Timedelta(minutes=15)
+        )
         vertical_spread = VerticalSpread.create_vertical_spread(
             symbol="SPY",
             option_type="PUT",
@@ -683,7 +710,7 @@ class TestOptionStrategy(unittest.TestCase):
         )
         vertical_spread.update("2024-09-06 15:45:00", self.update_df)
         self.assertTrue(vertical_spread.status == "CLOSED")
-    
+
     def test_default_exit_condition(self):
         default_exit_condition = DefaultExitCondition()
         vertical_spread = VerticalSpread.create_vertical_spread(
