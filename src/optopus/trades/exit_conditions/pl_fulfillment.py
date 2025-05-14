@@ -5,41 +5,96 @@ from typing import Union
 import datetime
 
 
-class WeeklyPLCheckForExit(BaseComponent):
+class PLCheckForExit(BaseComponent):
+    """
+    A component to check profit and loss conditions for strategy exit.
+    
+    This class evaluates whether a strategy should exit based on its performance
+    relative to specified return targets and loss prevention thresholds at a given frequency.
+    
+    Attributes:
+        target_return (float): Target return threshold for exit decision
+        target_loss_prevention (float): Loss prevention threshold for exit decision
+        loss_prevention_to_last_period (float): Multiplier for comparing current performance to previous period
+        freq (str): Time frequency for performance evaluation (e.g., 'W' for weekly, 'D' for daily)
+    """
+    
     def __init__(
         self,
         target_return=0.01,
         target_loss_prevention=0.01,
-        loss_prevention_to_last_week=0.5,
+        loss_prevention_to_last_period=0.5,
+        freq="W",
     ):
+        """
+        Initialize the PL Check for Exit component.
+        
+        Args:
+            target_return (float): Target return threshold for exit decision
+            target_loss_prevention (float): Loss prevention threshold for exit decision
+            loss_prevention_to_last_period (float): Multiplier for comparing current performance to previous period
+            freq (str): Time frequency for performance evaluation (e.g., 'W' for weekly, 'D' for daily)
+        """
         self.target_return = target_return
         self.target_loss_prevention = target_loss_prevention
-        self.loss_prevention_to_last_week = loss_prevention_to_last_week
+        self.loss_prevention_to_last_period = loss_prevention_to_last_period
+        self.freq = freq
+        logger.debug(f"Initialized PLCheckForExit with target_return={target_return}, target_loss_prevention={target_loss_prevention}, loss_prevention_to_last_period={loss_prevention_to_last_period}, freq='{freq}'")
 
     def should_exit(self, strategy, manager, time: pd.Timestamp) -> bool:
-        weekly_pl = (
-            pd.DataFrame(manager.performance_data)
-            .set_index("time")["closed_pl"]
-            .resample("W")
-            .last()
-            .diff()
-        )
-        previous_weekly_pl = weekly_pl.iloc[-2]
-        current_weekly_pl = weekly_pl.iloc[-1]
-        current_weekly_return = current_weekly_pl / manager.config.initial_capital
-
-        # Prevention check: exit if current weekly PL loss exceeds the previous week's PL gain
-
-        if previous_weekly_pl > 0:
-            loss_prevention_triggered = (
-                current_weekly_pl
-                < -previous_weekly_pl * self.loss_prevention_to_last_week
+        """
+        Determine if the strategy should exit based on P&L performance.
+        
+        Args:
+            strategy: The trading strategy to evaluate
+            manager: The strategy manager
+            time: The current timestamp
+            
+        Returns:
+            bool: True if the strategy should exit, False otherwise
+        """
+        logger.debug(f"Calculating P&L fulfillment for exit decision at frequency '{self.freq}'")
+        
+        try:
+            pl = (
+                pd.DataFrame(manager.performance_data)
+                .set_index("time")["closed_pl"]
+                .resample(self.freq)
+                .last()
+                .diff()
             )
-        else:
-            loss_prevention_triggered = False
+            
+            if len(pl) < 2:
+                logger.warning(f"Not enough performance data for {self.freq} resampling. Need at least 2 periods.")
+                return False
+                
+            previous_pl = pl.iloc[-2]
+            current_pl = pl.iloc[-1]
+            current_return = current_pl / manager.config.initial_capital
 
-        return (
-            -self.target_loss_prevention > current_weekly_return
-            or current_weekly_return > self.target_return
-            or loss_prevention_triggered
-        )
+            # Prevention check: exit if current PL loss exceeds previous period's gain
+            loss_prevention_triggered = False
+            if previous_pl > 0:
+                loss_prevention_triggered = current_pl < -previous_pl * self.loss_prevention_to_last_period
+                logger.debug(f"Loss prevention check: current_pl={current_pl:.2f}, previous_pl={previous_pl:.2f}, threshold={-previous_pl * self.loss_prevention_to_last_period:.2f}, triggered={loss_prevention_triggered}")
+
+            # Update context with current metrics
+            manager.context["indicators"].update({
+                f"Current {self.freq} PL": current_pl,
+                f"Current {self.freq} Return": current_return
+            })
+
+            # Determine exit condition
+            exit_condition = (
+                -self.target_loss_prevention > current_return
+                or current_return > self.target_return
+                or loss_prevention_triggered
+            )
+            
+            logger.debug(f"Exit condition evaluation: return={current_return:.4f}, target_return={self.target_return:.4f}, target_loss_prevention={self.target_loss_prevention:.4f}, triggered={exit_condition}")
+            
+            return exit_condition
+            
+        except Exception as e:
+            logger.error(f"Error in P&L fulfillment check: {str(e)}")
+            return False
