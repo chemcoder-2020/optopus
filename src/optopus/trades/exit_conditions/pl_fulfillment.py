@@ -56,8 +56,21 @@ class PLCheckForExit(BaseComponent):
         logger.debug(f"Calculating P&L fulfillment for exit decision at frequency '{self.freq}'")
         
         try:
+            # Estimate window size based on frequency
+            if self.freq == "W":  # Weekly
+                window = 26 * 7 * 2  # 1 week at 15-min intervals (26 15-min intervals per hour * 7 hours)
+            elif self.freq == "D":  # Daily
+                window = 26 * 1 * 2  # 1 day at 15-min intervals
+            elif self.freq == "M":  # Monthly
+                window = 26 * 30 * 2  # 1 month at 15-min intervals
+            else:  # Default for unknown frequencies
+                window = 26 * 7 * 2  # 1 week at 15-min intervals
+            
+            # Slice performance_data to only relevant portion before DataFrame conversion
+            recent_performance = manager.performance_data[-window:]
+            
             pl = (
-                pd.DataFrame(manager.performance_data)
+                pd.DataFrame(recent_performance)
                 .set_index("time")["total_pl"]
                 .resample(self.freq)
                 .last()
