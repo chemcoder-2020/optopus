@@ -27,5 +27,5 @@ class VWAPCheck(BaseComponent):
         else:
             logger.info(f"VWAPCheck on {self.anchor} anchor Failed")
 
-        manager.context["indicators"].update({f"VWAP_{self.anchor}": vwap})
+        manager.context["indicators"].update({f"VWAP_{self.anchor}": vwap.iloc[-1]})
         return vwap_check

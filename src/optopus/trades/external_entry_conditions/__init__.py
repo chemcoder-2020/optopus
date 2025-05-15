@@ -19,7 +19,7 @@ from .linear_regression import LinearRegressionCheck
 from .loess import LOESSCheck
 from .option_price_check import OptionPriceCheck
 from .parkinson_volatility_decrease import ParkinsonVolatilityDecreaseCheck
-from pl_fulfillment_check import PLFulfilmentCheck
+from .pl_fulfillment_check import PLFulfilmentCheck
 from .quadratic_regression import QuadraticRegressionCheck
 from .quadratic_indicator_regression import QuadraticIndicatorRegressionCheck
 from .ridge import RidgeCheck
