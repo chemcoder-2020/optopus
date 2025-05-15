@@ -39,10 +39,6 @@ class BaseBacktest:
         self.symbol = self.strategy_params["symbol"]
         self.backtester = OptionBacktester(self.config)
 
-    # @abstractmethod
-    # def create_spread(self, time, option_chain_df):
-    #     pass
-
     def run_backtest(
         self,
         start_date=None,
