@@ -14,16 +14,16 @@ class PLCheckForExit(BaseComponent):
     
     Attributes:
         target_return (float): Target return threshold for exit decision
-        target_loss_prevention (float): Loss prevention threshold for exit decision
-        loss_prevention_to_last_period (float): Multiplier for comparing current performance to previous period
+        target_loss_prevention (float, optional): Loss prevention threshold for exit decision. Defaults to None.
+        loss_prevention_to_last_period (float, optional): Multiplier for comparing current performance to previous period. Defaults to None.
         freq (str): Time frequency for performance evaluation (e.g., 'W' for weekly, 'D' for daily)
     """
     
     def __init__(
         self,
         target_return=0.01,
-        target_loss_prevention=0.01,
-        loss_prevention_to_last_period=0.5,
+        target_loss_prevention=None,
+        loss_prevention_to_last_period=None,
         freq="W",
     ):
         """
@@ -31,8 +31,8 @@ class PLCheckForExit(BaseComponent):
         
         Args:
             target_return (float): Target return threshold for exit decision
-            target_loss_prevention (float): Loss prevention threshold for exit decision
-            loss_prevention_to_last_period (float): Multiplier for comparing current performance to previous period
+            target_loss_prevention (float, optional): Loss prevention threshold for exit decision. If None, this check is skipped.
+            loss_prevention_to_last_period (float, optional): Multiplier for comparing current performance to previous period. If None, this check is skipped.
             freq (str): Time frequency for performance evaluation (e.g., 'W' for weekly, 'D' for daily)
         """
         self.target_return = target_return
@@ -87,7 +87,7 @@ class PLCheckForExit(BaseComponent):
 
             # Prevention check: exit if current PL loss exceeds previous period's gain
             loss_prevention_triggered = False
-            if previous_pl > 0:
+            if self.loss_prevention_to_last_period is not None and previous_pl > 0:
                 loss_prevention_triggered = current_pl < -previous_pl * self.loss_prevention_to_last_period
                 logger.debug(f"Loss prevention check: current_pl={current_pl:.2f}, previous_pl={previous_pl:.2f}, threshold={-previous_pl * self.loss_prevention_to_last_period:.2f}, triggered={loss_prevention_triggered}")
 
@@ -98,13 +98,18 @@ class PLCheckForExit(BaseComponent):
             })
 
             # Determine exit condition
-            exit_condition = (
-                -self.target_loss_prevention > current_return
-                or current_return > self.target_return
-                or loss_prevention_triggered
-            )
+            exit_conditions = []
+            if self.target_loss_prevention is not None:
+                exit_conditions.append(-self.target_loss_prevention > current_return)
             
-            logger.debug(f"Exit condition evaluation: return={current_return:.4f}, target_return={self.target_return:.4f}, target_loss_prevention={self.target_loss_prevention:.4f}, triggered={exit_condition}")
+            exit_conditions.append(current_return > self.target_return)
+            
+            if self.loss_prevention_to_last_period is not None:
+                exit_conditions.append(loss_prevention_triggered)
+            
+            exit_condition = any(exit_conditions)
+            
+            logger.debug(f"Exit condition evaluation: return={current_return:.4f}, target_return={self.target_return:.4f}, target_loss_prevention={self.target_loss_prevention}, loss_prevention_triggered={loss_prevention_triggered if self.loss_prevention_to_last_period is not None else 'skipped'}, triggered={exit_condition}")
             
             return exit_condition
             
