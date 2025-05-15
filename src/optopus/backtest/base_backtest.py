@@ -180,6 +180,12 @@ class BaseBacktest:
         trading_end_time: str,
     ) -> List[Tuple[str, str]]:
         """Create time ranges for cross-validation."""
+        # Ensure trading times are strings
+        if isinstance(trading_start_time, (pd.Timestamp, datetime)):
+            trading_start_time = trading_start_time.strftime("%H:%M")
+        if isinstance(trading_end_time, (pd.Timestamp, datetime)):
+            trading_end_time = trading_end_time.strftime("%H:%M")
+            
         full_range = pd.date_range(start=start_date, end=end_date, freq="15min")
 
         full_range = pd.Series(full_range).loc[
