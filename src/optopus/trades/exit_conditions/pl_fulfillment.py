@@ -58,13 +58,13 @@ class PLCheckForExit(BaseComponent):
         try:
             # Estimate window size based on frequency
             if self.freq == "W":  # Weekly
-                window = 26 * 7 * 2  # 1 week at 15-min intervals (26 15-min intervals per hour * 7 hours)
+                window = 26 * 7 * 3  # 1 week at 15-min intervals (26 15-min intervals per hour * 7 hours)
             elif self.freq == "D":  # Daily
-                window = 26 * 1 * 2  # 1 day at 15-min intervals
+                window = 26 * 1 * 3  # 1 day at 15-min intervals
             elif self.freq == "M":  # Monthly
-                window = 26 * 30 * 2  # 1 month at 15-min intervals
+                window = 26 * 30 * 3  # 1 month at 15-min intervals
             else:  # Default for unknown frequencies
-                window = 26 * 7 * 2  # 1 week at 15-min intervals
+                window = 26 * 7 * 3  # 1 week at 15-min intervals
             
             # Slice performance_data to only relevant portion before DataFrame conversion
             recent_performance = manager.performance_data[-window:]
