@@ -55,7 +55,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
     def broker(self):
         return self._broker
 
-    def submit_entry(self, price_step=0.01, wait_time=10):
+    def submit_entry(self):  # Removed price_step, wait_time
         # Ritual to avoid false price
 
         # 1. Fetch quotes
@@ -78,8 +78,11 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         else:
             raise ValueError("Invalid strategy side.")
 
-        max_attempts = int(abs(target_price - current_price) // price_step) + int(
-            abs(target_price - current_price) % price_step != 0
+        max_attempts = int(
+            abs(target_price - current_price) // self.price_step
+        ) + int(  # Use self.price_step
+            abs(target_price - current_price) % self.price_step
+            != 0  # Use self.price_step
         )
 
         for attempt in range(max_attempts):
@@ -93,7 +96,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     result[0] != "" and result[0] is not None
                 ), "Order ID is empty when placing entry order."
                 logger.info(f"Entry order placed successfully. Order ID: {result[0]}")
-                time.sleep(wait_time)
+                time.sleep(self.wait_time)  # Use self.wait_time
                 current_order = self.get_order(order_url=result[0])
                 if current_order.get("status") == "FILLED":
                     logger.info("Entry order filled.")
@@ -107,9 +110,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                         logger.info("Entry order canceled.")
 
                 if target_price > current_price:
-                    current_price += price_step
+                    current_price += self.price_step  # Use self.price_step
                 else:
-                    current_price -= price_step
+                    current_price -= self.price_step  # Use self.price_step
 
             else:
                 logger.warning(f"Entry attempt {attempt + 1} was not submitted.")
@@ -274,7 +277,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         self._exit_payload = payload
         return payload
 
-    def submit_exit(self, price_step=0.01, wait_time=10):
+    def submit_exit(self):  # Removed price_step, wait_time
 
         # Ritual to avoid false price
 
@@ -323,8 +326,11 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
         #                 logger.info("Strategy was incorrectly closed. Now re-opened.")
         #             return False
 
-        max_attempts = int(abs(target_price - current_price) // price_step) + int(
-            abs(target_price - current_price) % price_step != 0
+        max_attempts = int(
+            abs(target_price - current_price) // self.price_step
+        ) + int(  # Use self.price_step
+            abs(target_price - current_price) % self.price_step
+            != 0  # Use self.price_step
         )
 
         for attempt in range(max_attempts):
@@ -338,7 +344,7 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                     result[0] != "" and result[0] is not None
                 ), "Order ID is empty when placing exit order."
                 logger.info(f"Exit order placed successfully. Order ID: {result[0]}")
-                time.sleep(wait_time)
+                time.sleep(self.wait_time)  # Use self.wait_time
                 current_order = self.get_order(order_url=result[0])
                 if current_order.get("status") == "FILLED":
                     logger.info("Exit order filled.")
@@ -352,9 +358,9 @@ class SchwabOptionOrder(SchwabTrade, SchwabData, Order):
                         logger.info("Exit order canceled.")
 
                 if target_price > current_price:
-                    current_price += price_step
+                    current_price += self.price_step  # Use self.price_step
                 else:
-                    current_price -= price_step
+                    current_price -= self.price_step  # Use self.price_step
 
             else:
                 logger.warning(f"Exit attempt {attempt + 1} was not submitted.")

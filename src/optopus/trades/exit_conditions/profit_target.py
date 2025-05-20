@@ -2,7 +2,7 @@ from .base import BaseComponent
 import pandas as pd
 from loguru import logger
 from typing import Union, List
-import datetime
+from datetime import datetime
 
 
 class ProfitTargetCondition(BaseComponent):

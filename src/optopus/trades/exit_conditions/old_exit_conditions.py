@@ -6,7 +6,7 @@ for different exit conditions, such as profit targets, stop losses, and time-bas
 """
 
 from abc import ABC, abstractmethod
-import datetime
+from datetime import datetime
 import pandas as pd
 from typing import Union, List
 from loguru import logger

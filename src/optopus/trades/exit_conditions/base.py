@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import datetime
+from datetime import datetime
 import pandas as pd
 from typing import Union, List, Type
 from loguru import logger

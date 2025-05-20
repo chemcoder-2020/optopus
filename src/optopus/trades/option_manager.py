@@ -304,6 +304,12 @@ class OptionBacktester:
         Args:
             trade (OptionStrategy): The trade to close.
         """
+        if trade.status == "CLOSED":
+            logger.info("Confirmed trade is already closed.")
+        else:
+            trade.status = "CLOSED"
+            logger.info(f"Trade manually closed at {trade.exit_time}.")
+            
         self.active_trades.remove(trade)
         self.closed_trades.append(trade)
 

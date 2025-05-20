@@ -145,6 +145,10 @@ class OptionStrategy:
         self.filter_return_percentage = 0.0
         self.filter_pl = 0.0
 
+        # Initialize price_step and wait_time from kwargs or use defaults
+        self.price_step = kwargs.get("price_step", 0.01)
+        self.wait_time = kwargs.get("wait_time", 10)
+
     @staticmethod
     def _standardize_time(time_value):
         """Convert time to a pandas Timestamp object.

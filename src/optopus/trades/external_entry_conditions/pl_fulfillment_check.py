@@ -52,24 +52,28 @@ class PLFulfilmentCheck(BaseComponent):
         try:
             # Estimate window size based on frequency
             if self.freq == "W":  # Weekly
-                window = 26 * 7  # 1 week at 15-min intervals (26 15-min intervals per hour * 7 hours)
+                window = 26 * 7 * 3  # 1 week at 15-min intervals (26 15-min intervals per hour * 7 hours)
             elif self.freq == "D":  # Daily
-                window = 26 * 1  # 1 day at 15-min intervals
+                window = 26 * 1 * 3  # 1 day at 15-min intervals
             elif self.freq == "M":  # Monthly
-                window = 26 * 30  # 1 month at 15-min intervals
+                window = 26 * 30 * 3  # 1 month at 15-min intervals
             else:  # Default for unknown frequencies
-                window = 26 * 7  # 1 week at 15-min intervals
+                window = 26 * 7 * 3  # 1 week at 15-min intervals
             
             # Slice performance_data to only relevant portion before DataFrame conversion
             recent_performance = manager.performance_data[-window:]
             
-            pl = (
+            closed_pl_weekly = (
                 pd.DataFrame(recent_performance)
                 .set_index("time")["closed_pl"]
                 .resample(self.freq)
                 .last()
-                .diff()
             )
+            if len(closed_pl_weekly) < 2:
+                logger.info("Trading history is too short for P&L fulfillment check. Entering based on other conditions.")
+                return True
+            else:
+                pl = closed_pl_weekly.diff()
             current_pl = pl.iloc[-1]
     
             current_return = current_pl / manager.config.initial_capital

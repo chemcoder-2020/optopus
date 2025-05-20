@@ -10,7 +10,7 @@ from optopus.trades.exit_conditions import (
 )
 from typing import Union
 import pandas as pd
-import datetime
+from datetime import datetime
 
 # Uncomment the below class if you want to use the ProfitStoplossExitCondition
 

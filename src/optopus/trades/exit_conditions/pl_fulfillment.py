@@ -2,7 +2,7 @@ from .base import BaseComponent
 import pandas as pd
 from loguru import logger
 from typing import Union
-import datetime
+from datetime import datetime
 
 
 class PLCheckForExit(BaseComponent):
@@ -41,7 +41,7 @@ class PLCheckForExit(BaseComponent):
         self.freq = freq
         logger.debug(f"Initialized PLCheckForExit with target_return={target_return}, target_loss_prevention={target_loss_prevention}, loss_prevention_to_last_period={loss_prevention_to_last_period}, freq='{freq}'")
 
-    def should_exit(self, strategy, manager, time: pd.Timestamp) -> bool:
+    def should_exit(self, strategy, current_time: Union[datetime, str, pd.Timestamp], option_chain_df: pd.DataFrame, manager) -> bool:
         """
         Determine if the strategy should exit based on P&L performance.
         
